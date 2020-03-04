@@ -10,7 +10,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "downlevelIteration": true,
-    "lib": ["ES2015", "DOM"]
+    "lib": ["ES2015"]
   },
-  "include": ["src"]
+  "include": ["src/**/*.ts"]
 }
