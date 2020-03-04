@@ -1,7 +1,6 @@
 declare const process: any;
 const isProduction: boolean = typeof process === 'object' && process.env.NODE_ENV === 'production';
 
-import pkg from '../package.json';
 import { ValidatorFn, AsyncValidatorFn } from './validation/types.js';
 
 export function warning(condition: boolean, message: string): void {
@@ -14,7 +13,7 @@ export function warning(condition: boolean, message: string): void {
     }
 
     // Condition not passed
-    const text: string = `Warning from ${pkg.name}: ${message}`;
+    const text: string = `Warning: ${message}`;
 
     // check console for IE9 support which provides console
     // only with open devtools

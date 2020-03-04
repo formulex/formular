@@ -1,24 +1,35 @@
 {
-  "name": "core2",
+  "name": "@formular/core",
   "version": "1.0.0",
-  "main": "index.js",
+  "sideEffects": false,
+  "type": "module",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "files": [
+    "lib",
+    "es"
+  ],
   "author": "HeskeyBaozi <hezhiyu233@foxmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "parcel ./examples/basic/index.html --open",
-    "example:mst": "parcel ./examples/mst/index.html --open",
-    "example:antd": "parcel ./examples/antd/index.html --open",
-    "lint": "eslint --ext .ts examples src",
-    "build": "tsc --outDir build"
+    "lint": "eslint --ext .ts src",
+    "build": "npm run build:es && npm run build:lib",
+    "build:es": "rimraf es && babel src --out-dir es --extensions '.ts' && tsc --emitDeclarationOnly --outDir es",
+    "build:lib": "rimraf lib && cross-env BUILD_COMMONJS_MODULE=true babel src --out-dir lib --extensions '.ts' && tsc --emitDeclarationOnly --outDir lib",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.6",
+    "@babel/preset-env": "^7.8.6",
+    "@babel/preset-typescript": "^7.8.3",
     "@typescript-eslint/eslint-plugin": "^2.22.0",
     "@typescript-eslint/parser": "^2.22.0",
+    "cross-env": "^7.0.1",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",
     "mobx": "^5.15.1",
-    "mobx-react": "^6.1.8",
     "mobx-state-tree": "^3.15.0",
     "typescript": "^3.8.3"
   },
