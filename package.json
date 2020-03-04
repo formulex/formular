@@ -1,0 +1,10 @@
+{
+  "name": "formular",
+  "private": true,
+  "devDependencies": {
+    "lerna": "^3.20.2"
+  },
+  "repository": "git@github.com:formularx/formular.git",
+  "author": "HeskeyBaozi <hezhiyu233@foxmail.com>",
+  "license": "MIT"
+}

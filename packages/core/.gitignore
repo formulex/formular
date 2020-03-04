@@ -1,0 +1,10 @@
+/yarn.lock
+/package-lock.json
+/dist
+/build
+/.docz
+/node_modules
+*.tgz
+*.zip
+.cache
+*.log
