@@ -1,0 +1,36 @@
+{
+  "name": "@formular/react",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@formular/core": "^1.0.0"
+  },
+  "peerDependencies": {
+    "mobx": "5.x",
+    "mobx-react": "6.x",
+    "react": "16.x"
+  },
+  "scripts": {
+    "lint": "eslint --ext .ts src",
+    "build": "npm run build:es && npm run build:lib",
+    "build:es": "rimraf es && babel src --out-dir es --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir es",
+    "build:lib": "rimraf lib && cross-env BUILD_COMMONJS_MODULE=true babel src --out-dir lib --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir lib",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.7",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/preset-env": "^7.8.7",
+    "@babel/preset-react": "^7.8.3",
+    "@babel/preset-typescript": "^7.8.3",
+    "@types/react": "^16.9.23",
+    "cross-env": "^7.0.1",
+    "mobx": "^5.15.4",
+    "mobx-react": "^6.1.8",
+    "react": "^16.13.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.8.3"
+  }
+}
