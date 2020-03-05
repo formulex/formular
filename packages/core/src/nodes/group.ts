@@ -1,6 +1,6 @@
-import { types, IAnyModelType } from 'mobx-state-tree';
-import { Field } from './field';
-import { FieldArray } from './array';
+import { types, IAnyModelType, Instance } from 'mobx-state-tree';
+import { Field, createField } from './field';
+import { FieldArray, createFieldArray } from './array';
 import { dispatcher } from './helper';
 
 export const FieldGroup = types
@@ -27,14 +27,18 @@ export const FieldGroup = types
     function _checkAllValuesPresent(val: any) {
       for (const name of self.children.keys()) {
         if (val[name] === undefined) {
-          throw new Error(`Must supply a value for form field with name: '${name}'.`);
+          throw new Error(
+            `Must supply a value for form field with name: '${name}'.`
+          );
         }
       }
     }
 
     function _throwIfFieldMissing(name: string) {
       if (!self.children.size) {
-        throw new Error('There are no form fields registered with this group yet.');
+        throw new Error(
+          'There are no form fields registered with this group yet.'
+        );
       }
       if (!self.children.get(name)) {
         throw new Error(`Cannot find form field with name: ${name}.`);
@@ -55,6 +59,27 @@ export const FieldGroup = types
             self.children.get(name).patchValue(val[name]);
           }
         });
+      },
+      afterAttach() {
+        console.log(self, 'is attached');
       }
     };
   });
+
+export type FieldGroupInstance = Instance<typeof FieldGroup>;
+
+export function createFieldGroup(value: { [key: string]: any }) {
+  const children = {};
+  Object.keys(value).forEach(name => {
+    const target = value[name];
+    const type = dispatcher({ children: target });
+    if (type === FieldGroup) {
+      Object.assign(children, { [name]: createFieldGroup(target) });
+    } else if (type === FieldArray) {
+      Object.assign(children, { [name]: createFieldArray(target) });
+    } else {
+      Object.assign(children, { [name]: createField(target) });
+    }
+  });
+  return FieldGroup.create({ children });
+}

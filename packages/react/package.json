@@ -4,14 +4,17 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "@babel/runtime": "^7.8.7",
     "@formular/core": "^1.0.0"
   },
   "peerDependencies": {
     "mobx": "5.x",
     "mobx-react": "6.x",
+    "mobx-state-tree": "3.x",
     "react": "16.x"
   },
   "scripts": {
+    "start": "parcel examples/basic/index.html --open",
     "lint": "eslint --ext .ts src",
     "build": "npm run build:es && npm run build:lib",
     "build:es": "rimraf es && babel src --out-dir es --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir es",
@@ -22,6 +25,7 @@
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.7",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.8.3",
     "@babel/preset-env": "^7.8.7",
     "@babel/preset-react": "^7.8.3",
     "@babel/preset-typescript": "^7.8.3",
@@ -29,6 +33,8 @@
     "cross-env": "^7.0.1",
     "mobx": "^5.15.4",
     "mobx-react": "^6.1.8",
+    "mobx-state-tree": "^3.15.0",
+    "parcel-bundler": "^1.12.4",
     "react": "^16.13.0",
     "rimraf": "^3.0.2",
     "typescript": "^3.8.3"

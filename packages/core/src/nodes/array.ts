@@ -1,6 +1,6 @@
-import { types, IAnyModelType } from 'mobx-state-tree';
-import { FieldGroup } from './group';
-import { Field } from './field';
+import { types, IAnyModelType, Instance } from 'mobx-state-tree';
+import { FieldGroup, createFieldGroup } from './group';
+import { Field, createField } from './field';
 import { dispatcher } from './helper';
 
 export const FieldArray = types
@@ -23,14 +23,18 @@ export const FieldArray = types
     function _checkAllValuesPresent(val: any) {
       self.children.forEach((field, index) => {
         if (val[index] === undefined) {
-          throw new Error(`Must supply a value for form field at index: ${index}.`);
+          throw new Error(
+            `Must supply a value for form field at index: ${index}.`
+          );
         }
       });
     }
 
     function _throwIfFieldMissing(index: number) {
       if (!self.children.length) {
-        throw new Error('There are no form fields registered with this array yet.');
+        throw new Error(
+          'There are no form fields registered with this array yet.'
+        );
       }
       if (!self.children[index]) {
         throw new Error(`Cannot find form field at index ${index}`);
@@ -53,3 +57,20 @@ export const FieldArray = types
       }
     };
   });
+
+export type FieldArrayInstance = Instance<typeof FieldGroup>;
+
+export function createFieldArray(value: any[]) {
+  const children: any[] = [];
+  value.forEach((target, index) => {
+    const type = dispatcher({ children: target });
+    if (type === FieldGroup) {
+      children[index] = createFieldGroup(target);
+    } else if (type === FieldArray) {
+      children[index] = createFieldArray(target);
+    } else {
+      children[index] = createField(target);
+    }
+  });
+  return FieldArray.create({ children });
+}

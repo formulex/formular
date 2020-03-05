@@ -1,4 +1,4 @@
-import { types } from 'mobx-state-tree';
+import { types, Instance } from 'mobx-state-tree';
 
 export const Field = types
   .model('Field', {
@@ -14,3 +14,11 @@ export const Field = types
       self.setValue(val);
     }
   }));
+
+export type FieldInstance = Instance<typeof Field>;
+
+export function createField(value?: string | number | boolean): FieldInstance {
+  return Field.create({
+    value
+  });
+}
