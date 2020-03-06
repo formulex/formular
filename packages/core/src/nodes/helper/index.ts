@@ -1,9 +1,8 @@
 import {
   ITypeDispatcher,
-  IAnyStateTreeNode,
-  walk,
-  getType
+  IAnyStateTreeNode
 } from 'mobx-state-tree/dist/internal';
+import { walk, getType } from 'mobx-state-tree';
 import { Field } from '../field';
 import { FieldGroup } from '../group';
 import { FieldArray } from '../array';

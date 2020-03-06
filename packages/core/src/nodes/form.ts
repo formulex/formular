@@ -1,12 +1,25 @@
 import { types, Instance, flow } from 'mobx-state-tree';
 import { FieldGroup, createFieldGroup } from './group';
-import { walkFieldNode } from './helper';
 
 export const Form = types
   .model('Form', {
     root: FieldGroup,
     isSubmitting: types.boolean
   })
+  .views(self => ({
+    get value() {
+      return self.root.value;
+    },
+    get initialValue() {
+      return self.root.initialValue;
+    },
+    get clear() {
+      return self.root.clear;
+    },
+    get reset() {
+      return self.root.reset;
+    }
+  }))
   .actions(self => {
     return {
       submit: flow<{ [key: string]: any }, []>(function* submit() {
@@ -14,12 +27,7 @@ export const Form = types
         yield new Promise(r => setTimeout(r, 500));
         self.isSubmitting = false;
         return self.root.value;
-      }),
-      reset() {
-        walkFieldNode(self.root, node => {
-          console.log('node =', node);
-        });
-      }
+      })
     };
   });
 

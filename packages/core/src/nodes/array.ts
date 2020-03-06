@@ -17,12 +17,17 @@ export const FieldArray = types
   .views(self => ({
     get value() {
       return [...self.children.values()].map(({ value }) => value);
+    },
+    get initialValue() {
+      return [...self.children.values()].map(
+        ({ initialValue }) => initialValue
+      );
     }
   }))
   .actions(self => {
     function _checkAllValuesPresent(val: any) {
       self.children.forEach((field, index) => {
-        if (val[index] === undefined) {
+        if (!Object.prototype.hasOwnProperty.call(val, index)) {
           throw new Error(
             `Must supply a value for form field at index: ${index}.`
           );
@@ -48,12 +53,39 @@ export const FieldArray = types
           self.children[index].setValue(newValue);
         });
       },
+      setInitialValue(val: any[]) {
+        _checkAllValuesPresent(val);
+        val.forEach((newValue: any, index: number) => {
+          _throwIfFieldMissing(index);
+          self.children[index].setInitialValue(newValue);
+        });
+      },
       patchValue(val: any[]) {
         val.forEach((newValue: any, index: number) => {
           if (self.children[index]) {
             self.children[index].patchValue(newValue);
           }
         });
+      },
+      patchInitialValue(val: any[]) {
+        val.forEach((newValue: any, index: number) => {
+          if (self.children[index]) {
+            self.children[index].patchInitialValue(newValue);
+          }
+        });
+      }
+    };
+  })
+  .actions(self => {
+    return {
+      afterCreate() {
+        self.setInitialValue(self.value);
+      },
+      reset() {
+        self.setValue(self.initialValue);
+      },
+      clear() {
+        self.children.clear();
       }
     };
   });

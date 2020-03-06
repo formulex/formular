@@ -16,17 +16,24 @@ export const FieldGroup = types
   })
   .views(self => ({
     get value() {
-      const result = {};
+      const result: { [key: string]: any } = {};
       for (const [key, node] of self.children.entries()) {
-        Object.assign(result, { [key]: node.value });
+        result[key] = node.value;
+      }
+      return result;
+    },
+    get initialValue() {
+      const result: { [key: string]: any } = {};
+      for (const [key, node] of self.children.entries()) {
+        result[key] = node.initialValue;
       }
       return result;
     }
   }))
   .actions(self => {
-    function _checkAllValuesPresent(val: any) {
+    function _checkAllValuesPresent(val: object) {
       for (const name of self.children.keys()) {
-        if (val[name] === undefined) {
+        if (!Object.prototype.hasOwnProperty.call(val, name)) {
           throw new Error(
             `Must supply a value for form field with name: '${name}'.`
           );
@@ -53,12 +60,41 @@ export const FieldGroup = types
           self.children.get(name).setValue(val[name]);
         });
       },
+      setInitialValue(val: { [key: string]: any }) {
+        _checkAllValuesPresent(val);
+        Object.keys(val).forEach(name => {
+          _throwIfFieldMissing(name);
+          self.children.get(name).setInitialValue(val[name]);
+        });
+      },
       patchValue(val: { [key: string]: any }) {
         Object.keys(val).forEach(name => {
           if (self.children.get(name)) {
             self.children.get(name).patchValue(val[name]);
           }
         });
+      },
+      patchInitialValue(val: { [key: string]: any }) {
+        Object.keys(val).forEach(name => {
+          if (self.children.get(name)) {
+            self.children.get(name).patchInitialValue(val[name]);
+          }
+        });
+      }
+    };
+  })
+  .actions(self => {
+    return {
+      afterCreate() {
+        self.setInitialValue(self.value);
+      },
+      reset() {
+        self.setValue(self.initialValue);
+      },
+      clear() {
+        for (const node of self.children.values()) {
+          node.clear();
+        }
       }
     };
   });
