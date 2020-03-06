@@ -58,9 +58,9 @@ export const FieldArray = types
     };
   });
 
-export type FieldArrayInstance = Instance<typeof FieldGroup>;
+export type FieldArrayInstance = Instance<typeof FieldArray>;
 
-export function createFieldArray(value: any[]) {
+export function createFieldArray(value: any[]): FieldArrayInstance {
   const children: any[] = [];
   value.forEach((target, index) => {
     const type = dispatcher({ children: target });

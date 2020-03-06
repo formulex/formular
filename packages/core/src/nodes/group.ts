@@ -59,16 +59,15 @@ export const FieldGroup = types
             self.children.get(name).patchValue(val[name]);
           }
         });
-      },
-      afterAttach() {
-        console.log(self, 'is attached');
       }
     };
   });
 
 export type FieldGroupInstance = Instance<typeof FieldGroup>;
 
-export function createFieldGroup(value: { [key: string]: any }) {
+export function createFieldGroup(value: {
+  [key: string]: any;
+}): FieldGroupInstance {
   const children = {};
   Object.keys(value).forEach(name => {
     const target = value[name];
