@@ -47,7 +47,7 @@ const App: React.FC = observer(() => {
       ref={formRef}
       initialValues={{
         // foo: 'bar',
-        bar: 123,
+        bar: initVal,
         baz: true,
         touming: undefined,
         foofoo: {
@@ -63,7 +63,7 @@ const App: React.FC = observer(() => {
       }}
     >
       <div>
-        <Item name="aa.bb.cc[1][2].hello.world" initialValue={initVal}>
+        <Item name="bar" initialValue={"initVal"}>
           {({ field, name }) => (
             <div>
               <h3>{name}</h3>

@@ -14704,16 +14704,11 @@ var Form = _mobxStateTree.types.model('Form', {
         var pathArray = name2PathArray(name);
         var parent = self.root;
         pathArray.forEach(function (pathToken, index, array) {
-          console.log('outter', pathToken, parent.value);
-          var hasNode = typeof parent.children.has === 'function' && parent.children.has(pathToken) || parent.children.get(pathToken) === null;
-          console.log('hasNode =', typeof parent.children.has === 'function' && parent.children.has(pathToken), parent.children.get(pathToken));
+          var hasNode = typeof parent.children.has === 'function' && parent.children.has(pathToken);
 
           if (index !== array.length - 1) {
             if (!hasNode) {
-              console.log('pathToken', pathToken);
-              console.log('parent', parent);
               parent.addChild(pathToken, (0, _group.createFieldGroup)({}));
-              console.log('after parent', parent);
             }
 
             parent = parent.children.get(pathToken);
@@ -49810,7 +49805,7 @@ var App = mobx_react_1.observer(function () {
     ref: formRef,
     initialValues: {
       // foo: 'bar',
-      bar: 123,
+      bar: initVal,
       baz: true,
       touming: undefined,
       foofoo: {
@@ -49830,8 +49825,8 @@ var App = mobx_react_1.observer(function () {
       }]
     }
   }, react_1.default.createElement("div", null, react_1.default.createElement(src_1.Item, {
-    name: "aa.bb.cc[1][2].hello.world",
-    initialValue: initVal
+    name: "bar",
+    initialValue: "initVal"
   }, function (_ref) {
     var field = _ref.field,
         name = _ref.name;

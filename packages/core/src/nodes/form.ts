@@ -88,23 +88,12 @@ export const Form = types
           const pathArray = name2PathArray(name);
           let parent = self.root;
           pathArray.forEach((pathToken, index, array) => {
-            console.log('outter', pathToken, parent.value);
             const hasNode =
-              (typeof parent.children.has === 'function' &&
-                parent.children.has(pathToken)) ||
-              parent.children.get(pathToken) === null;
-            console.log(
-              'hasNode =',
               typeof parent.children.has === 'function' &&
-                parent.children.has(pathToken),
-              parent.children.get(pathToken)
-            );
+              parent.children.has(pathToken);
             if (index !== array.length - 1) {
               if (!hasNode) {
-                console.log('pathToken', pathToken);
-                console.log('parent', parent);
                 parent.addChild(pathToken, createFieldGroup({}));
-                console.log('after parent', parent);
               }
               parent = parent.children.get(pathToken);
             } else {
