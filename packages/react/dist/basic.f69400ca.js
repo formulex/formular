@@ -13281,8 +13281,8 @@ exports.Field = void 0;
 var _mobxStateTree = require("mobx-state-tree");
 
 var Field = _mobxStateTree.types.model('Field', {
-  initialValue: _mobxStateTree.types.maybe(_mobxStateTree.types.union(_mobxStateTree.types.string, _mobxStateTree.types.number, _mobxStateTree.types.boolean)),
-  value: _mobxStateTree.types.maybe(_mobxStateTree.types.union(_mobxStateTree.types.string, _mobxStateTree.types.number, _mobxStateTree.types.boolean))
+  initialValue: _mobxStateTree.types.maybe(_mobxStateTree.types.union(_mobxStateTree.types.string, _mobxStateTree.types.number, _mobxStateTree.types.boolean, _mobxStateTree.types.null)),
+  value: _mobxStateTree.types.maybe(_mobxStateTree.types.union(_mobxStateTree.types.string, _mobxStateTree.types.number, _mobxStateTree.types.boolean, _mobxStateTree.types.null))
 }).actions(function (self) {
   return {
     setValue: function setValue(val) {
@@ -13307,7 +13307,7 @@ var Field = _mobxStateTree.types.model('Field', {
       self.setValue(self.initialValue);
     },
     clear: function clear() {
-      self.setValue(undefined);
+      self.setValue(null);
     }
   };
 });
@@ -13468,7 +13468,7 @@ var _array = require("../array");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var dispatcher = function dispatcher(snapshot) {
-  if ((0, _typeof2.default)(snapshot.children) === 'object' && !Array.isArray(snapshot.children)) {
+  if ((0, _typeof2.default)(snapshot.children) === 'object' && snapshot.children !== null && !Array.isArray(snapshot.children)) {
     return _group.FieldGroup;
   }
 
@@ -13587,6 +13587,10 @@ var FieldArray = _mobxStateTree.types.model('FieldArray', {
           self.children[index].patchInitialValue(newValue);
         }
       });
+    },
+    addChild: function addChild(name, val) {
+      var index = typeof name === 'string' ? Number.parseInt(name) : name;
+      self.children[index] = val;
     }
   };
 }).actions(function (self) {
@@ -13794,6 +13798,9 @@ var FieldGroup = _mobxStateTree.types.model('FieldGroup', {
           self.children.get(name).patchInitialValue(val[name]);
         }
       });
+    },
+    addChild: function addChild(name, val) {
+      self.children.set(name, val);
     }
   };
 }).actions(function (self) {
@@ -14597,11 +14604,17 @@ Object.defineProperty(exports, "__esModule", {
 exports.createForm = createForm;
 exports.Form = void 0;
 
+var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
+
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
 var _mobxStateTree = require("mobx-state-tree");
 
 var _group = require("./group");
+
+var _field = require("./field");
+
+var _array = require("./array");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -14628,6 +14641,19 @@ var Form = _mobxStateTree.types.model('Form', {
 
   };
 }).actions(function (self) {
+  var rightSquare = /\]/g;
+  var leftSquare = /\[/g;
+
+  function name2JSONPointer(name) {
+    var dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
+    return '/children/' + dotPath.split('.').join('/children/');
+  }
+
+  function name2PathArray(name) {
+    var dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
+    return dotPath.split('.');
+  }
+
   return {
     submit: (0, _mobxStateTree.flow)( /*#__PURE__*/_regenerator.default.mark(function submit() {
       return _regenerator.default.wrap(function submit$(_context) {
@@ -14650,7 +14676,61 @@ var Form = _mobxStateTree.types.model('Form', {
           }
         }
       }, submit);
-    }))
+    })),
+    registerField: function registerField(name, applyEffectFn) {
+      var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+        type: undefined,
+        initialValue: undefined
+      };
+      var node = null;
+
+      try {
+        node = (0, _mobxStateTree.tryResolve)(self.root, name2JSONPointer(name));
+      } catch (error) {// noop
+      }
+
+      if (node === null) {
+        var createdNode = null;
+
+        if (config.type === 'object' || (0, _typeof2.default)(config.initialValue) === 'object' && config.initialValue !== null && !Array.isArray(config.initialValue)) {
+          createdNode = (0, _group.createFieldGroup)(config.initialValue || {});
+        } else if (config.type === 'array' || (0, _typeof2.default)(config.initialValue) === 'object' && Array.isArray(config.initialValue)) {
+          createdNode = (0, _array.createFieldArray)(config.initialValue || []);
+        } else {
+          createdNode = (0, _field.createField)(config.initialValue);
+        }
+
+        node = createdNode;
+        var pathArray = name2PathArray(name);
+        var parent = self.root;
+        pathArray.forEach(function (pathToken, index, array) {
+          console.log('outter', pathToken, parent.value);
+          var hasNode = typeof parent.children.has === 'function' && parent.children.has(pathToken) || parent.children.get(pathToken) === null;
+          console.log('hasNode =', typeof parent.children.has === 'function' && parent.children.has(pathToken), parent.children.get(pathToken));
+
+          if (index !== array.length - 1) {
+            if (!hasNode) {
+              console.log('pathToken', pathToken);
+              console.log('parent', parent);
+              parent.addChild(pathToken, (0, _group.createFieldGroup)({}));
+              console.log('after parent', parent);
+            }
+
+            parent = parent.children.get(pathToken);
+          } else {
+            parent.addChild(pathToken, node);
+          }
+        });
+      }
+
+      var disposer = applyEffectFn(node);
+
+      if (typeof disposer !== 'function') {
+        throw new Error("Apply Effect Function should return a unsubscription function, but got ".concat(disposer, " with type ").concat((0, _typeof2.default)(disposer), "."));
+      }
+
+      return disposer;
+    }
   };
 });
 
@@ -14665,13 +14745,14 @@ function createForm(_ref) {
   // see https://github.com/mobxjs/mobx-state-tree/issues/1433
 
   !root.value;
+  !root.initialValue;
   root.patchValue(values);
   return Form.create({
     root: root,
     isSubmitting: false
   });
 }
-},{"@babel/runtime/regenerator":"../../node_modules/@formular/core/node_modules/@babel/runtime/regenerator/index.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","./group":"../../node_modules/@formular/core/es/nodes/group.js"}],"../../node_modules/@formular/core/es/nodes/index.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/typeof":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/typeof.js","@babel/runtime/regenerator":"../../node_modules/@formular/core/node_modules/@babel/runtime/regenerator/index.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","./group":"../../node_modules/@formular/core/es/nodes/group.js","./field":"../../node_modules/@formular/core/es/nodes/field.js","./array":"../../node_modules/@formular/core/es/nodes/array.js"}],"../../node_modules/@formular/core/es/nodes/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43007,13 +43088,31 @@ exports.useForm = useForm;
 },{"@formular/core":"../../node_modules/@formular/core/es/index.js","react":"../../node_modules/react/index.js"}],"../../src/contexts/form.tsx":[function(require,module,exports) {
 "use strict";
 
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
 var react_1 = require("react");
 
+var react_2 = __importDefault(require("react"));
+
 exports.FormContext = react_1.createContext(null);
+
+exports.useFormContext = function () {
+  var store = react_2.default.useContext(exports.FormContext);
+
+  if (!store) {
+    throw new Error('useFormContext must be used within a StoreProvider.');
+  }
+
+  return store;
+};
 },{"react":"../../node_modules/react/index.js"}],"../../src/contexts/index.ts":[function(require,module,exports) {
 "use strict";
 
@@ -43064,31 +43163,7 @@ exports.Container = react_1.default.forwardRef(function (_ref, ref) {
     value: formInstance
   }, children);
 });
-},{"react":"../../node_modules/react/index.js","../hooks/useForm":"../../src/hooks/useForm.ts","../contexts":"../../src/contexts/index.ts"}],"../../src/components/index.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var Container_1 = require("./Container");
-
-exports.Container = Container_1.Container;
-},{"./Container":"../../src/components/Container.tsx"}],"../../src/index.ts":[function(require,module,exports) {
-"use strict";
-
-function __export(m) {
-  for (var p in m) {
-    if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-  }
-}
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-__export(require("./components"));
-},{"./components":"../../src/components/index.ts"}],"../../node_modules/mobx/lib/mobx.module.js":[function(require,module,exports) {
+},{"react":"../../node_modules/react/index.js","../hooks/useForm":"../../src/hooks/useForm.ts","../contexts":"../../src/contexts/index.ts"}],"../../node_modules/mobx/lib/mobx.module.js":[function(require,module,exports) {
 var process = require("process");
 var global = arguments[3];
 "use strict";
@@ -48292,8 +48367,1381 @@ if (typeof __MOBX_DEVTOOLS_GLOBAL_HOOK__ === "object") {
     $mobx: $mobx
   });
 }
-},{"process":"../../node_modules/process/browser.js"}],"index.tsx":[function(require,module,exports) {
+},{"process":"../../node_modules/process/browser.js"}],"../../node_modules/mobx-react-lite/dist/index.module.js":[function(require,module,exports) {
 "use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Observer = ObserverComponent;
+exports.isUsingStaticRendering = isUsingStaticRendering;
+exports.observer = observer;
+exports.useAsObservableSource = useAsObservableSource;
+exports.useComputed = useComputed;
+exports.useDisposable = useDisposable;
+exports.useForceUpdate = useForceUpdate;
+exports.useLocalStore = useLocalStore;
+exports.useObservable = useObservable;
+exports.useObserver = useObserver;
+exports.useStaticRendering = useStaticRendering;
+exports.optimizeScheduler = void 0;
+
+var _mobx = require("mobx");
+
+var _react = _interopRequireWildcard(require("react"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+if (!_react.useState) {
+  throw new Error("mobx-react-lite requires React with Hooks support");
+}
+
+if (!_mobx.spy) {
+  throw new Error("mobx-react-lite requires mobx at least version 4 to be available");
+}
+
+function useObservable(initialValue) {
+  var observableRef = (0, _react.useRef)(null);
+
+  if (!observableRef.current) {
+    observableRef.current = (0, _mobx.observable)(initialValue);
+  }
+
+  return observableRef.current;
+}
+
+function useComputed(func, inputs) {
+  if (inputs === void 0) {
+    inputs = [];
+  }
+
+  var computed$1 = (0, _react.useMemo)(function () {
+    return (0, _mobx.computed)(func);
+  }, inputs);
+  return computed$1.get();
+}
+
+var doNothingDisposer = function () {// empty
+};
+/**
+ * Adds an observable effect (reaction, autorun, or anything else that returns a disposer) that will be registered upon component creation and disposed upon unmounting.
+ * Returns the generated disposer for early disposal.
+ *
+ * @export
+ * @template D
+ * @param {() => D} disposerGenerator A function that returns the disposer of the wanted effect.
+ * @param {ReadonlyArray<any>} [inputs=[]] If you want the effect to be automatically re-created when some variable(s) are changed then pass them in this array.
+ * @returns {D}
+ */
+
+
+function useDisposable(disposerGenerator, inputs) {
+  if (inputs === void 0) {
+    inputs = [];
+  }
+
+  var disposerRef = (0, _react.useRef)(null);
+  var earlyDisposedRef = (0, _react.useRef)(false);
+  (0, _react.useEffect)(function () {
+    return lazyCreateDisposer(false);
+  }, inputs);
+
+  function lazyCreateDisposer(earlyDisposal) {
+    // ensure that we won't create a new disposer if it was early disposed
+    if (earlyDisposedRef.current) {
+      return doNothingDisposer;
+    }
+
+    if (!disposerRef.current) {
+      var newDisposer = disposerGenerator();
+
+      if (typeof newDisposer !== "function") {
+        var error = new Error("generated disposer must be a function");
+        {
+          // tslint:disable-next-line:no-console
+          console.error(error);
+          return doNothingDisposer;
+        }
+      }
+
+      disposerRef.current = newDisposer;
+    }
+
+    return function () {
+      if (disposerRef.current) {
+        disposerRef.current();
+        disposerRef.current = null;
+      }
+
+      if (earlyDisposal) {
+        earlyDisposedRef.current = true;
+      }
+    };
+  }
+
+  return lazyCreateDisposer(true);
+}
+
+var globalIsUsingStaticRendering = false;
+
+function useStaticRendering(enable) {
+  globalIsUsingStaticRendering = enable;
+}
+
+function isUsingStaticRendering() {
+  return globalIsUsingStaticRendering;
+}
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+
+
+var __assign = function () {
+  __assign = Object.assign || function __assign(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+      s = arguments[i];
+
+      for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+    }
+
+    return t;
+  };
+
+  return __assign.apply(this, arguments);
+};
+
+function __read(o, n) {
+  var m = typeof Symbol === "function" && o[Symbol.iterator];
+  if (!m) return o;
+  var i = m.call(o),
+      r,
+      ar = [],
+      e;
+
+  try {
+    while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+  } catch (error) {
+    e = {
+      error: error
+    };
+  } finally {
+    try {
+      if (r && !r.done && (m = i["return"])) m.call(i);
+    } finally {
+      if (e) throw e.error;
+    }
+  }
+
+  return ar;
+}
+
+function printDebugValue(v) {
+  if (!v.current) {
+    return "<unknown>";
+  }
+
+  return (0, _mobx.getDependencyTree)(v.current);
+}
+
+var EMPTY_ARRAY = [];
+
+function useUnmount(fn) {
+  (0, _react.useEffect)(function () {
+    return fn;
+  }, EMPTY_ARRAY);
+}
+
+function useForceUpdate() {
+  var _a = __read((0, _react.useState)(0), 2),
+      setTick = _a[1];
+
+  var update = (0, _react.useCallback)(function () {
+    setTick(function (tick) {
+      return tick + 1;
+    });
+  }, []);
+  return update;
+}
+
+function isPlainObject(value) {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  var proto = Object.getPrototypeOf(value);
+  return !proto || proto === Object.prototype;
+}
+
+var EMPTY_OBJECT = {};
+
+function useObserver(fn, baseComponentName, options) {
+  if (baseComponentName === void 0) {
+    baseComponentName = "observed";
+  }
+
+  if (options === void 0) {
+    options = EMPTY_OBJECT;
+  }
+
+  if (isUsingStaticRendering()) {
+    return fn();
+  }
+
+  var wantedForceUpdateHook = options.useForceUpdate || useForceUpdate;
+  var forceUpdate = wantedForceUpdateHook();
+  var reaction = (0, _react.useRef)(null);
+
+  if (!reaction.current) {
+    reaction.current = new _mobx.Reaction("observer(" + baseComponentName + ")", function () {
+      forceUpdate();
+    });
+  }
+
+  var dispose = function () {
+    if (reaction.current && !reaction.current.isDisposed) {
+      reaction.current.dispose();
+      reaction.current = null;
+    }
+  };
+
+  (0, _react.useDebugValue)(reaction, printDebugValue);
+  useUnmount(function () {
+    dispose();
+  }); // render the original component, but have the
+  // reaction track the observables, so that rendering
+  // can be invalidated (see above) once a dependency changes
+
+  var rendering;
+  var exception;
+  reaction.current.track(function () {
+    try {
+      rendering = fn();
+    } catch (e) {
+      exception = e;
+    }
+  });
+
+  if (exception) {
+    dispose();
+    throw exception; // re-throw any exceptions catched during rendering
+  }
+
+  return rendering;
+} // n.b. base case is not used for actual typings or exported in the typing files
+
+
+function observer(baseComponent, options) {
+  // The working of observer is explained step by step in this talk: https://www.youtube.com/watch?v=cPF4iBedoF0&feature=youtu.be&t=1307
+  if (isUsingStaticRendering()) {
+    return baseComponent;
+  }
+
+  var realOptions = __assign({
+    forwardRef: false
+  }, options);
+
+  var baseComponentName = baseComponent.displayName || baseComponent.name;
+
+  var wrappedComponent = function (props, ref) {
+    return useObserver(function () {
+      return baseComponent(props, ref);
+    }, baseComponentName);
+  };
+
+  wrappedComponent.displayName = baseComponentName; // memo; we are not intested in deep updates
+  // in props; we assume that if deep objects are changed,
+  // this is in observables, which would have been tracked anyway
+
+  var memoComponent;
+
+  if (realOptions.forwardRef) {
+    // we have to use forwardRef here because:
+    // 1. it cannot go before memo, only after it
+    // 2. forwardRef converts the function into an actual component, so we can't let the baseComponent do it
+    //    since it wouldn't be a callable function anymore
+    memoComponent = (0, _react.memo)((0, _react.forwardRef)(wrappedComponent));
+  } else {
+    memoComponent = (0, _react.memo)(wrappedComponent);
+  }
+
+  copyStaticProperties(baseComponent, memoComponent);
+  memoComponent.displayName = baseComponentName;
+  return memoComponent;
+} // based on https://github.com/mridgway/hoist-non-react-statics/blob/master/src/index.js
+
+
+var hoistBlackList = {
+  $$typeof: true,
+  render: true,
+  compare: true,
+  type: true
+};
+
+function copyStaticProperties(base, target) {
+  Object.keys(base).forEach(function (key) {
+    if (base.hasOwnProperty(key) && !hoistBlackList[key]) {
+      Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(base, key));
+    }
+  });
+}
+
+function ObserverComponent(_a) {
+  var children = _a.children,
+      render = _a.render;
+  var component = children || render;
+
+  if (typeof component !== "function") {
+    return null;
+  }
+
+  return useObserver(component);
+}
+
+ObserverComponent.propTypes = {
+  children: ObserverPropsCheck,
+  render: ObserverPropsCheck
+};
+ObserverComponent.displayName = "Observer";
+
+function ObserverPropsCheck(props, key, componentName, location, propFullName) {
+  var extraKey = key === "children" ? "render" : "children";
+  var hasProp = typeof props[key] === "function";
+  var hasExtraProp = typeof props[extraKey] === "function";
+
+  if (hasProp && hasExtraProp) {
+    return new Error("MobX Observer: Do not use children and render in the same time in`" + componentName);
+  }
+
+  if (hasProp || hasExtraProp) {
+    return null;
+  }
+
+  return new Error("Invalid prop `" + propFullName + "` of type `" + typeof props[key] + "` supplied to" + " `" + componentName + "`, expected `function`.");
+}
+
+function useAsObservableSourceInternal(current, usedByLocalStore) {
+  if (usedByLocalStore && current === undefined) {
+    return undefined;
+  }
+
+  var _a = __read(_react.default.useState(function () {
+    return (0, _mobx.observable)(current, {}, {
+      deep: false
+    });
+  }), 1),
+      res = _a[0];
+
+  (0, _mobx.runInAction)(function () {
+    Object.assign(res, current);
+  });
+  return res;
+}
+
+function useAsObservableSource(current) {
+  return useAsObservableSourceInternal(current, false);
+}
+
+function useLocalStore(initializer, current) {
+  var source = useAsObservableSourceInternal(current, true);
+  return _react.default.useState(function () {
+    var local = (0, _mobx.observable)(initializer(source));
+
+    if (isPlainObject(local)) {
+      (0, _mobx.runInAction)(function () {
+        Object.keys(local).forEach(function (key) {
+          var value = local[key];
+
+          if (typeof value === "function") {
+            // @ts-ignore No idea why ts2536 is popping out here
+            local[key] = wrapInTransaction(value, local);
+          }
+        });
+      });
+    }
+
+    return local;
+  })[0];
+} // tslint:disable-next-line: ban-types
+
+
+function wrapInTransaction(fn, context) {
+  return function () {
+    var args = [];
+
+    for (var _i = 0; _i < arguments.length; _i++) {
+      args[_i] = arguments[_i];
+    }
+
+    return (0, _mobx.transaction)(function () {
+      return fn.apply(context, args);
+    });
+  };
+}
+
+var optimizeScheduler = function (reactionScheduler) {
+  if (typeof reactionScheduler === "function") {
+    (0, _mobx.configure)({
+      reactionScheduler: reactionScheduler
+    });
+  }
+};
+
+exports.optimizeScheduler = optimizeScheduler;
+},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js"}],"../../node_modules/mobx-react/dist/mobxreact.esm.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Provider = Provider;
+exports.disposeOnUnmount = disposeOnUnmount;
+exports.inject = inject;
+exports.observer = observer;
+Object.defineProperty(exports, "Observer", {
+  enumerable: true,
+  get: function () {
+    return _mobxReactLite.Observer;
+  }
+});
+Object.defineProperty(exports, "isUsingStaticRendering", {
+  enumerable: true,
+  get: function () {
+    return _mobxReactLite.isUsingStaticRendering;
+  }
+});
+Object.defineProperty(exports, "useAsObservableSource", {
+  enumerable: true,
+  get: function () {
+    return _mobxReactLite.useAsObservableSource;
+  }
+});
+Object.defineProperty(exports, "useLocalStore", {
+  enumerable: true,
+  get: function () {
+    return _mobxReactLite.useLocalStore;
+  }
+});
+Object.defineProperty(exports, "useObserver", {
+  enumerable: true,
+  get: function () {
+    return _mobxReactLite.useObserver;
+  }
+});
+Object.defineProperty(exports, "useStaticRendering", {
+  enumerable: true,
+  get: function () {
+    return _mobxReactLite.useStaticRendering;
+  }
+});
+exports.PropTypes = exports.MobXProviderContext = void 0;
+
+var _mobx = require("mobx");
+
+var _react = _interopRequireWildcard(require("react"));
+
+var _reactDom = require("react-dom");
+
+var _mobxReactLite = require("mobx-react-lite");
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+var symbolId = 0;
+
+function createSymbol(name) {
+  if (typeof Symbol === "function") {
+    return Symbol(name);
+  }
+
+  var symbol = "__$mobx-react " + name + " (" + symbolId + ")";
+  symbolId++;
+  return symbol;
+}
+
+var createdSymbols = {};
+
+function newSymbol(name) {
+  if (!createdSymbols[name]) {
+    createdSymbols[name] = createSymbol(name);
+  }
+
+  return createdSymbols[name];
+}
+
+function shallowEqual(objA, objB) {
+  //From: https://github.com/facebook/fbjs/blob/c69904a511b900266935168223063dd8772dfc40/packages/fbjs/src/core/shallowEqual.js
+  if (is(objA, objB)) return true;
+
+  if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) {
+    return false;
+  }
+
+  var keysA = Object.keys(objA);
+  var keysB = Object.keys(objB);
+  if (keysA.length !== keysB.length) return false;
+
+  for (var i = 0; i < keysA.length; i++) {
+    if (!Object.hasOwnProperty.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function is(x, y) {
+  // From: https://github.com/facebook/fbjs/blob/c69904a511b900266935168223063dd8772dfc40/packages/fbjs/src/core/shallowEqual.js
+  if (x === y) {
+    return x !== 0 || 1 / x === 1 / y;
+  } else {
+    return x !== x && y !== y;
+  }
+} // based on https://github.com/mridgway/hoist-non-react-statics/blob/master/src/index.js
+
+
+var hoistBlackList = {
+  $$typeof: 1,
+  render: 1,
+  compare: 1,
+  type: 1,
+  childContextTypes: 1,
+  contextType: 1,
+  contextTypes: 1,
+  defaultProps: 1,
+  getDefaultProps: 1,
+  getDerivedStateFromError: 1,
+  getDerivedStateFromProps: 1,
+  mixins: 1,
+  propTypes: 1
+};
+
+function copyStaticProperties(base, target) {
+  var protoProps = Object.getOwnPropertyNames(Object.getPrototypeOf(base));
+  Object.getOwnPropertyNames(base).forEach(function (key) {
+    if (!hoistBlackList[key] && protoProps.indexOf(key) === -1) {
+      Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(base, key));
+    }
+  });
+}
+/**
+ * Helper to set `prop` to `this` as non-enumerable (hidden prop)
+ * @param target
+ * @param prop
+ * @param value
+ */
+
+
+function setHiddenProp(target, prop, value) {
+  if (!Object.hasOwnProperty.call(target, prop)) {
+    Object.defineProperty(target, prop, {
+      enumerable: false,
+      configurable: true,
+      writable: true,
+      value: value
+    });
+  } else {
+    target[prop] = value;
+  }
+}
+/**
+ * Utilities for patching componentWillUnmount, to make sure @disposeOnUnmount works correctly icm with user defined hooks
+ * and the handler provided by mobx-react
+ */
+
+
+var mobxMixins = /*#__PURE__*/newSymbol("patchMixins");
+var mobxPatchedDefinition = /*#__PURE__*/newSymbol("patchedDefinition");
+
+function getMixins(target, methodName) {
+  var mixins = target[mobxMixins] = target[mobxMixins] || {};
+  var methodMixins = mixins[methodName] = mixins[methodName] || {};
+  methodMixins.locks = methodMixins.locks || 0;
+  methodMixins.methods = methodMixins.methods || [];
+  return methodMixins;
+}
+
+function wrapper(realMethod, mixins) {
+  var _this = this;
+
+  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    args[_key - 2] = arguments[_key];
+  } // locks are used to ensure that mixins are invoked only once per invocation, even on recursive calls
+
+
+  mixins.locks++;
+
+  try {
+    var retVal;
+
+    if (realMethod !== undefined && realMethod !== null) {
+      retVal = realMethod.apply(this, args);
+    }
+
+    return retVal;
+  } finally {
+    mixins.locks--;
+
+    if (mixins.locks === 0) {
+      mixins.methods.forEach(function (mx) {
+        mx.apply(_this, args);
+      });
+    }
+  }
+}
+
+function wrapFunction(realMethod, mixins) {
+  var fn = function fn() {
+    for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+      args[_key2] = arguments[_key2];
+    }
+
+    wrapper.call.apply(wrapper, [this, realMethod, mixins].concat(args));
+  };
+
+  return fn;
+}
+
+function patch(target, methodName, mixinMethod) {
+  var mixins = getMixins(target, methodName);
+
+  if (mixins.methods.indexOf(mixinMethod) < 0) {
+    mixins.methods.push(mixinMethod);
+  }
+
+  var oldDefinition = Object.getOwnPropertyDescriptor(target, methodName);
+
+  if (oldDefinition && oldDefinition[mobxPatchedDefinition]) {
+    // already patched definition, do not repatch
+    return;
+  }
+
+  var originalMethod = target[methodName];
+  var newDefinition = createDefinition(target, methodName, oldDefinition ? oldDefinition.enumerable : undefined, mixins, originalMethod);
+  Object.defineProperty(target, methodName, newDefinition);
+}
+
+function createDefinition(target, methodName, enumerable, mixins, originalMethod) {
+  var _ref;
+
+  var wrappedFunc = wrapFunction(originalMethod, mixins);
+  return _ref = {}, _ref[mobxPatchedDefinition] = true, _ref.get = function get() {
+    return wrappedFunc;
+  }, _ref.set = function set(value) {
+    if (this === target) {
+      wrappedFunc = wrapFunction(value, mixins);
+    } else {
+      // when it is an instance of the prototype/a child prototype patch that particular case again separately
+      // since we need to store separate values depending on wether it is the actual instance, the prototype, etc
+      // e.g. the method for super might not be the same as the method for the prototype which might be not the same
+      // as the method for the instance
+      var newDefinition = createDefinition(this, methodName, enumerable, mixins, value);
+      Object.defineProperty(this, methodName, newDefinition);
+    }
+  }, _ref.configurable = true, _ref.enumerable = enumerable, _ref;
+}
+
+var mobxAdminProperty = _mobx.$mobx || "$mobx";
+var mobxIsUnmounted = /*#__PURE__*/newSymbol("isUnmounted");
+var skipRenderKey = /*#__PURE__*/newSymbol("skipRender");
+var isForcingUpdateKey = /*#__PURE__*/newSymbol("isForcingUpdate");
+
+function makeClassComponentObserver(componentClass) {
+  var target = componentClass.prototype;
+  if (target.componentWillReact) throw new Error("The componentWillReact life-cycle event is no longer supported");
+
+  if (componentClass["__proto__"] !== _react.PureComponent) {
+    if (!target.shouldComponentUpdate) target.shouldComponentUpdate = observerSCU;else if (target.shouldComponentUpdate !== observerSCU) // n.b. unequal check, instead of existence check, as @observer might be on superclass as well
+      throw new Error("It is not allowed to use shouldComponentUpdate in observer based components.");
+  } // this.props and this.state are made observable, just to make sure @computed fields that
+  // are defined inside the component, and which rely on state or props, re-compute if state or props change
+  // (otherwise the computed wouldn't update and become stale on props change, since props are not observable)
+  // However, this solution is not without it's own problems: https://github.com/mobxjs/mobx-react/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Aobservable-props-or-not+
+
+
+  makeObservableProp(target, "props");
+  makeObservableProp(target, "state");
+  var baseRender = target.render;
+
+  target.render = function () {
+    return makeComponentReactive.call(this, baseRender);
+  };
+
+  patch(target, "componentWillUnmount", function () {
+    if ((0, _mobxReactLite.isUsingStaticRendering)() === true) return;
+
+    if (this.render[mobxAdminProperty]) {
+      this.render[mobxAdminProperty].dispose();
+    } else if ("development" !== "production") {
+      var displayName = getDisplayName(this);
+      console.warn("The render function for an observer component (" + displayName + ") was modified after MobX attached. This is not supported, since the new function can't be triggered by MobX.");
+    }
+
+    this[mobxIsUnmounted] = true;
+  });
+  return componentClass;
+} // Generates a friendly name for debugging
+
+
+function getDisplayName(comp) {
+  return comp.displayName || comp.name || comp.constructor && (comp.constructor.displayName || comp.constructor.name) || "<component>";
+}
+
+function makeComponentReactive(render) {
+  var _this = this;
+
+  if ((0, _mobxReactLite.isUsingStaticRendering)() === true) return render.call(this);
+  /**
+   * If props are shallowly modified, react will render anyway,
+   * so atom.reportChanged() should not result in yet another re-render
+   */
+
+  setHiddenProp(this, skipRenderKey, false);
+  /**
+   * forceUpdate will re-assign this.props. We don't want that to cause a loop,
+   * so detect these changes
+   */
+
+  setHiddenProp(this, isForcingUpdateKey, false);
+  var initialName = getDisplayName(this);
+  var baseRender = render.bind(this);
+  var isRenderingPending = false;
+  var reaction = new _mobx.Reaction(initialName + ".render()", function () {
+    if (!isRenderingPending) {
+      // N.B. Getting here *before mounting* means that a component constructor has side effects (see the relevant test in misc.js)
+      // This unidiomatic React usage but React will correctly warn about this so we continue as usual
+      // See #85 / Pull #44
+      isRenderingPending = true;
+
+      if (_this[mobxIsUnmounted] !== true) {
+        var hasError = true;
+
+        try {
+          setHiddenProp(_this, isForcingUpdateKey, true);
+          if (!_this[skipRenderKey]) _react.Component.prototype.forceUpdate.call(_this);
+          hasError = false;
+        } finally {
+          setHiddenProp(_this, isForcingUpdateKey, false);
+          if (hasError) reaction.dispose();
+        }
+      }
+    }
+  });
+  reaction["reactComponent"] = this;
+  reactiveRender[mobxAdminProperty] = reaction;
+  this.render = reactiveRender;
+
+  function reactiveRender() {
+    isRenderingPending = false;
+    var exception = undefined;
+    var rendering = undefined;
+    reaction.track(function () {
+      try {
+        rendering = (0, _mobx._allowStateChanges)(false, baseRender);
+      } catch (e) {
+        exception = e;
+      }
+    });
+
+    if (exception) {
+      throw exception;
+    }
+
+    return rendering;
+  }
+
+  return reactiveRender.call(this);
+}
+
+function observerSCU(nextProps, nextState) {
+  if ((0, _mobxReactLite.isUsingStaticRendering)()) {
+    console.warn("[mobx-react] It seems that a re-rendering of a React component is triggered while in static (server-side) mode. Please make sure components are rendered only once server-side.");
+  } // update on any state changes (as is the default)
+
+
+  if (this.state !== nextState) {
+    return true;
+  } // update if props are shallowly not equal, inspired by PureRenderMixin
+  // we could return just 'false' here, and avoid the `skipRender` checks etc
+  // however, it is nicer if lifecycle events are triggered like usually,
+  // so we return true here if props are shallowly modified.
+
+
+  return !shallowEqual(this.props, nextProps);
+}
+
+function makeObservableProp(target, propName) {
+  var valueHolderKey = newSymbol("reactProp_" + propName + "_valueHolder");
+  var atomHolderKey = newSymbol("reactProp_" + propName + "_atomHolder");
+
+  function getAtom() {
+    if (!this[atomHolderKey]) {
+      setHiddenProp(this, atomHolderKey, (0, _mobx.createAtom)("reactive " + propName));
+    }
+
+    return this[atomHolderKey];
+  }
+
+  Object.defineProperty(target, propName, {
+    configurable: true,
+    enumerable: true,
+    get: function get() {
+      var prevReadState = false;
+
+      if (_mobx._allowStateReadsStart && _mobx._allowStateReadsEnd) {
+        prevReadState = (0, _mobx._allowStateReadsStart)(true);
+      }
+
+      getAtom.call(this).reportObserved();
+
+      if (_mobx._allowStateReadsStart && _mobx._allowStateReadsEnd) {
+        (0, _mobx._allowStateReadsEnd)(prevReadState);
+      }
+
+      return this[valueHolderKey];
+    },
+    set: function set(v) {
+      if (!this[isForcingUpdateKey] && !shallowEqual(this[valueHolderKey], v)) {
+        setHiddenProp(this, valueHolderKey, v);
+        setHiddenProp(this, skipRenderKey, true);
+        getAtom.call(this).reportChanged();
+        setHiddenProp(this, skipRenderKey, false);
+      } else {
+        setHiddenProp(this, valueHolderKey, v);
+      }
+    }
+  });
+}
+
+var hasSymbol = typeof Symbol === "function" && Symbol.for; // Using react-is had some issues (and operates on elements, not on types), see #608 / #609
+
+var ReactForwardRefSymbol = hasSymbol ? /*#__PURE__*/Symbol.for("react.forward_ref") : typeof _react.forwardRef === "function" && /*#__PURE__*/(0, _react.forwardRef)(function (props) {
+  return null;
+})["$$typeof"];
+var ReactMemoSymbol = hasSymbol ? /*#__PURE__*/Symbol.for("react.memo") : typeof _react.memo === "function" && /*#__PURE__*/(0, _react.memo)(function (props) {
+  return null;
+})["$$typeof"];
+/**
+ * Observer function / decorator
+ */
+
+function observer(component) {
+  if (component["isMobxInjector"] === true) {
+    console.warn("Mobx observer: You are trying to use 'observer' on a component that already has 'inject'. Please apply 'observer' before applying 'inject'");
+  }
+
+  if (ReactMemoSymbol && component["$$typeof"] === ReactMemoSymbol) {
+    throw new Error("Mobx observer: You are trying to use 'observer' on function component wrapped to either another observer or 'React.memo'. The observer already applies 'React.memo' for you.");
+  } // Unwrap forward refs into `<Observer>` component
+  // we need to unwrap the render, because it is the inner render that needs to be tracked,
+  // not the ForwardRef HoC
+
+
+  if (ReactForwardRefSymbol && component["$$typeof"] === ReactForwardRefSymbol) {
+    var baseRender = component["render"];
+    if (typeof baseRender !== "function") throw new Error("render property of ForwardRef was not a function");
+    return (0, _react.forwardRef)(function ObserverForwardRef() {
+      var args = arguments;
+      return (0, _react.createElement)(_mobxReactLite.Observer, null, function () {
+        return baseRender.apply(undefined, args);
+      });
+    });
+  } // Function component
+
+
+  if (typeof component === "function" && (!component.prototype || !component.prototype.render) && !component["isReactClass"] && !Object.prototype.isPrototypeOf.call(_react.Component, component)) {
+    return (0, _mobxReactLite.observer)(component);
+  }
+
+  return makeClassComponentObserver(component);
+}
+
+function _extends() {
+  _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+
+    return target;
+  };
+
+  return _extends.apply(this, arguments);
+}
+
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+
+  return target;
+}
+
+var MobXProviderContext = /*#__PURE__*/_react.default.createContext({});
+
+exports.MobXProviderContext = MobXProviderContext;
+
+function Provider(props) {
+  var children = props.children,
+      stores = _objectWithoutPropertiesLoose(props, ["children"]);
+
+  var parentValue = _react.default.useContext(MobXProviderContext);
+
+  var mutableProviderRef = _react.default.useRef(_extends({}, parentValue, {}, stores));
+
+  var value = mutableProviderRef.current;
+
+  if ("development" !== "production") {
+    var newValue = _extends({}, value, {}, stores); // spread in previous state for the context based stores
+
+
+    if (!shallowEqual(value, newValue)) {
+      throw new Error("MobX Provider: The set of provided stores has changed. See: https://github.com/mobxjs/mobx-react#the-set-of-provided-stores-has-changed-error.");
+    }
+  }
+
+  return _react.default.createElement(MobXProviderContext.Provider, {
+    value: value
+  }, children);
+}
+
+Provider.displayName = "MobXProvider";
+/**
+ * Store Injection
+ */
+
+function createStoreInjector(grabStoresFn, component, injectNames, makeReactive) {
+  // Support forward refs
+  var Injector = _react.default.forwardRef(function (props, ref) {
+    var newProps = _extends({}, props);
+
+    var context = _react.default.useContext(MobXProviderContext);
+
+    Object.assign(newProps, grabStoresFn(context || {}, newProps) || {});
+
+    if (ref) {
+      newProps.ref = ref;
+    }
+
+    return _react.default.createElement(component, newProps);
+  });
+
+  if (makeReactive) Injector = observer(Injector);
+  Injector["isMobxInjector"] = true; // assigned late to suppress observer warning
+  // Static fields from component should be visible on the generated Injector
+
+  copyStaticProperties(component, Injector);
+  Injector["wrappedComponent"] = component;
+  Injector.displayName = getInjectName(component, injectNames);
+  return Injector;
+}
+
+function getInjectName(component, injectNames) {
+  var displayName;
+  var componentName = component.displayName || component.name || component.constructor && component.constructor.name || "Component";
+  if (injectNames) displayName = "inject-with-" + injectNames + "(" + componentName + ")";else displayName = "inject(" + componentName + ")";
+  return displayName;
+}
+
+function grabStoresByName(storeNames) {
+  return function (baseStores, nextProps) {
+    storeNames.forEach(function (storeName) {
+      if (storeName in nextProps // prefer props over stores
+      ) return;
+      if (!(storeName in baseStores)) throw new Error("MobX injector: Store '" + storeName + "' is not available! Make sure it is provided by some Provider");
+      nextProps[storeName] = baseStores[storeName];
+    });
+    return nextProps;
+  };
+}
+/**
+ * higher order component that injects stores to a child.
+ * takes either a varargs list of strings, which are stores read from the context,
+ * or a function that manually maps the available stores from the context to props:
+ * storesToProps(mobxStores, props, context) => newProps
+ */
+
+
+function inject() {
+  for (var _len = arguments.length, storeNames = new Array(_len), _key = 0; _key < _len; _key++) {
+    storeNames[_key] = arguments[_key];
+  }
+
+  if (typeof arguments[0] === "function") {
+    var grabStoresFn = arguments[0];
+    return function (componentClass) {
+      return createStoreInjector(grabStoresFn, componentClass, grabStoresFn.name, true);
+    };
+  } else {
+    return function (componentClass) {
+      return createStoreInjector(grabStoresByName(storeNames), componentClass, storeNames.join("-"), false);
+    };
+  }
+}
+
+var protoStoreKey = /*#__PURE__*/newSymbol("disposeOnUnmountProto");
+var instStoreKey = /*#__PURE__*/newSymbol("disposeOnUnmountInst");
+
+function runDisposersOnWillUnmount() {
+  var _this = this;
+
+  [].concat(this[protoStoreKey] || [], this[instStoreKey] || []).forEach(function (propKeyOrFunction) {
+    var prop = typeof propKeyOrFunction === "string" ? _this[propKeyOrFunction] : propKeyOrFunction;
+
+    if (prop !== undefined && prop !== null) {
+      if (Array.isArray(prop)) prop.map(function (f) {
+        return f();
+      });else prop();
+    }
+  });
+}
+
+function disposeOnUnmount(target, propertyKeyOrFunction) {
+  if (Array.isArray(propertyKeyOrFunction)) {
+    return propertyKeyOrFunction.map(function (fn) {
+      return disposeOnUnmount(target, fn);
+    });
+  }
+
+  var c = Object.getPrototypeOf(target).constructor || Object.getPrototypeOf(target.constructor);
+  var c2 = Object.getPrototypeOf(target.constructor);
+
+  if (!(c === _react.default.Component || c === _react.default.PureComponent || c2 === _react.default.Component || c2 === _react.default.PureComponent)) {
+    throw new Error("[mobx-react] disposeOnUnmount only supports direct subclasses of React.Component or React.PureComponent.");
+  }
+
+  if (typeof propertyKeyOrFunction !== "string" && typeof propertyKeyOrFunction !== "function" && !Array.isArray(propertyKeyOrFunction)) {
+    throw new Error("[mobx-react] disposeOnUnmount only works if the parameter is either a property key or a function.");
+  } // decorator's target is the prototype, so it doesn't have any instance properties like props
+
+
+  var isDecorator = typeof propertyKeyOrFunction === "string"; // add property key / function we want run (disposed) to the store
+
+  var componentWasAlreadyModified = !!target[protoStoreKey] || !!target[instStoreKey];
+  var store = isDecorator ? // decorators are added to the prototype store
+  target[protoStoreKey] || (target[protoStoreKey] = []) : // functions are added to the instance store
+  target[instStoreKey] || (target[instStoreKey] = []);
+  store.push(propertyKeyOrFunction); // tweak the component class componentWillUnmount if not done already
+
+  if (!componentWasAlreadyModified) {
+    patch(target, "componentWillUnmount", runDisposersOnWillUnmount);
+  } // return the disposer as is if invoked as a non decorator
+
+
+  if (typeof propertyKeyOrFunction !== "string") {
+    return propertyKeyOrFunction;
+  }
+}
+
+function createChainableTypeChecker(validator) {
+  function checkType(isRequired, props, propName, componentName, location, propFullName) {
+    for (var _len = arguments.length, rest = new Array(_len > 6 ? _len - 6 : 0), _key = 6; _key < _len; _key++) {
+      rest[_key - 6] = arguments[_key];
+    }
+
+    return (0, _mobx.untracked)(function () {
+      componentName = componentName || "<<anonymous>>";
+      propFullName = propFullName || propName;
+
+      if (props[propName] == null) {
+        if (isRequired) {
+          var actual = props[propName] === null ? "null" : "undefined";
+          return new Error("The " + location + " `" + propFullName + "` is marked as required " + "in `" + componentName + "`, but its value is `" + actual + "`.");
+        }
+
+        return null;
+      } else {
+        // @ts-ignore rest arg is necessary for some React internals - fails tests otherwise
+        return validator.apply(void 0, [props, propName, componentName, location, propFullName].concat(rest));
+      }
+    });
+  }
+
+  var chainedCheckType = checkType.bind(null, false); // Add isRequired to satisfy Requirable
+
+  chainedCheckType.isRequired = checkType.bind(null, true);
+  return chainedCheckType;
+} // Copied from React.PropTypes
+
+
+function isSymbol(propType, propValue) {
+  // Native Symbol.
+  if (propType === "symbol") {
+    return true;
+  } // 19.4.3.5 Symbol.prototype[@@toStringTag] === 'Symbol'
+
+
+  if (propValue["@@toStringTag"] === "Symbol") {
+    return true;
+  } // Fallback for non-spec compliant Symbols which are polyfilled.
+
+
+  if (typeof Symbol === "function" && propValue instanceof Symbol) {
+    return true;
+  }
+
+  return false;
+} // Copied from React.PropTypes
+
+
+function getPropType(propValue) {
+  var propType = typeof propValue;
+
+  if (Array.isArray(propValue)) {
+    return "array";
+  }
+
+  if (propValue instanceof RegExp) {
+    // Old webkits (at least until Android 4.0) return 'function' rather than
+    // 'object' for typeof a RegExp. We'll normalize this here so that /bla/
+    // passes PropTypes.object.
+    return "object";
+  }
+
+  if (isSymbol(propType, propValue)) {
+    return "symbol";
+  }
+
+  return propType;
+} // This handles more types than `getPropType`. Only used for error messages.
+// Copied from React.PropTypes
+
+
+function getPreciseType(propValue) {
+  var propType = getPropType(propValue);
+
+  if (propType === "object") {
+    if (propValue instanceof Date) {
+      return "date";
+    } else if (propValue instanceof RegExp) {
+      return "regexp";
+    }
+  }
+
+  return propType;
+}
+
+function createObservableTypeCheckerCreator(allowNativeType, mobxType) {
+  return createChainableTypeChecker(function (props, propName, componentName, location, propFullName) {
+    return (0, _mobx.untracked)(function () {
+      if (allowNativeType) {
+        if (getPropType(props[propName]) === mobxType.toLowerCase()) return null;
+      }
+
+      var mobxChecker;
+
+      switch (mobxType) {
+        case "Array":
+          mobxChecker = _mobx.isObservableArray;
+          break;
+
+        case "Object":
+          mobxChecker = _mobx.isObservableObject;
+          break;
+
+        case "Map":
+          mobxChecker = _mobx.isObservableMap;
+          break;
+
+        default:
+          throw new Error("Unexpected mobxType: " + mobxType);
+      }
+
+      var propValue = props[propName];
+
+      if (!mobxChecker(propValue)) {
+        var preciseType = getPreciseType(propValue);
+        var nativeTypeExpectationMessage = allowNativeType ? " or javascript `" + mobxType.toLowerCase() + "`" : "";
+        return new Error("Invalid prop `" + propFullName + "` of type `" + preciseType + "` supplied to" + " `" + componentName + "`, expected `mobx.Observable" + mobxType + "`" + nativeTypeExpectationMessage + ".");
+      }
+
+      return null;
+    });
+  });
+}
+
+function createObservableArrayOfTypeChecker(allowNativeType, typeChecker) {
+  return createChainableTypeChecker(function (props, propName, componentName, location, propFullName) {
+    for (var _len2 = arguments.length, rest = new Array(_len2 > 5 ? _len2 - 5 : 0), _key2 = 5; _key2 < _len2; _key2++) {
+      rest[_key2 - 5] = arguments[_key2];
+    }
+
+    return (0, _mobx.untracked)(function () {
+      if (typeof typeChecker !== "function") {
+        return new Error("Property `" + propFullName + "` of component `" + componentName + "` has " + "invalid PropType notation.");
+      } else {
+        var error = createObservableTypeCheckerCreator(allowNativeType, "Array")(props, propName, componentName, location, propFullName);
+        if (error instanceof Error) return error;
+        var propValue = props[propName];
+
+        for (var i = 0; i < propValue.length; i++) {
+          error = typeChecker.apply(void 0, [propValue, i, componentName, location, propFullName + "[" + i + "]"].concat(rest));
+          if (error instanceof Error) return error;
+        }
+
+        return null;
+      }
+    });
+  });
+}
+
+var observableArray = /*#__PURE__*/createObservableTypeCheckerCreator(false, "Array");
+var observableArrayOf = /*#__PURE__*/createObservableArrayOfTypeChecker.bind(null, false);
+var observableMap = /*#__PURE__*/createObservableTypeCheckerCreator(false, "Map");
+var observableObject = /*#__PURE__*/createObservableTypeCheckerCreator(false, "Object");
+var arrayOrObservableArray = /*#__PURE__*/createObservableTypeCheckerCreator(true, "Array");
+var arrayOrObservableArrayOf = /*#__PURE__*/createObservableArrayOfTypeChecker.bind(null, true);
+var objectOrObservableObject = /*#__PURE__*/createObservableTypeCheckerCreator(true, "Object");
+var PropTypes = {
+  observableArray: observableArray,
+  observableArrayOf: observableArrayOf,
+  observableMap: observableMap,
+  observableObject: observableObject,
+  arrayOrObservableArray: arrayOrObservableArray,
+  arrayOrObservableArrayOf: arrayOrObservableArrayOf,
+  objectOrObservableObject: objectOrObservableObject
+};
+exports.PropTypes = PropTypes;
+if (!_react.Component) throw new Error("mobx-react requires React to be available");
+if (!_mobx.observable) throw new Error("mobx-react requires mobx to be available");
+if (typeof _reactDom.unstable_batchedUpdates === "function") (0, _mobx.configure)({
+  reactionScheduler: _reactDom.unstable_batchedUpdates
+});
+},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useField.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var form_1 = require("../contexts/form");
+
+var react_1 = require("react");
+
+var mobx_react_1 = require("mobx-react");
+
+function useField(_ref) {
+  var name = _ref.name,
+      initialValue = _ref.initialValue;
+  var formInstance = form_1.useFormContext();
+  var fieldInstance = mobx_react_1.useAsObservableSource({
+    name: name,
+    field: function () {
+      var result = null;
+      var disposer = formInstance.registerField(name, function (node) {
+        result = node;
+        return function () {};
+      }, {
+        initialValue: initialValue
+      });
+      disposer();
+      return result;
+    }()
+  });
+  react_1.useEffect(function () {
+    return formInstance.registerField(name, function (node) {
+      fieldInstance.field = node;
+      return function () {};
+    }, {
+      initialValue: initialValue
+    });
+  }, [initialValue]);
+  return fieldInstance;
+}
+
+exports.useField = useField;
+},{"../contexts/form":"../../src/contexts/form.tsx","react":"../../node_modules/react/index.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../src/components/Item.tsx":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var useField_1 = require("../hooks/useField");
+
+var mobx_react_1 = require("mobx-react");
+
+exports.Item = function (_ref) {
+  var name = _ref.name,
+      initialValue = _ref.initialValue,
+      children = _ref.children;
+  var fieldInstace = useField_1.useField({
+    name: name,
+    initialValue: initialValue
+  });
+  var render = typeof children === 'function' && children;
+
+  if (typeof render !== 'function') {
+    throw new Error("children should be a function.");
+  }
+
+  return mobx_react_1.useObserver(function () {
+    return render(fieldInstace);
+  });
+};
+},{"../hooks/useField":"../../src/hooks/useField.ts","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../src/components/index.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var Container_1 = require("./Container");
+
+exports.Container = Container_1.Container;
+
+var Item_1 = require("./Item");
+
+exports.Item = Item_1.Item;
+},{"./Container":"../../src/components/Container.tsx","./Item":"../../src/components/Item.tsx"}],"../../src/index.ts":[function(require,module,exports) {
+"use strict";
+
+function __export(m) {
+  for (var p in m) {
+    if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+  }
+}
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+__export(require("./components"));
+},{"./components":"../../src/components/index.ts"}],"index.tsx":[function(require,module,exports) {
+"use strict";
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 var __importStar = this && this.__importStar || function (mod) {
   if (mod && mod.__esModule) return mod;
@@ -48319,24 +49767,49 @@ var react_1 = __importStar(require("react"));
 
 var m = __importStar(require("mobx"));
 
+var mobx_react_1 = require("mobx-react");
+
 window.m = m;
 window.base = core_1.createForm({
   initialValues: {
     daddy: 'hello'
   }
 });
-
-var App = function App() {
+var App = mobx_react_1.observer(function () {
   // const form = useForm();
   var formRef = react_1.createRef();
   react_1.useEffect(function () {
     // (window as any).form = form;
-    window.formRef = formRef;
+    var form = window.form = formRef.current; // form.registerField('foofoo.username', field => {
+    //   const el = document.getElementById('username') as HTMLInputElement;
+    //   el.oninput = (e: any) => {
+    //     field.setValue(e.target.value);
+    //   };
+    //   return m.autorun(() => {
+    //     el.value = (field.value as string) || '';
+    //   });
+    // });
+    // form.registerField('foo', field => {
+    //   const el = document.getElementById('foo') as HTMLInputElement;
+    //   el.oninput = (e: any) => {
+    //     field.setValue(e.target.value);
+    //   };
+    //   return m.autorun(() => {
+    //     el.value = (field.value as string) || '';
+    //   });
+    // });
   }, [formRef]);
+
+  var _react_1$useState = react_1.useState('baofdfbao'),
+      _react_1$useState2 = _slicedToArray(_react_1$useState, 2),
+      initVal = _react_1$useState2[0],
+      setInitVal = _react_1$useState2[1];
+
+  console.log(formRef.current);
   return react_1.default.createElement(src_1.Container, {
     ref: formRef,
     initialValues: {
-      foo: 'bar',
+      // foo: 'bar',
       bar: 123,
       baz: true,
       touming: undefined,
@@ -48356,11 +49829,42 @@ var App = function App() {
         age: 24
       }]
     }
-  }, react_1.default.createElement("div", null, "123123"));
-};
-
+  }, react_1.default.createElement("div", null, react_1.default.createElement(src_1.Item, {
+    name: "aa.bb.cc[1][2].hello.world",
+    initialValue: initVal
+  }, function (_ref) {
+    var field = _ref.field,
+        name = _ref.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "aa[0][2].hello.daddy",
+    initialValue: initVal
+  }, function (_ref2) {
+    var field = _ref2.field,
+        name = _ref2.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  })), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+    type: "text",
+    value: initVal,
+    onChange: function onChange(e) {
+      setInitVal(e.target.value);
+    }
+  }), react_1.default.createElement("pre", null, JSON.stringify(formRef.current, null, 2))));
+});
 react_dom_1.render(react_1.default.createElement(App, null), document.getElementById('app'));
-},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react-dom":"../../node_modules/react-dom/index.js","../../src":"../../src/index.ts","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js"}],"../../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react-dom":"../../node_modules/react-dom/index.js","../../src":"../../src/index.ts","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -48388,7 +49892,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55387" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64257" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -80,6 +80,9 @@ export const FieldGroup = types
             self.children.get(name).patchInitialValue(val[name]);
           }
         });
+      },
+      addChild(name: string, val: any) {
+        self.children.set(name, val);
       }
     };
   })

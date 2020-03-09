@@ -73,6 +73,11 @@ export const FieldArray = types
             self.children[index].patchInitialValue(newValue);
           }
         });
+      },
+      addChild(name: string | number, val: any) {
+        let index: number =
+          typeof name === 'string' ? Number.parseInt(name) : name;
+        self.children[index] = val;
       }
     };
   })

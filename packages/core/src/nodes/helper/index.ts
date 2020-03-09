@@ -10,6 +10,7 @@ import { FieldArray } from '../array';
 export const dispatcher: ITypeDispatcher = snapshot => {
   if (
     typeof snapshot.children === 'object' &&
+    snapshot.children !== null &&
     !Array.isArray(snapshot.children)
   ) {
     return FieldGroup;

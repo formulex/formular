@@ -20,5 +20,6 @@ export function useForm<Values = any>(
       form.root.patchInitialValue(options.initialValues || {});
     }
   }, [options.initialValues, form, previousForm]);
+
   return form;
 }
