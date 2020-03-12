@@ -1,7 +1,8 @@
-import { types, Instance, flow, tryResolve } from 'mobx-state-tree';
+import { types, Instance, flow } from 'mobx-state-tree';
 import { FieldGroup, createFieldGroup, FieldGroupInstance } from './group';
 import { FieldInstance, createField } from './field';
 import { FieldArrayInstance, createFieldArray } from './array';
+import { fieldResolver, name2PathArray } from './helper';
 
 export const Form = types
   .model('Form', {
@@ -23,18 +24,6 @@ export const Form = types
     }
   }))
   .actions(self => {
-    const rightSquare = /\]/g;
-    const leftSquare = /\[/g;
-    function name2JSONPointer(name: string): string {
-      const dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
-      return '/children/' + dotPath.split('.').join('/children/');
-    }
-
-    function name2PathArray(name: string): string[] {
-      const dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
-      return dotPath.split('.');
-    }
-
     return {
       submit: flow<{ [key: string]: any }, []>(function* submit() {
         self.isSubmitting = true;
@@ -55,16 +44,7 @@ export const Form = types
           initialValue: undefined
         }
       ): () => void {
-        let node:
-          | FieldInstance
-          | FieldGroupInstance
-          | FieldArrayInstance
-          | null = null;
-        try {
-          node = tryResolve(self.root, name2JSONPointer(name));
-        } catch (error) {
-          // noop
-        }
+        let node = fieldResolver(self.root, name);
 
         if (node === null) {
           let createdNode = null;

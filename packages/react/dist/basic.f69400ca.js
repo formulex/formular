@@ -13453,6 +13453,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.walkFieldNode = walkFieldNode;
+exports.name2JSONPointer = name2JSONPointer;
+exports.name2PathArray = name2PathArray;
+exports.fieldResolver = fieldResolver;
 exports.dispatcher = void 0;
 
 var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
@@ -13489,6 +13492,30 @@ function walkFieldNode(root, fn) {
       fn(node);
     }
   });
+}
+
+var rightSquare = /\]/g;
+var leftSquare = /\[/g;
+
+function name2JSONPointer(name) {
+  var dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
+  return '/children/' + dotPath.split('.').join('/children/');
+}
+
+function name2PathArray(name) {
+  var dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
+  return dotPath.split('.');
+}
+
+function fieldResolver(base, name) {
+  var node = null;
+
+  try {
+    node = (0, _mobxStateTree.tryResolve)(base, name2JSONPointer(name));
+  } catch (error) {// noop
+  }
+
+  return node;
 }
 },{"@babel/runtime/helpers/typeof":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/typeof.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","../field":"../../node_modules/@formular/core/es/nodes/field.js","../group":"../../node_modules/@formular/core/es/nodes/group.js","../array":"../../node_modules/@formular/core/es/nodes/array.js"}],"../../node_modules/@formular/core/es/nodes/array.js":[function(require,module,exports) {
 "use strict";
@@ -14616,6 +14643,8 @@ var _field = require("./field");
 
 var _array = require("./array");
 
+var _helper = require("./helper");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var Form = _mobxStateTree.types.model('Form', {
@@ -14641,19 +14670,6 @@ var Form = _mobxStateTree.types.model('Form', {
 
   };
 }).actions(function (self) {
-  var rightSquare = /\]/g;
-  var leftSquare = /\[/g;
-
-  function name2JSONPointer(name) {
-    var dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
-    return '/children/' + dotPath.split('.').join('/children/');
-  }
-
-  function name2PathArray(name) {
-    var dotPath = name.replace(rightSquare, '').replace(leftSquare, '.');
-    return dotPath.split('.');
-  }
-
   return {
     submit: (0, _mobxStateTree.flow)( /*#__PURE__*/_regenerator.default.mark(function submit() {
       return _regenerator.default.wrap(function submit$(_context) {
@@ -14682,12 +14698,7 @@ var Form = _mobxStateTree.types.model('Form', {
         type: undefined,
         initialValue: undefined
       };
-      var node = null;
-
-      try {
-        node = (0, _mobxStateTree.tryResolve)(self.root, name2JSONPointer(name));
-      } catch (error) {// noop
-      }
+      var node = (0, _helper.fieldResolver)(self.root, name);
 
       if (node === null) {
         var createdNode = null;
@@ -14701,7 +14712,7 @@ var Form = _mobxStateTree.types.model('Form', {
         }
 
         node = createdNode;
-        var pathArray = name2PathArray(name);
+        var pathArray = (0, _helper.name2PathArray)(name);
         var parent = self.root;
         pathArray.forEach(function (pathToken, index, array) {
           var hasNode = typeof parent.children.has === 'function' && parent.children.has(pathToken);
@@ -14747,7 +14758,7 @@ function createForm(_ref) {
     isSubmitting: false
   });
 }
-},{"@babel/runtime/helpers/typeof":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/typeof.js","@babel/runtime/regenerator":"../../node_modules/@formular/core/node_modules/@babel/runtime/regenerator/index.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","./group":"../../node_modules/@formular/core/es/nodes/group.js","./field":"../../node_modules/@formular/core/es/nodes/field.js","./array":"../../node_modules/@formular/core/es/nodes/array.js"}],"../../node_modules/@formular/core/es/nodes/index.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/typeof":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/typeof.js","@babel/runtime/regenerator":"../../node_modules/@formular/core/node_modules/@babel/runtime/regenerator/index.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","./group":"../../node_modules/@formular/core/es/nodes/group.js","./field":"../../node_modules/@formular/core/es/nodes/field.js","./array":"../../node_modules/@formular/core/es/nodes/array.js","./helper":"../../node_modules/@formular/core/es/nodes/helper/index.js"}],"../../node_modules/@formular/core/es/nodes/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -14831,6 +14842,12 @@ Object.defineProperty(exports, "CreateFormOptions", {
     return _form.CreateFormOptions;
   }
 });
+Object.defineProperty(exports, "fieldResolver", {
+  enumerable: true,
+  get: function () {
+    return _helper.fieldResolver;
+  }
+});
 
 var _field = require("./field");
 
@@ -14839,7 +14856,9 @@ var _group = require("./group");
 var _array = require("./array");
 
 var _form = require("./form");
-},{"./field":"../../node_modules/@formular/core/es/nodes/field.js","./group":"../../node_modules/@formular/core/es/nodes/group.js","./array":"../../node_modules/@formular/core/es/nodes/array.js","./form":"../../node_modules/@formular/core/es/nodes/form.js"}],"../../node_modules/@formular/core/es/index.js":[function(require,module,exports) {
+
+var _helper = require("./helper");
+},{"./field":"../../node_modules/@formular/core/es/nodes/field.js","./group":"../../node_modules/@formular/core/es/nodes/group.js","./array":"../../node_modules/@formular/core/es/nodes/array.js","./form":"../../node_modules/@formular/core/es/nodes/form.js","./helper":"../../node_modules/@formular/core/es/nodes/helper/index.js"}],"../../node_modules/@formular/core/es/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43051,114 +43070,7 @@ if ("development" === 'production') {
 } else {
   module.exports = require('./cjs/react-dom.development.js');
 }
-},{"./cjs/react-dom.development.js":"../../node_modules/react-dom/cjs/react-dom.development.js"}],"../../src/hooks/useForm.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var core_1 = require("@formular/core");
-
-var react_1 = require("react");
-
-function useForm(options, previousForm) {
-  var form = react_1.useMemo(function () {
-    return previousForm || core_1.createForm(options);
-  }, []);
-  react_1.useEffect(function () {
-    if (!previousForm) {
-      form.root.patchValue(options.values || {});
-    }
-  }, [options.values, form, previousForm]);
-  react_1.useEffect(function () {
-    if (!previousForm) {
-      form.root.patchInitialValue(options.initialValues || {});
-    }
-  }, [options.initialValues, form, previousForm]);
-  return form;
-}
-
-exports.useForm = useForm;
-},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react":"../../node_modules/react/index.js"}],"../../src/contexts/form.tsx":[function(require,module,exports) {
-"use strict";
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var react_1 = require("react");
-
-var react_2 = __importDefault(require("react"));
-
-exports.FormContext = react_1.createContext(null);
-
-exports.useFormContext = function () {
-  var store = react_2.default.useContext(exports.FormContext);
-
-  if (!store) {
-    throw new Error('useFormContext must be used within a StoreProvider.');
-  }
-
-  return store;
-};
-},{"react":"../../node_modules/react/index.js"}],"../../src/contexts/index.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var form_1 = require("./form");
-
-exports.FormContext = form_1.FormContext;
-},{"./form":"../../src/contexts/form.tsx"}],"../../src/components/Container.tsx":[function(require,module,exports) {
-"use strict";
-
-function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
-
-function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
-
-var __importStar = this && this.__importStar || function (mod) {
-  if (mod && mod.__esModule) return mod;
-  var result = {};
-  if (mod != null) for (var k in mod) {
-    if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-  }
-  result["default"] = mod;
-  return result;
-};
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var react_1 = __importStar(require("react"));
-
-var useForm_1 = require("../hooks/useForm");
-
-var contexts_1 = require("../contexts");
-
-exports.Container = react_1.default.forwardRef(function (_ref, ref) {
-  var form = _ref.form,
-      children = _ref.children,
-      options = _objectWithoutProperties(_ref, ["form", "children"]);
-
-  var formInstance = useForm_1.useForm(options, form);
-  react_1.useImperativeHandle(ref, function () {
-    return formInstance;
-  });
-  return react_1.default.createElement(contexts_1.FormContext.Provider, {
-    value: formInstance
-  }, children);
-});
-},{"react":"../../node_modules/react/index.js","../hooks/useForm":"../../src/hooks/useForm.ts","../contexts":"../../src/contexts/index.ts"}],"../../node_modules/mobx/lib/mobx.module.js":[function(require,module,exports) {
+},{"./cjs/react-dom.development.js":"../../node_modules/react-dom/cjs/react-dom.development.js"}],"../../node_modules/mobx/lib/mobx.module.js":[function(require,module,exports) {
 var process = require("process");
 var global = arguments[3];
 "use strict";
@@ -49627,7 +49539,141 @@ if (!_mobx.observable) throw new Error("mobx-react requires mobx to be available
 if (typeof _reactDom.unstable_batchedUpdates === "function") (0, _mobx.configure)({
   reactionScheduler: _reactDom.unstable_batchedUpdates
 });
-},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useField.ts":[function(require,module,exports) {
+},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useForm.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var core_1 = require("@formular/core");
+
+var react_1 = require("react");
+
+var mobx_1 = require("mobx");
+
+var mobx_react_1 = require("mobx-react");
+
+function useForm() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var previousForm = arguments.length > 1 ? arguments[1] : undefined;
+  var form = react_1.useMemo(function () {
+    return previousForm || core_1.createForm(options);
+  }, []);
+  react_1.useEffect(function () {
+    if (!previousForm) {
+      form.root.patchValue(options.values || {});
+    }
+  }, [options.values, form, previousForm]);
+  react_1.useEffect(function () {
+    if (!previousForm) {
+      form.root.patchInitialValue(options.initialValues || {});
+    }
+  }, [options.initialValues, form, previousForm]);
+  var resolver = react_1.useMemo(function () {
+    return function (base) {
+      return function (name) {
+        return core_1.fieldResolver(base, name);
+      };
+    }(form.root);
+  }, [form]);
+  var resolvers = mobx_react_1.useAsObservableSource({
+    field: resolver,
+    group: resolver,
+    array: resolver
+  });
+  react_1.useEffect(function () {
+    return mobx_1.autorun(function () {
+      if (typeof options.setup === 'function') {
+        options.setup(resolvers);
+      }
+    }, {
+      name: "FormularAutorunWithTheseFieldNames:(".concat(Object.keys(form.value).join('|'), ")")
+    });
+  }, [resolver]);
+  return form;
+}
+
+exports.useForm = useForm;
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../src/contexts/form.tsx":[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var react_1 = require("react");
+
+var react_2 = __importDefault(require("react"));
+
+exports.FormContext = react_1.createContext(null);
+
+exports.useFormContext = function () {
+  var store = react_2.default.useContext(exports.FormContext);
+
+  if (!store) {
+    throw new Error('useFormContext must be used within a StoreProvider.');
+  }
+
+  return store;
+};
+},{"react":"../../node_modules/react/index.js"}],"../../src/contexts/index.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var form_1 = require("./form");
+
+exports.FormContext = form_1.FormContext;
+},{"./form":"../../src/contexts/form.tsx"}],"../../src/components/Container.tsx":[function(require,module,exports) {
+"use strict";
+
+function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
+
+function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
+
+var __importStar = this && this.__importStar || function (mod) {
+  if (mod && mod.__esModule) return mod;
+  var result = {};
+  if (mod != null) for (var k in mod) {
+    if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+  }
+  result["default"] = mod;
+  return result;
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var react_1 = __importStar(require("react"));
+
+var useForm_1 = require("../hooks/useForm");
+
+var contexts_1 = require("../contexts");
+
+exports.Container = react_1.default.forwardRef(function (_ref, ref) {
+  var form = _ref.form,
+      children = _ref.children,
+      options = _objectWithoutProperties(_ref, ["form", "children"]);
+
+  var formInstance = useForm_1.useForm(options, form);
+  react_1.useImperativeHandle(ref, function () {
+    return formInstance;
+  });
+  return react_1.default.createElement(contexts_1.FormContext.Provider, {
+    value: formInstance
+  }, children);
+});
+},{"react":"../../node_modules/react/index.js","../hooks/useForm":"../../src/hooks/useForm.ts","../contexts":"../../src/contexts/index.ts"}],"../../src/hooks/useField.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -49730,13 +49776,29 @@ __export(require("./components"));
 },{"./components":"../../src/components/index.ts"}],"index.tsx":[function(require,module,exports) {
 "use strict";
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
 
 var __importStar = this && this.__importStar || function (mod) {
   if (mod && mod.__esModule) return mod;
@@ -49758,7 +49820,9 @@ var react_dom_1 = require("react-dom");
 
 var src_1 = require("../../src");
 
-var react_1 = __importStar(require("react"));
+var react_1 = __importDefault(require("react"));
+
+var useForm_1 = require("../../src/hooks/useForm");
 
 var m = __importStar(require("mobx"));
 
@@ -49770,66 +49834,104 @@ window.base = core_1.createForm({
     daddy: 'hello'
   }
 });
-var App = mobx_react_1.observer(function () {
-  // const form = useForm();
-  var formRef = react_1.createRef();
-  react_1.useEffect(function () {
-    // (window as any).form = form;
-    var form = window.form = formRef.current; // form.registerField('foofoo.username', field => {
-    //   const el = document.getElementById('username') as HTMLInputElement;
-    //   el.oninput = (e: any) => {
-    //     field.setValue(e.target.value);
-    //   };
-    //   return m.autorun(() => {
-    //     el.value = (field.value as string) || '';
-    //   });
-    // });
-    // form.registerField('foo', field => {
-    //   const el = document.getElementById('foo') as HTMLInputElement;
-    //   el.oninput = (e: any) => {
-    //     field.setValue(e.target.value);
-    //   };
-    //   return m.autorun(() => {
-    //     el.value = (field.value as string) || '';
-    //   });
-    // });
-  }, [formRef]);
 
-  var _react_1$useState = react_1.useState('baofdfbao'),
-      _react_1$useState2 = _slicedToArray(_react_1$useState, 2),
-      initVal = _react_1$useState2[0],
-      setInitVal = _react_1$useState2[1];
+var Bpp = /*#__PURE__*/function (_react_1$default$Comp) {
+  _inherits(Bpp, _react_1$default$Comp);
 
-  console.log(formRef.current);
+  function Bpp() {
+    var _this;
+
+    _classCallCheck(this, Bpp);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Bpp).apply(this, arguments));
+    _this.formRef = react_1.default.createRef();
+    _this.form = m.observable.box(null, {
+      deep: false
+    });
+    return _this;
+  }
+
+  _createClass(Bpp, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      this.form.set(this.formRef.current);
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this2 = this;
+
+      return react_1.default.createElement(src_1.Container, {
+        ref: this.formRef,
+        setup: function setup(_ref) {
+          var field = _ref.field;
+          field('WholeName').setValue(field('firstName').value + ' ' + field('LastName').value);
+        }
+      }, react_1.default.createElement("div", null, react_1.default.createElement(src_1.Item, {
+        name: "firstName",
+        initialValue: 'hello formular'
+      }, function (_ref2) {
+        var field = _ref2.field,
+            name = _ref2.name;
+        return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+          type: "text",
+          value: field.value || '',
+          onChange: function onChange(e) {
+            field.setValue(e.target.value);
+          }
+        })));
+      }), react_1.default.createElement(src_1.Item, {
+        name: "LastName",
+        initialValue: 'learning furry'
+      }, function (_ref3) {
+        var field = _ref3.field,
+            name = _ref3.name;
+        return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+          type: "text",
+          value: field.value || '',
+          onChange: function onChange(e) {
+            field.setValue(e.target.value);
+          }
+        })));
+      }), react_1.default.createElement(src_1.Item, {
+        name: "WholeName",
+        initialValue: 'Zhiyu'
+      }, function (_ref4) {
+        var field = _ref4.field,
+            name = _ref4.name;
+        return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+          style: {
+            width: '500px'
+          },
+          type: "text",
+          value: field.value || '',
+          onChange: function onChange(e) {
+            field.setValue(e.target.value);
+          }
+        })));
+      })), react_1.default.createElement("div", null, react_1.default.createElement(mobx_react_1.Observer, null, function () {
+        return react_1.default.createElement("pre", null, JSON.stringify(_this2.form.get(), null, 2));
+      })));
+    }
+  }]);
+
+  return Bpp;
+}(react_1.default.Component);
+
+var App = function App() {
+  var form = useForm_1.useForm();
   return react_1.default.createElement(src_1.Container, {
-    ref: formRef,
-    initialValues: {
-      // foo: 'bar',
-      bar: initVal,
-      baz: true,
-      touming: undefined,
-      foofoo: {
-        username: 'baozi',
-        age: 23
-      },
-      tag: ['happy', 'nice', 'quick'],
-      firends: [{
-        name: 'Heskey',
-        age: 22
-      }, {
-        name: 'Barbara',
-        age: 25
-      }, {
-        name: 'Fiona',
-        age: 24
-      }]
+    form: form,
+    setup: function setup(_ref5) {
+      var field = _ref5.field;
+      field('WholeName').setValue(field('firstName').value + ' ' + field('LastName').value);
     }
   }, react_1.default.createElement("div", null, react_1.default.createElement(src_1.Item, {
-    name: "bar",
-    initialValue: "initVal"
-  }, function (_ref) {
-    var field = _ref.field,
-        name = _ref.name;
+    name: "firstName",
+    initialValue: 'hello formular'
+  }, function (_ref6) {
+    var field = _ref6.field,
+        name = _ref6.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       type: "text",
       value: field.value || '',
@@ -49838,11 +49940,11 @@ var App = mobx_react_1.observer(function () {
       }
     })));
   }), react_1.default.createElement(src_1.Item, {
-    name: "aa[0][2].hello.daddy",
-    initialValue: initVal
-  }, function (_ref2) {
-    var field = _ref2.field,
-        name = _ref2.name;
+    name: "LastName",
+    initialValue: 'learning furry'
+  }, function (_ref7) {
+    var field = _ref7.field,
+        name = _ref7.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       type: "text",
       value: field.value || '',
@@ -49850,16 +49952,29 @@ var App = mobx_react_1.observer(function () {
         field.setValue(e.target.value);
       }
     })));
-  })), react_1.default.createElement("div", null, react_1.default.createElement("input", {
-    type: "text",
-    value: initVal,
-    onChange: function onChange(e) {
-      setInitVal(e.target.value);
-    }
-  }), react_1.default.createElement("pre", null, JSON.stringify(formRef.current, null, 2))));
-});
-react_dom_1.render(react_1.default.createElement(App, null), document.getElementById('app'));
-},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react-dom":"../../node_modules/react-dom/index.js","../../src":"../../src/index.ts","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+  }), react_1.default.createElement(src_1.Item, {
+    name: "WholeName",
+    initialValue: 'Zhiyu'
+  }, function (_ref8) {
+    var field = _ref8.field,
+        name = _ref8.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      style: {
+        width: '500px'
+      },
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  })), react_1.default.createElement("div", null, react_1.default.createElement(mobx_react_1.Observer, null, function () {
+    return react_1.default.createElement("pre", null, JSON.stringify(form, null, 2));
+  })));
+};
+
+react_dom_1.render(react_1.default.createElement(Bpp, null), document.getElementById('app'));
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react-dom":"../../node_modules/react-dom/index.js","../../src":"../../src/index.ts","react":"../../node_modules/react/index.js","../../src/hooks/useForm":"../../src/hooks/useForm.ts","mobx":"../../node_modules/mobx/lib/mobx.module.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -49887,7 +50002,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64257" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58539" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

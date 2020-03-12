@@ -1,9 +1,9 @@
-import React, { useImperativeHandle, useEffect } from 'react';
-import { CreateFormOptions, FormInstance } from '@formular/core';
-import { useForm } from '../hooks/useForm';
+import React, { useImperativeHandle } from 'react';
+import { FormInstance } from '@formular/core';
+import { useForm, FormOptions } from '../hooks/useForm';
 import { FormContext } from '../contexts';
 
-export interface ContainerProps extends CreateFormOptions<any> {
+export interface ContainerProps extends FormOptions<any> {
   form?: FormInstance;
   ref?: React.RefObject<FormInstance>;
 }

@@ -1,69 +1,115 @@
-import { createForm, FormInstance } from '@formular/core';
+import { createForm, FormInstance, FieldInstance } from '@formular/core';
 import { render } from 'react-dom';
 import { Container, Item } from '../../src';
 import React, { useRef, createRef, useEffect, useState } from 'react';
 import { useForm } from '../../src/hooks/useForm';
 import * as m from 'mobx';
-import { observer, useLocalStore, useAsObservableSource } from 'mobx-react';
+import {
+  observer,
+  useLocalStore,
+  useAsObservableSource,
+  Observer
+} from 'mobx-react';
 (window as any).m = m;
 
 (window as any).base = createForm({
   initialValues: { daddy: 'hello' }
 });
 
-const App: React.FC = observer(() => {
-  // const form = useForm();
-  const formRef = createRef<FormInstance>();
-  useEffect(() => {
-    // (window as any).form = form;
-    let form = ((window as any).form = formRef.current);
-    // form.registerField('foofoo.username', field => {
-    //   const el = document.getElementById('username') as HTMLInputElement;
-    //   el.oninput = (e: any) => {
-    //     field.setValue(e.target.value);
-    //   };
-    //   return m.autorun(() => {
-    //     el.value = (field.value as string) || '';
-    //   });
-    // });
+class Bpp extends React.Component {
+  formRef = React.createRef<FormInstance>();
 
-    // form.registerField('foo', field => {
-    //   const el = document.getElementById('foo') as HTMLInputElement;
-    //   el.oninput = (e: any) => {
-    //     field.setValue(e.target.value);
-    //   };
-    //   return m.autorun(() => {
-    //     el.value = (field.value as string) || '';
-    //   });
-    // });
-  }, [formRef]);
+  form = m.observable.box<FormInstance>(null, { deep: false });
 
-  const [initVal, setInitVal] = useState('baofdfbao');
+  componentDidMount() {
+    this.form.set(this.formRef.current);
+  }
 
-  console.log(formRef.current);
+  render() {
+    return (
+      <Container
+        ref={this.formRef}
+        setup={({ field }) => {
+          field('WholeName').setValue(
+            field('firstName').value + ' ' + field('LastName').value
+          );
+        }}
+      >
+        <div>
+          <Item name="firstName" initialValue={'hello formular'}>
+            {({ field, name }) => (
+              <div>
+                <h3>{name}</h3>
+                <div>
+                  <input
+                    type="text"
+                    value={field.value || ''}
+                    onChange={e => {
+                      field.setValue(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </Item>
+          <Item name="LastName" initialValue={'learning furry'}>
+            {({ field, name }) => (
+              <div>
+                <h3>{name}</h3>
+                <div>
+                  <input
+                    type="text"
+                    value={field.value || ''}
+                    onChange={e => {
+                      field.setValue(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </Item>
+          <Item name="WholeName" initialValue={'Zhiyu'}>
+            {({ field, name }) => (
+              <div>
+                <h3>{name}</h3>
+                <div>
+                  <input
+                    style={{ width: '500px' }}
+                    type="text"
+                    value={field.value || ''}
+                    onChange={e => {
+                      field.setValue(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </Item>
+        </div>
+        <div>
+          <Observer>
+            {() => <pre>{JSON.stringify(this.form.get(), null, 2)}</pre>}
+          </Observer>
+        </div>
+      </Container>
+    );
+  }
+}
+
+const App: React.FC = () => {
+  const form = useForm();
 
   return (
     <Container
-      ref={formRef}
-      initialValues={{
-        // foo: 'bar',
-        bar: initVal,
-        baz: true,
-        touming: undefined,
-        foofoo: {
-          username: 'baozi',
-          age: 23
-        },
-        tag: ['happy', 'nice', 'quick'],
-        firends: [
-          { name: 'Heskey', age: 22 },
-          { name: 'Barbara', age: 25 },
-          { name: 'Fiona', age: 24 }
-        ]
+      form={form}
+      setup={({ field }) => {
+        field('WholeName').setValue(
+          field('firstName').value + ' ' + field('LastName').value
+        );
       }}
     >
       <div>
-        <Item name="bar" initialValue={"initVal"}>
+        <Item name="firstName" initialValue={'hello formular'}>
           {({ field, name }) => (
             <div>
               <h3>{name}</h3>
@@ -79,12 +125,29 @@ const App: React.FC = observer(() => {
             </div>
           )}
         </Item>
-        <Item name="aa[0][2].hello.daddy" initialValue={initVal}>
+        <Item name="LastName" initialValue={'learning furry'}>
           {({ field, name }) => (
             <div>
               <h3>{name}</h3>
               <div>
                 <input
+                  type="text"
+                  value={field.value || ''}
+                  onChange={e => {
+                    field.setValue(e.target.value);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </Item>
+        <Item name="WholeName" initialValue={'Zhiyu'}>
+          {({ field, name }) => (
+            <div>
+              <h3>{name}</h3>
+              <div>
+                <input
+                  style={{ width: '500px' }}
                   type="text"
                   value={field.value || ''}
                   onChange={e => {
@@ -97,17 +160,10 @@ const App: React.FC = observer(() => {
         </Item>
       </div>
       <div>
-        <input
-          type="text"
-          value={initVal}
-          onChange={e => {
-            setInitVal(e.target.value);
-          }}
-        />
-        <pre>{JSON.stringify(formRef.current, null, 2)}</pre>
+        <Observer>{() => <pre>{JSON.stringify(form, null, 2)}</pre>}</Observer>
       </div>
     </Container>
   );
-});
+};
 
-render(<App />, document.getElementById('app'));
+render(<Bpp />, document.getElementById('app'));
