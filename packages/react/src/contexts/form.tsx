@@ -9,7 +9,7 @@ export const FormContext: Context<FormInstance | null> = createContext<FormInsta
 export const useFormContext: () => FormInstance = () => {
   const store = React.useContext(FormContext);
   if (!store) {
-    throw new Error('useFormContext must be used within a StoreProvider.');
+    throw new Error('Cannot find an inner form instance.');
   }
   return store;
 };

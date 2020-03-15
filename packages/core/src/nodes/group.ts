@@ -1,4 +1,4 @@
-import { types, IAnyModelType, Instance } from 'mobx-state-tree';
+import { types, IAnyModelType, Instance, getType } from 'mobx-state-tree';
 import { Field, createField } from './field';
 import { FieldArray, createFieldArray } from './array';
 import { dispatcher } from './helper';
@@ -120,4 +120,8 @@ export function createFieldGroup(value: {
     }
   });
   return FieldGroup.create({ children });
+}
+
+export function isFieldGroupInstance(node: any): node is FieldGroupInstance {
+  return getType(node) === FieldGroup;
 }

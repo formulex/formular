@@ -13456,6 +13456,7 @@ exports.walkFieldNode = walkFieldNode;
 exports.name2JSONPointer = name2JSONPointer;
 exports.name2PathArray = name2PathArray;
 exports.fieldResolver = fieldResolver;
+exports.getOrCreateNodeFromBase = getOrCreateNodeFromBase;
 exports.dispatcher = void 0;
 
 var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
@@ -13511,9 +13512,53 @@ function fieldResolver(base, name) {
   var node = null;
 
   try {
-    node = (0, _mobxStateTree.tryResolve)(base, name2JSONPointer(name));
+    if (typeof name !== 'string' || name === '') {
+      node = base;
+    } else {
+      node = (0, _mobxStateTree.tryResolve)(base, name2JSONPointer(name));
+    }
   } catch (error) {// noop
   }
+
+  return node;
+}
+
+function getOrCreateNodeFromBase(name, _ref) {
+  var base = _ref.base,
+      initialValue = _ref.initialValue,
+      type = _ref.type; // 1. find the node
+
+  var node = fieldResolver(base, name); // 2. create node recursively
+
+  if (node === null) {
+    var createdNode = null;
+
+    if (type === 'object' || (0, _typeof2.default)(initialValue) === 'object' && initialValue !== null && !Array.isArray(initialValue)) {
+      createdNode = (0, _group.createFieldGroup)(initialValue || {});
+    } else if (type === 'array' || (0, _typeof2.default)(initialValue) === 'object' && initialValue !== null && Array.isArray(initialValue)) {
+      createdNode = (0, _array.createFieldArray)(initialValue || []);
+    } else {
+      createdNode = (0, _field.createField)(initialValue);
+    }
+
+    node = createdNode;
+    var pathArray = name2PathArray(name);
+    var parent = base;
+    pathArray.forEach(function (pathToken, index, array) {
+      var hasNode = typeof parent.children.has === 'function' && parent.children.has(pathToken);
+
+      if (index !== array.length - 1) {
+        if (!hasNode) {
+          parent.addChild(pathToken, (0, _group.createFieldGroup)({}));
+        }
+
+        parent = parent.children.get(pathToken);
+      } else {
+        parent.addChild(pathToken, node);
+      }
+    });
+  } // 3. offer node
+
 
   return node;
 }
@@ -13662,6 +13707,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.createFieldGroup = createFieldGroup;
+exports.isFieldGroupInstance = isFieldGroupInstance;
 exports.FieldGroup = void 0;
 
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
@@ -13887,6 +13933,10 @@ function createFieldGroup(value) {
   return FieldGroup.create({
     children: children
   });
+}
+
+function isFieldGroupInstance(node) {
+  return (0, _mobxStateTree.getType)(node) === FieldGroup;
 }
 },{"@babel/runtime/helpers/defineProperty":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/slicedToArray":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/slicedToArray.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","./field":"../../node_modules/@formular/core/es/nodes/field.js","./array":"../../node_modules/@formular/core/es/nodes/array.js","./helper":"../../node_modules/@formular/core/es/nodes/helper/index.js"}],"../../node_modules/@formular/core/node_modules/regenerator-runtime/runtime.js":[function(require,module,exports) {
 /**
@@ -14631,7 +14681,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.createForm = createForm;
 exports.Form = void 0;
 
-var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
 
@@ -14639,13 +14689,43 @@ var _mobxStateTree = require("mobx-state-tree");
 
 var _group = require("./group");
 
-var _field = require("./field");
-
-var _array = require("./array");
-
 var _helper = require("./helper");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+    if (enumerableOnly) symbols = symbols.filter(function (sym) {
+      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+    });
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        (0, _defineProperty2.default)(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
 
 var Form = _mobxStateTree.types.model('Form', {
   root: _group.FieldGroup,
@@ -14693,49 +14773,14 @@ var Form = _mobxStateTree.types.model('Form', {
         }
       }, submit);
     })),
-    registerField: function registerField(name, applyEffectFn) {
-      var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+    registerField: function registerField(name) {
+      var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
         type: undefined,
         initialValue: undefined
       };
-      var node = (0, _helper.fieldResolver)(self.root, name);
-
-      if (node === null) {
-        var createdNode = null;
-
-        if (config.type === 'object' || (0, _typeof2.default)(config.initialValue) === 'object' && config.initialValue !== null && !Array.isArray(config.initialValue)) {
-          createdNode = (0, _group.createFieldGroup)(config.initialValue || {});
-        } else if (config.type === 'array' || (0, _typeof2.default)(config.initialValue) === 'object' && Array.isArray(config.initialValue)) {
-          createdNode = (0, _array.createFieldArray)(config.initialValue || []);
-        } else {
-          createdNode = (0, _field.createField)(config.initialValue);
-        }
-
-        node = createdNode;
-        var pathArray = (0, _helper.name2PathArray)(name);
-        var parent = self.root;
-        pathArray.forEach(function (pathToken, index, array) {
-          var hasNode = typeof parent.children.has === 'function' && parent.children.has(pathToken);
-
-          if (index !== array.length - 1) {
-            if (!hasNode) {
-              parent.addChild(pathToken, (0, _group.createFieldGroup)({}));
-            }
-
-            parent = parent.children.get(pathToken);
-          } else {
-            parent.addChild(pathToken, node);
-          }
-        });
-      }
-
-      var disposer = applyEffectFn(node);
-
-      if (typeof disposer !== 'function') {
-        throw new Error("Apply Effect Function should return a unsubscription function, but got ".concat(disposer, " with type ").concat((0, _typeof2.default)(disposer), "."));
-      }
-
-      return disposer;
+      return (0, _helper.getOrCreateNodeFromBase)(name, _objectSpread({}, config, {
+        base: self.root
+      }));
     }
   };
 });
@@ -14758,7 +14803,7 @@ function createForm(_ref) {
     isSubmitting: false
   });
 }
-},{"@babel/runtime/helpers/typeof":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/typeof.js","@babel/runtime/regenerator":"../../node_modules/@formular/core/node_modules/@babel/runtime/regenerator/index.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","./group":"../../node_modules/@formular/core/es/nodes/group.js","./field":"../../node_modules/@formular/core/es/nodes/field.js","./array":"../../node_modules/@formular/core/es/nodes/array.js","./helper":"../../node_modules/@formular/core/es/nodes/helper/index.js"}],"../../node_modules/@formular/core/es/nodes/index.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/defineProperty":"../../node_modules/@formular/core/node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/regenerator":"../../node_modules/@formular/core/node_modules/@babel/runtime/regenerator/index.js","mobx-state-tree":"../../node_modules/@formular/core/node_modules/mobx-state-tree/dist/mobx-state-tree.module.js","./group":"../../node_modules/@formular/core/es/nodes/group.js","./helper":"../../node_modules/@formular/core/es/nodes/helper/index.js"}],"../../node_modules/@formular/core/es/nodes/index.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -14798,6 +14843,12 @@ Object.defineProperty(exports, "createFieldGroup", {
   enumerable: true,
   get: function () {
     return _group.createFieldGroup;
+  }
+});
+Object.defineProperty(exports, "isFieldGroupInstance", {
+  enumerable: true,
+  get: function () {
+    return _group.isFieldGroupInstance;
   }
 });
 Object.defineProperty(exports, "FieldArray", {
@@ -14846,6 +14897,12 @@ Object.defineProperty(exports, "fieldResolver", {
   enumerable: true,
   get: function () {
     return _helper.fieldResolver;
+  }
+});
+Object.defineProperty(exports, "getOrCreateNodeFromBase", {
+  enumerable: true,
+  get: function () {
+    return _helper.getOrCreateNodeFromBase;
   }
 });
 
@@ -43070,7 +43127,139 @@ if ("development" === 'production') {
 } else {
   module.exports = require('./cjs/react-dom.development.js');
 }
-},{"./cjs/react-dom.development.js":"../../node_modules/react-dom/cjs/react-dom.development.js"}],"../../node_modules/mobx/lib/mobx.module.js":[function(require,module,exports) {
+},{"./cjs/react-dom.development.js":"../../node_modules/react-dom/cjs/react-dom.development.js"}],"../../src/hooks/useForm.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var core_1 = require("@formular/core");
+
+var react_1 = require("react");
+
+function useForm() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var previousForm = arguments.length > 1 ? arguments[1] : undefined;
+  var form = react_1.useMemo(function () {
+    return previousForm || core_1.createForm(options);
+  }, []);
+  react_1.useEffect(function () {
+    if (!previousForm) {
+      form.root.patchValue(options.values || {});
+    }
+  }, [options.values, form, previousForm]);
+  react_1.useEffect(function () {
+    if (!previousForm) {
+      form.root.patchInitialValue(options.initialValues || {});
+    }
+  }, [options.initialValues, form, previousForm]);
+  return form;
+}
+
+exports.useForm = useForm;
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react":"../../node_modules/react/index.js"}],"../../src/contexts/form.tsx":[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var react_1 = require("react");
+
+var react_2 = __importDefault(require("react"));
+
+exports.FormContext = react_1.createContext(null);
+
+exports.useFormContext = function () {
+  var store = react_2.default.useContext(exports.FormContext);
+
+  if (!store) {
+    throw new Error('Cannot find an inner form instance.');
+  }
+
+  return store;
+};
+},{"react":"../../node_modules/react/index.js"}],"../../src/contexts/scope.tsx":[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var react_1 = require("react");
+
+var react_2 = __importDefault(require("react"));
+
+exports.ScopeConext = react_1.createContext(null);
+
+exports.useScopeContext = function () {
+  var store = react_2.default.useContext(exports.ScopeConext);
+
+  if (!store) {
+    throw new Error('Cannot find an scoped field group instance.');
+  }
+
+  return store;
+};
+},{"react":"../../node_modules/react/index.js"}],"../../src/contexts/index.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var form_1 = require("./form");
+
+exports.FormContext = form_1.FormContext;
+
+var scope_1 = require("./scope");
+
+exports.ScopeConext = scope_1.ScopeConext;
+},{"./form":"../../src/contexts/form.tsx","./scope":"../../src/contexts/scope.tsx"}],"../../src/hooks/useScope.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var core_1 = require("@formular/core");
+
+var scope_1 = require("../contexts/scope");
+
+function useScope(_ref) {
+  var name = _ref.name,
+      _ref$autoCreate = _ref.autoCreate,
+      autoCreate = _ref$autoCreate === void 0 ? true : _ref$autoCreate;
+  var previousScope = scope_1.useScopeContext();
+  var node = autoCreate && name && !core_1.fieldResolver(previousScope, name) ? core_1.getOrCreateNodeFromBase(name, {
+    base: previousScope,
+    type: 'object'
+  }) : core_1.fieldResolver(previousScope, name);
+
+  if (!core_1.isFieldGroupInstance(node)) {
+    throw new Error("Scope context value must be with type \"FieldGroup\", but got ".concat(node, " with type ").concat(node && node.value || _typeof(node)));
+  }
+
+  return node;
+}
+
+exports.useScope = useScope;
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js","../contexts/scope":"../../src/contexts/scope.tsx"}],"../../node_modules/mobx/lib/mobx.module.js":[function(require,module,exports) {
 var process = require("process");
 var global = arguments[3];
 "use strict";
@@ -49539,7 +49728,7 @@ if (!_mobx.observable) throw new Error("mobx-react requires mobx to be available
 if (typeof _reactDom.unstable_batchedUpdates === "function") (0, _mobx.configure)({
   reactionScheduler: _reactDom.unstable_batchedUpdates
 });
-},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useForm.ts":[function(require,module,exports) {
+},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useResolvers.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -49550,52 +49739,235 @@ var core_1 = require("@formular/core");
 
 var react_1 = require("react");
 
-var mobx_1 = require("mobx");
-
 var mobx_react_1 = require("mobx-react");
 
-function useForm() {
-  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var previousForm = arguments.length > 1 ? arguments[1] : undefined;
-  var form = react_1.useMemo(function () {
-    return previousForm || core_1.createForm(options);
-  }, []);
-  react_1.useEffect(function () {
-    if (!previousForm) {
-      form.root.patchValue(options.values || {});
-    }
-  }, [options.values, form, previousForm]);
-  react_1.useEffect(function () {
-    if (!previousForm) {
-      form.root.patchInitialValue(options.initialValues || {});
-    }
-  }, [options.initialValues, form, previousForm]);
+function useResolvers(_ref) {
+  var root = _ref.base;
   var resolver = react_1.useMemo(function () {
     return function (base) {
       return function (name) {
         return core_1.fieldResolver(base, name);
       };
-    }(form.root);
-  }, [form]);
+    }(root);
+  }, [root]);
   var resolvers = mobx_react_1.useAsObservableSource({
     field: resolver,
     group: resolver,
     array: resolver
   });
-  react_1.useEffect(function () {
-    return mobx_1.autorun(function () {
-      if (typeof options.setup === 'function') {
-        options.setup(resolvers);
-      }
-    }, {
-      name: "FormularAutorunWithTheseFieldNames:(".concat(Object.keys(form.value).join('|'), ")")
-    });
-  }, [resolver]);
-  return form;
+  return resolvers;
 }
 
-exports.useForm = useForm;
-},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../src/contexts/form.tsx":[function(require,module,exports) {
+exports.useResolvers = useResolvers;
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react":"../../node_modules/react/index.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../src/hooks/useAutoruns.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var useResolvers_1 = require("./useResolvers");
+
+var scope_1 = require("../contexts/scope");
+
+var react_1 = require("react");
+
+var mobx_1 = require("mobx");
+
+function useAutoruns(autoruns) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+      outterScope = _ref.scope;
+
+  var scopeCtx = scope_1.useScopeContext();
+
+  if (_typeof(outterScope) === 'object' && outterScope !== null) {
+    scopeCtx = outterScope;
+  }
+
+  var resolvers = useResolvers_1.useResolvers({
+    base: scopeCtx
+  });
+  var effects = react_1.useMemo(function () {
+    var fns = Array.isArray(autoruns) ? autoruns : typeof autoruns === 'function' ? [autoruns] : void 0;
+    return fns === null || fns === void 0 ? void 0 : fns.map(function (f) {
+      return function () {
+        return f(resolvers);
+      };
+    });
+  }, [autoruns, resolvers]);
+  effects === null || effects === void 0 ? void 0 : effects.forEach(function (fn) {
+    if (typeof fn !== 'function') {
+      throw new Error("Autorun effect should be a function, but got ".concat(fn, " with type ").concat(_typeof(fn)));
+    }
+  });
+  react_1.useEffect(function () {
+    var disposers = effects === null || effects === void 0 ? void 0 : effects.map(function (effect) {
+      return mobx_1.autorun(effect, {
+        name: "FormularAutorunWithTheseFieldNames:(".concat(Object.keys(scopeCtx.value).join('|'), ")")
+      });
+    });
+    return function () {
+      disposers === null || disposers === void 0 ? void 0 : disposers.forEach(function (f) {
+        return f();
+      });
+    };
+  }, [effects, scopeCtx, resolvers]);
+}
+
+exports.useAutoruns = useAutoruns;
+},{"./useResolvers":"../../src/hooks/useResolvers.ts","../contexts/scope":"../../src/contexts/scope.tsx","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js"}],"../../src/hooks/useReactions.ts":[function(require,module,exports) {
+"use strict";
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var useResolvers_1 = require("./useResolvers");
+
+var scope_1 = require("../contexts/scope");
+
+var react_1 = require("react");
+
+var mobx_1 = require("mobx");
+
+function useReactions(reactions) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+      outterScope = _ref.scope,
+      fireImmediately = _ref.fireImmediately;
+
+  var scopeCtx = scope_1.useScopeContext();
+
+  if (_typeof(outterScope) === 'object' && outterScope !== null) {
+    scopeCtx = outterScope;
+  }
+
+  var resolvers = useResolvers_1.useResolvers({
+    base: scopeCtx
+  });
+  var effects = react_1.useMemo(function () {
+    var fns = Array.isArray(reactions) ? reactions : void 0;
+
+    if (!fns) {
+      return fns;
+    }
+
+    if (typeof fns[0] === 'function' && typeof fns[1] === 'function') {
+      fns = [fns];
+    }
+
+    return fns.map(function (_ref2) {
+      var _ref3 = _slicedToArray(_ref2, 2),
+          f = _ref3[0],
+          g = _ref3[1];
+
+      return [function () {
+        return f(resolvers);
+      }, g];
+    });
+  }, [reactions, resolvers]);
+  effects === null || effects === void 0 ? void 0 : effects.forEach(function (_ref4) {
+    var _ref5 = _slicedToArray(_ref4, 2),
+        f = _ref5[0],
+        g = _ref5[1];
+
+    if (typeof f !== 'function' || typeof g !== 'function') {
+      throw new Error("Reaction effect should be a function, but got ".concat([f, g], "."));
+    }
+  });
+  react_1.useEffect(function () {
+    var disposers = effects === null || effects === void 0 ? void 0 : effects.map(function (_ref6) {
+      var _ref7 = _slicedToArray(_ref6, 2),
+          f = _ref7[0],
+          g = _ref7[1];
+
+      return mobx_1.reaction(f, g, {
+        name: "FormularReactionWithTheseFieldNames:(".concat(Object.keys(scopeCtx.value).join('|'), ")"),
+        fireImmediately: fireImmediately
+      });
+    });
+    return function () {
+      disposers === null || disposers === void 0 ? void 0 : disposers.forEach(function (f) {
+        return f();
+      });
+    };
+  }, [effects, scopeCtx, resolvers, fireImmediately]);
+}
+
+exports.useReactions = useReactions;
+},{"./useResolvers":"../../src/hooks/useResolvers.ts","../contexts/scope":"../../src/contexts/scope.tsx","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js"}],"../../src/hooks/useField.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var react_1 = require("react");
+
+var mobx_react_1 = require("mobx-react");
+
+var core_1 = require("@formular/core");
+
+var scope_1 = require("../contexts/scope");
+
+function useField(_ref) {
+  var name = _ref.name,
+      initialValue = _ref.initialValue;
+  var scope = scope_1.useScopeContext();
+  var fieldInstance = mobx_react_1.useAsObservableSource({
+    name: name,
+    field: core_1.getOrCreateNodeFromBase(name, {
+      initialValue: initialValue,
+      base: scope
+    })
+  });
+  react_1.useEffect(function () {
+    fieldInstance.field = core_1.getOrCreateNodeFromBase(name, {
+      initialValue: initialValue,
+      base: scope
+    });
+  }, [initialValue, scope]);
+  return fieldInstance;
+}
+
+exports.useField = useField;
+},{"react":"../../node_modules/react/index.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js","@formular/core":"../../node_modules/@formular/core/es/index.js","../contexts/scope":"../../src/contexts/scope.tsx"}],"../../src/hooks/index.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var useAutoruns_1 = require("./useAutoruns");
+
+exports.useAutoruns = useAutoruns_1.useAutoruns;
+exports.AutorunEffect = useAutoruns_1.AutorunEffect;
+
+var useReactions_1 = require("./useReactions");
+
+exports.useReactions = useReactions_1.useReactions;
+exports.ReactionEffect = useReactions_1.ReactionEffect;
+exports.ReactionTrace = useReactions_1.ReactionTrace;
+
+var useField_1 = require("./useField");
+
+exports.useField = useField_1.useField;
+
+var useForm_1 = require("./useForm");
+
+exports.useForm = useForm_1.useForm;
+},{"./useAutoruns":"../../src/hooks/useAutoruns.ts","./useReactions":"../../src/hooks/useReactions.ts","./useField":"../../src/hooks/useField.ts","./useForm":"../../src/hooks/useForm.ts"}],"../../src/components/Scope.tsx":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -49608,32 +49980,34 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var react_1 = require("react");
+var react_1 = __importDefault(require("react"));
 
-var react_2 = __importDefault(require("react"));
+var contexts_1 = require("../contexts");
 
-exports.FormContext = react_1.createContext(null);
+var useScope_1 = require("../hooks/useScope");
 
-exports.useFormContext = function () {
-  var store = react_2.default.useContext(exports.FormContext);
+var hooks_1 = require("../hooks");
 
-  if (!store) {
-    throw new Error('useFormContext must be used within a StoreProvider.');
-  }
-
-  return store;
+exports.Scope = function (_ref) {
+  var name = _ref.name,
+      autoRuns = _ref.autoRuns,
+      reactions = _ref.reactions,
+      children = _ref.children;
+  var scope = useScope_1.useScope({
+    name: name
+  });
+  hooks_1.useAutoruns(autoRuns, {
+    scope: scope
+  });
+  hooks_1.useReactions(reactions, {
+    scope: scope,
+    fireImmediately: false
+  });
+  return react_1.default.createElement(contexts_1.ScopeConext.Provider, {
+    value: scope
+  }, children);
 };
-},{"react":"../../node_modules/react/index.js"}],"../../src/contexts/index.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var form_1 = require("./form");
-
-exports.FormContext = form_1.FormContext;
-},{"./form":"../../src/contexts/form.tsx"}],"../../src/components/Container.tsx":[function(require,module,exports) {
+},{"react":"../../node_modules/react/index.js","../contexts":"../../src/contexts/index.ts","../hooks/useScope":"../../src/hooks/useScope.ts","../hooks":"../../src/hooks/index.ts"}],"../../src/components/Container.tsx":[function(require,module,exports) {
 "use strict";
 
 function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
@@ -49660,10 +50034,15 @@ var useForm_1 = require("../hooks/useForm");
 
 var contexts_1 = require("../contexts");
 
+var scope_1 = require("../contexts/scope");
+
+var Scope_1 = require("./Scope");
+
 exports.Container = react_1.default.forwardRef(function (_ref, ref) {
   var form = _ref.form,
       children = _ref.children,
-      options = _objectWithoutProperties(_ref, ["form", "children"]);
+      autoRuns = _ref.autoRuns,
+      options = _objectWithoutProperties(_ref, ["form", "children", "autoRuns"]);
 
   var formInstance = useForm_1.useForm(options, form);
   react_1.useImperativeHandle(ref, function () {
@@ -49671,52 +50050,13 @@ exports.Container = react_1.default.forwardRef(function (_ref, ref) {
   });
   return react_1.default.createElement(contexts_1.FormContext.Provider, {
     value: formInstance
-  }, children);
+  }, react_1.default.createElement(scope_1.ScopeConext.Provider, {
+    value: formInstance.root
+  }, react_1.default.createElement(Scope_1.Scope, {
+    autoRuns: autoRuns
+  }, children)));
 });
-},{"react":"../../node_modules/react/index.js","../hooks/useForm":"../../src/hooks/useForm.ts","../contexts":"../../src/contexts/index.ts"}],"../../src/hooks/useField.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var form_1 = require("../contexts/form");
-
-var react_1 = require("react");
-
-var mobx_react_1 = require("mobx-react");
-
-function useField(_ref) {
-  var name = _ref.name,
-      initialValue = _ref.initialValue;
-  var formInstance = form_1.useFormContext();
-  var fieldInstance = mobx_react_1.useAsObservableSource({
-    name: name,
-    field: function () {
-      var result = null;
-      var disposer = formInstance.registerField(name, function (node) {
-        result = node;
-        return function () {};
-      }, {
-        initialValue: initialValue
-      });
-      disposer();
-      return result;
-    }()
-  });
-  react_1.useEffect(function () {
-    return formInstance.registerField(name, function (node) {
-      fieldInstance.field = node;
-      return function () {};
-    }, {
-      initialValue: initialValue
-    });
-  }, [initialValue]);
-  return fieldInstance;
-}
-
-exports.useField = useField;
-},{"../contexts/form":"../../src/contexts/form.tsx","react":"../../node_modules/react/index.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../src/components/Item.tsx":[function(require,module,exports) {
+},{"react":"../../node_modules/react/index.js","../hooks/useForm":"../../src/hooks/useForm.ts","../contexts":"../../src/contexts/index.ts","../contexts/scope":"../../src/contexts/scope.tsx","./Scope":"../../src/components/Scope.tsx"}],"../../src/components/Item.tsx":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -49759,7 +50099,11 @@ exports.Container = Container_1.Container;
 var Item_1 = require("./Item");
 
 exports.Item = Item_1.Item;
-},{"./Container":"../../src/components/Container.tsx","./Item":"../../src/components/Item.tsx"}],"../../src/index.ts":[function(require,module,exports) {
+
+var Scope_1 = require("./Scope");
+
+exports.Scope = Scope_1.Scope;
+},{"./Container":"../../src/components/Container.tsx","./Item":"../../src/components/Item.tsx","./Scope":"../../src/components/Scope.tsx"}],"../../src/index.ts":[function(require,module,exports) {
 "use strict";
 
 function __export(m) {
@@ -49773,26 +50117,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 __export(require("./components"));
-},{"./components":"../../src/components/index.ts"}],"index.tsx":[function(require,module,exports) {
+
+__export(require("./hooks"));
+},{"./components":"../../src/components/index.ts","./hooks":"../../src/hooks/index.ts"}],"index.tsx":[function(require,module,exports) {
 "use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 var __importDefault = this && this.__importDefault || function (mod) {
   return mod && mod.__esModule ? mod : {
@@ -49835,129 +50163,66 @@ window.base = core_1.createForm({
   }
 });
 
-var Bpp = /*#__PURE__*/function (_react_1$default$Comp) {
-  _inherits(Bpp, _react_1$default$Comp);
-
-  function Bpp() {
-    var _this;
-
-    _classCallCheck(this, Bpp);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Bpp).apply(this, arguments));
-    _this.formRef = react_1.default.createRef();
-    _this.form = m.observable.box(null, {
-      deep: false
-    });
-    return _this;
-  }
-
-  _createClass(Bpp, [{
-    key: "componentDidMount",
-    value: function componentDidMount() {
-      this.form.set(this.formRef.current);
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      var _this2 = this;
-
-      return react_1.default.createElement(src_1.Container, {
-        ref: this.formRef,
-        setup: function setup(_ref) {
-          var field = _ref.field;
-          field('WholeName').setValue(field('firstName').value + ' ' + field('LastName').value);
-        }
-      }, react_1.default.createElement("div", null, react_1.default.createElement(src_1.Item, {
-        name: "firstName",
-        initialValue: 'hello formular'
-      }, function (_ref2) {
-        var field = _ref2.field,
-            name = _ref2.name;
-        return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
-          type: "text",
-          value: field.value || '',
-          onChange: function onChange(e) {
-            field.setValue(e.target.value);
-          }
-        })));
-      }), react_1.default.createElement(src_1.Item, {
-        name: "LastName",
-        initialValue: 'learning furry'
-      }, function (_ref3) {
-        var field = _ref3.field,
-            name = _ref3.name;
-        return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
-          type: "text",
-          value: field.value || '',
-          onChange: function onChange(e) {
-            field.setValue(e.target.value);
-          }
-        })));
-      }), react_1.default.createElement(src_1.Item, {
-        name: "WholeName",
-        initialValue: 'Zhiyu'
-      }, function (_ref4) {
-        var field = _ref4.field,
-            name = _ref4.name;
-        return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
-          style: {
-            width: '500px'
-          },
-          type: "text",
-          value: field.value || '',
-          onChange: function onChange(e) {
-            field.setValue(e.target.value);
-          }
-        })));
-      })), react_1.default.createElement("div", null, react_1.default.createElement(mobx_react_1.Observer, null, function () {
-        return react_1.default.createElement("pre", null, JSON.stringify(_this2.form.get(), null, 2));
-      })));
-    }
-  }]);
-
-  return Bpp;
-}(react_1.default.Component);
-
 var App = function App() {
   var form = useForm_1.useForm();
   return react_1.default.createElement(src_1.Container, {
-    form: form,
-    setup: function setup(_ref5) {
-      var field = _ref5.field;
-      field('WholeName').setValue(field('firstName').value + ' ' + field('LastName').value);
-    }
-  }, react_1.default.createElement("div", null, react_1.default.createElement(src_1.Item, {
-    name: "firstName",
-    initialValue: 'hello formular'
+    form: form
+  }, react_1.default.createElement(src_1.Scope, {
+    name: "TestCase1",
+    autoRuns: [function (_ref) {
+      var field = _ref.field;
+
+      if (!field('数量').value || !field('单价').value) {
+        return;
+      }
+
+      field('总价').setValue(field('数量').value * field('单价').value);
+    }, function (_ref2) {
+      var field = _ref2.field;
+
+      if (!field('总价').value || !field('单价').value) {
+        return;
+      }
+
+      field('数量').setValue(field('总价').value / field('单价').value);
+    }, function (_ref3) {
+      var field = _ref3.field;
+
+      if (!field('总价').value || !field('数量').value) {
+        return;
+      }
+
+      field('单价').setValue(field('总价').value / field('数量').value);
+    }]
+  }, react_1.default.createElement(src_1.Item, {
+    name: "\u603B\u4EF7"
+  }, function (_ref4) {
+    var field = _ref4.field,
+        name = _ref4.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(Number.parseFloat(e.target.value));
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "\u5355\u4EF7"
+  }, function (_ref5) {
+    var field = _ref5.field,
+        name = _ref5.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(Number.parseFloat(e.target.value));
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "\u6570\u91CF"
   }, function (_ref6) {
     var field = _ref6.field,
         name = _ref6.name;
-    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
-      type: "text",
-      value: field.value || '',
-      onChange: function onChange(e) {
-        field.setValue(e.target.value);
-      }
-    })));
-  }), react_1.default.createElement(src_1.Item, {
-    name: "LastName",
-    initialValue: 'learning furry'
-  }, function (_ref7) {
-    var field = _ref7.field,
-        name = _ref7.name;
-    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
-      type: "text",
-      value: field.value || '',
-      onChange: function onChange(e) {
-        field.setValue(e.target.value);
-      }
-    })));
-  }), react_1.default.createElement(src_1.Item, {
-    name: "WholeName",
-    initialValue: 'Zhiyu'
-  }, function (_ref8) {
-    var field = _ref8.field,
-        name = _ref8.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       style: {
         width: '500px'
@@ -49965,15 +50230,17 @@ var App = function App() {
       type: "text",
       value: field.value || '',
       onChange: function onChange(e) {
-        field.setValue(e.target.value);
+        field.setValue(Number.parseFloat(e.target.value));
       }
     })));
   })), react_1.default.createElement("div", null, react_1.default.createElement(mobx_react_1.Observer, null, function () {
+    return react_1.default.createElement("pre", null, JSON.stringify(form.value, null, 2));
+  }), react_1.default.createElement(mobx_react_1.Observer, null, function () {
     return react_1.default.createElement("pre", null, JSON.stringify(form, null, 2));
   })));
 };
 
-react_dom_1.render(react_1.default.createElement(Bpp, null), document.getElementById('app'));
+react_dom_1.render(react_1.default.createElement(App, null), document.getElementById('app'));
 },{"@formular/core":"../../node_modules/@formular/core/es/index.js","react-dom":"../../node_modules/react-dom/index.js","../../src":"../../src/index.ts","react":"../../node_modules/react/index.js","../../src/hooks/useForm":"../../src/hooks/useForm.ts","mobx":"../../node_modules/mobx/lib/mobx.module.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -50002,7 +50269,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58539" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52562" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
