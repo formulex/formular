@@ -49731,6 +49731,8 @@ if (typeof _reactDom.unstable_batchedUpdates === "function") (0, _mobx.configure
 },{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useResolvers.ts":[function(require,module,exports) {
 "use strict";
 
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
@@ -49750,11 +49752,21 @@ function useResolvers(_ref) {
       };
     }(root);
   }, [root]);
+  var value = react_1.useMemo(function () {
+    return function (name) {
+      var _resolver;
+
+      return (_resolver = resolver(name)) === null || _resolver === void 0 ? void 0 : _resolver.value;
+    };
+  }, [resolver]);
+  console.log('valueOf', _typeof(value));
   var resolvers = mobx_react_1.useAsObservableSource({
     field: resolver,
     group: resolver,
-    array: resolver
+    array: resolver,
+    value: value
   });
+  console.log(resolvers);
   return resolvers;
 }
 
@@ -49874,7 +49886,9 @@ function useReactions(reactions) {
 
       return [function () {
         return f(resolvers);
-      }, g];
+      }, function (data, reaction) {
+        return g(data, resolvers, reaction);
+      }];
     });
   }, [reactions, resolvers]);
   effects === null || effects === void 0 ? void 0 : effects.forEach(function (_ref4) {
@@ -50169,36 +50183,70 @@ var App = function App() {
     form: form
   }, react_1.default.createElement(src_1.Scope, {
     name: "TestCase1",
-    autoRuns: [function (_ref) {
-      var field = _ref.field;
+    // autoRuns={[
+    //   ({ field }) => {
+    //     if (!field('数量').value || !field('单价').value) {
+    //       return;
+    //     }
+    //     field('总价').setValue(
+    //       (field('数量').value as number) * (field('单价').value as number)
+    //     );
+    //   },
+    //   ({ field }) => {
+    //     if (!field('总价').value || !field('单价').value) {
+    //       return;
+    //     }
+    //     field('数量').setValue(
+    //       (field('总价').value as number) / (field('单价').value as number)
+    //     );
+    //   },
+    //   ({ field }) => {
+    //     if (!field('总价').value || !field('数量').value) {
+    //       return;
+    //     }
+    //     field('单价').setValue(
+    //       (field('总价').value as number) / (field('数量').value as number)
+    //     );
+    //   }
+    // ]}
+    reactions: [[function (_ref) {
+      var value = _ref.value;
+      return value('总价');
+    }, function (totalValue, _ref2) {
+      var field = _ref2.field,
+          value = _ref2.value;
 
-      if (!field('数量').value || !field('单价').value) {
-        return;
+      if (value('单价')) {
+        field('数量').setValue(totalValue / value('单价'));
       }
+    }], [function (_ref3) {
+      var value = _ref3.value;
+      return value('单价');
+    }, function (priceValue, _ref4) {
+      var field = _ref4.field,
+          value = _ref4.value;
 
-      field('总价').setValue(field('数量').value * field('单价').value);
-    }, function (_ref2) {
-      var field = _ref2.field;
-
-      if (!field('总价').value || !field('单价').value) {
-        return;
+      if (value('数量')) {
+        field('总价').setValue(priceValue * value('数量'));
+      } else if (value('总价')) {
+        field('数量').setValue(value('总价') / priceValue);
       }
+    }], [function (_ref5) {
+      var value = _ref5.value;
+      return value('数量');
+    }, function (count, _ref6) {
+      var field = _ref6.field,
+          value = _ref6.value;
 
-      field('数量').setValue(field('总价').value / field('单价').value);
-    }, function (_ref3) {
-      var field = _ref3.field;
-
-      if (!field('总价').value || !field('数量').value) {
-        return;
+      if (value('单价')) {
+        field('总价').setValue(count * value('单价'));
       }
-
-      field('单价').setValue(field('总价').value / field('数量').value);
-    }]
+    }]]
   }, react_1.default.createElement(src_1.Item, {
     name: "\u603B\u4EF7"
-  }, function (_ref4) {
-    var field = _ref4.field,
-        name = _ref4.name;
+  }, function (_ref7) {
+    var field = _ref7.field,
+        name = _ref7.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       type: "text",
       value: field.value || '',
@@ -50208,9 +50256,9 @@ var App = function App() {
     })));
   }), react_1.default.createElement(src_1.Item, {
     name: "\u5355\u4EF7"
-  }, function (_ref5) {
-    var field = _ref5.field,
-        name = _ref5.name;
+  }, function (_ref8) {
+    var field = _ref8.field,
+        name = _ref8.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       type: "text",
       value: field.value || '',
@@ -50220,9 +50268,9 @@ var App = function App() {
     })));
   }), react_1.default.createElement(src_1.Item, {
     name: "\u6570\u91CF"
-  }, function (_ref6) {
-    var field = _ref6.field,
-        name = _ref6.name;
+  }, function (_ref9) {
+    var field = _ref9.field,
+        name = _ref9.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       style: {
         width: '500px'
@@ -50269,7 +50317,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52562" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62494" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

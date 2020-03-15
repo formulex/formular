@@ -18,60 +18,60 @@ const App: React.FC = () => {
     <Container form={form}>
       <Scope
         name="TestCase1"
-        autoRuns={[
-          ({ field }) => {
-            if (!field('数量').value || !field('单价').value) {
-              return;
-            }
-            field('总价').setValue(
-              (field('数量').value as number) * (field('单价').value as number)
-            );
-          },
-          ({ field }) => {
-            if (!field('总价').value || !field('单价').value) {
-              return;
-            }
-            field('数量').setValue(
-              (field('总价').value as number) / (field('单价').value as number)
-            );
-          },
-          ({ field }) => {
-            if (!field('总价').value || !field('数量').value) {
-              return;
-            }
-            field('单价').setValue(
-              (field('总价').value as number) / (field('数量').value as number)
-            );
-          }
-        ]}
-        // reactions={[
-        //   [
-        //     ({ field }) => [field, field('总价').value],
-        //     ([field, totalValue]) => {
-        //       if (field('单价').value) {
-        //         field('数量').setValue(
-        //           totalValue / (field('单价').value as number)
-        //         );
-        //       }
+        // autoRuns={[
+        //   ({ field }) => {
+        //     if (!field('数量').value || !field('单价').value) {
+        //       return;
         //     }
-        //   ],
-        //   [
-        //     ({ field }) => [field, field('单价').value],
-        //     ([field, priceValue]) => {
-        //       field('总价').setValue(
-        //         priceValue * (field('数量').value as number)
-        //       );
+        //     field('总价').setValue(
+        //       (field('数量').value as number) * (field('单价').value as number)
+        //     );
+        //   },
+        //   ({ field }) => {
+        //     if (!field('总价').value || !field('单价').value) {
+        //       return;
         //     }
-        //   ],
-        //   [
-        //     ({ field }) => [field, field('数量').value],
-        //     ([field, countValue]) => {
-        //       field('总价').setValue(
-        //         countValue * (field('单价').value as number)
-        //       );
+        //     field('数量').setValue(
+        //       (field('总价').value as number) / (field('单价').value as number)
+        //     );
+        //   },
+        //   ({ field }) => {
+        //     if (!field('总价').value || !field('数量').value) {
+        //       return;
         //     }
-        //   ]
+        //     field('单价').setValue(
+        //       (field('总价').value as number) / (field('数量').value as number)
+        //     );
+        //   }
         // ]}
+        reactions={[
+          [
+            ({ value }) => value('总价'),
+            (totalValue, { field, value }) => {
+              if (value('单价')) {
+                field('数量').setValue(totalValue / value<number>('单价'));
+              }
+            }
+          ],
+          [
+            ({ value }) => value('单价'),
+            (priceValue, { field, value }) => {
+              if (value('数量')) {
+                field('总价').setValue(priceValue * value<number>('数量'));
+              } else if (value('总价')) {
+                field('数量').setValue(value<number>('总价') / priceValue);
+              }
+            }
+          ],
+          [
+            ({ value }) => value('数量'),
+            (count, { field, value }) => {
+              if (value('单价')) {
+                field('总价').setValue(count * value<number>('单价'));
+              }
+            }
+          ]
+        ]}
       >
         <Item name="总价">
           {({ field, name }) => (

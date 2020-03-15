@@ -15,7 +15,7 @@ export interface ReactionTrace {
 }
 
 export interface ReactionEffect {
-  (...args: any[]): void;
+  (data: any, resolvers: Resolvers, reaction: Function): void;
 }
 
 export function useReactions(
@@ -39,7 +39,7 @@ export function useReactions(
     }
     return (fns as [ReactionTrace, ReactionEffect][]).map(([f, g]) => [
       () => f(resolvers),
-      g
+      (data: any, reaction: Function) => g(data, resolvers, reaction)
     ]);
   }, [reactions, resolvers]);
 
@@ -53,7 +53,7 @@ export function useReactions(
 
   useEffect(() => {
     const disposers = effects?.map(([f, g]) =>
-      reaction(f, g, {
+      reaction(f as any, g as any, {
         name: `FormularReactionWithTheseFieldNames:(${Object.keys(
           scopeCtx.value
         ).join('|')})`,
