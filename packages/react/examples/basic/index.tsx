@@ -1,6 +1,14 @@
 import { createForm } from '@formular/core';
 import { render } from 'react-dom';
-import { Container, Item, Scope, value, field, withContext } from '../../src';
+import {
+  Container,
+  Item,
+  Scope,
+  value,
+  field,
+  withContext,
+  asyncEffect
+} from '../../src';
 import React from 'react';
 import { useForm } from '../../src/hooks/useForm';
 import * as m from 'mobx';
@@ -21,47 +29,44 @@ const App: React.FC = () => {
       form={form}
       reactions={[
         () => value<string>('greeting'),
-        greeting => {
+        asyncEffect(function*(greeting) {
           field('greetingSync').setValue(greeting);
-          setTimeout(
-            withContext(() => {
-              field('greetingAsync').setValue(greeting);
-            }),
-            1000
-          );
-        }
+          const randomNumber = Math.floor(Math.random() * 1000 * 5);
+          yield delay(randomNumber);
+          field('greetingAsync').setValue(greeting);
+        })
       ]}
     >
       <Scope
         name="TestCase1"
-        // reactions={[
-        //   [
-        //     () => value('总价'),
-        //     totalValue => {
-        //       if (value('单价')) {
-        //         field('数量').setValue(totalValue / value<number>('单价'));
-        //       }
-        //     }
-        //   ],
-        //   [
-        //     () => value('单价'),
-        //     priceValue => {
-        //       if (value('数量')) {
-        //         field('总价').setValue(priceValue * value<number>('数量'));
-        //       } else if (value('总价')) {
-        //         field('数量').setValue(value<number>('总价') / priceValue);
-        //       }
-        //     }
-        //   ],
-        //   [
-        //     () => value('数量'),
-        //     count => {
-        //       if (value('单价')) {
-        //         field('总价').setValue(count * value<number>('单价'));
-        //       }
-        //     }
-        //   ]
-        // ]}
+        reactions={[
+          [
+            () => value('总价'),
+            totalValue => {
+              if (value('单价')) {
+                field('数量').setValue(totalValue / value<number>('单价'));
+              }
+            }
+          ],
+          [
+            () => value('单价'),
+            priceValue => {
+              if (value('数量')) {
+                field('总价').setValue(priceValue * value<number>('数量'));
+              } else if (value('总价')) {
+                field('数量').setValue(value<number>('总价') / priceValue);
+              }
+            }
+          ],
+          [
+            () => value('数量'),
+            count => {
+              if (value('单价')) {
+                field('总价').setValue(count * value<number>('单价'));
+              }
+            }
+          ]
+        ]}
       >
         <Item name="总价">
           {({ field, name }) => (

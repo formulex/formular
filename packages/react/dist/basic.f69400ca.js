@@ -48563,7 +48563,274 @@ function withContext(f) {
 }
 
 exports.withContext = withContext;
-},{"@formular/core":"../../node_modules/@formular/core/es/index.js"}],"../../src/utils/index.ts":[function(require,module,exports) {
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js"}],"../../src/utils/asyncEffect.ts":[function(require,module,exports) {
+"use strict"; // use tj/co
+// See: https://github.com/tj/co/blob/master/index.js
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var resolvers_1 = require("./resolvers");
+
+var slice = Array.prototype.slice;
+/**
+ * Wrap the given generator `fn` into a
+ * function that returns a promise.
+ * This is a separate function so that
+ * every `co()` call doesn't create a new,
+ * unnecessary closure.
+ *
+ * @param {GeneratorFunction} fn
+ * @return {Function}
+ * @api public
+ */
+
+function asyncEffect(fn) {
+  createPromise.__generatorFunction__ = fn;
+  return createPromise;
+
+  function createPromise() {
+    return runAsyncEffect.call(this, fn.apply(this, arguments));
+  }
+}
+
+exports.asyncEffect = asyncEffect;
+/**
+ * Execute the generator function or a generator
+ * and return a promise.
+ *
+ * @param {Function} fn
+ * @return {Promise}
+ * @api public
+ */
+
+function runAsyncEffect(gen) {
+  var ctx = this;
+  var args = slice.call(arguments, 1);
+  var tempContext = null;
+
+  if (resolvers_1.ResolverContextManager.top) {
+    tempContext = new resolvers_1.ResolverContext(resolvers_1.ResolverContextManager.top.scopeNode);
+  }
+
+  if (!tempContext) {
+    throw new Error('Async effect should have at least one context.');
+  }
+
+  function runWithContext(f) {
+    resolvers_1.ResolverContextManager.push(tempContext);
+    var result = resolvers_1.withContext(f)();
+    resolvers_1.ResolverContextManager.pop();
+    return result;
+  } // we wrap everything in a promise to avoid promise chaining,
+  // which leads to memory leak errors.
+  // see https://github.com/tj/co/issues/180
+
+
+  return new Promise(function (resolve, reject) {
+    if (typeof gen === 'function') gen = gen.apply(ctx, args);
+    if (!gen || typeof gen.next !== 'function') return resolve(gen);
+    onFulfilled();
+    /**
+     * @param {Mixed} res
+     * @return {Promise}
+     * @api private
+     */
+
+    function onFulfilled(res) {
+      var ret;
+
+      try {
+        runWithContext(function () {
+          ret = gen.next(res);
+        });
+        console.log('after', resolvers_1.ResolverContextManager.stack);
+      } catch (e) {
+        return reject(e);
+      }
+
+      next(ret);
+      return null;
+    }
+    /**
+     * @param {Error} err
+     * @return {Promise}
+     * @api private
+     */
+
+
+    function onRejected(err) {
+      var ret;
+
+      try {
+        runWithContext(function () {
+          ret = gen.throw(err);
+        });
+      } catch (e) {
+        return reject(e);
+      }
+
+      next(ret);
+    }
+    /**
+     * Get the next value in the generator,
+     * return a promise.
+     *
+     * @param {Object} ret
+     * @return {Promise}
+     * @api private
+     */
+
+
+    function next(ret) {
+      if (ret.done) {
+        var result = resolve(ret.value);
+        return result;
+      }
+
+      var value = toPromise.call(ctx, ret.value);
+      if (value && isPromise(value)) return value.then(onFulfilled, onRejected);
+      return onRejected(new TypeError('You may only yield a function, promise, generator, array, or object, ' + 'but the following object was passed: "' + String(ret.value) + '"'));
+    }
+  });
+}
+
+exports.runAsyncEffect = runAsyncEffect;
+/**
+ * Convert a `yield`ed value into a promise.
+ *
+ * @param {Mixed} obj
+ * @return {Promise}
+ * @api private
+ */
+
+function toPromise(obj) {
+  if (!obj) return obj;
+  if (isPromise(obj)) return obj;
+  if (isGeneratorFunction(obj) || isGenerator(obj)) return asyncEffect.call(this, obj);
+  if ('function' == typeof obj) return thunkToPromise.call(this, obj);
+  if (Array.isArray(obj)) return arrayToPromise.call(this, obj);
+  if (isObject(obj)) return objectToPromise.call(this, obj);
+  return obj;
+}
+/**
+ * Convert a thunk to a promise.
+ *
+ * @param {Function}
+ * @return {Promise}
+ * @api private
+ */
+
+
+function thunkToPromise(fn) {
+  var ctx = this;
+  return new Promise(function (resolve, reject) {
+    fn.call(ctx, function (err, res) {
+      if (err) return reject(err);
+      if (arguments.length > 2) res = slice.call(arguments, 1);
+      resolve(res);
+    });
+  });
+}
+/**
+ * Convert an array of "yieldables" to a promise.
+ * Uses `Promise.all()` internally.
+ *
+ * @param {Array} obj
+ * @return {Promise}
+ * @api private
+ */
+
+
+function arrayToPromise(obj) {
+  return Promise.all(obj.map(toPromise, this));
+}
+/**
+ * Convert an object of "yieldables" to a promise.
+ * Uses `Promise.all()` internally.
+ *
+ * @param {Object} obj
+ * @return {Promise}
+ * @api private
+ */
+
+
+function objectToPromise(obj) {
+  var results = new obj.constructor();
+  var keys = Object.keys(obj);
+  var promises = [];
+
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    var promise = toPromise.call(this, obj[key]);
+    if (promise && isPromise(promise)) defer(promise, key);else results[key] = obj[key];
+  }
+
+  return Promise.all(promises).then(function () {
+    return results;
+  });
+
+  function defer(promise, key) {
+    // predefine the key in the result
+    results[key] = undefined;
+    promises.push(promise.then(function (res) {
+      results[key] = res;
+    }));
+  }
+}
+/**
+ * Check if `obj` is a promise.
+ *
+ * @param {Object} obj
+ * @return {Boolean}
+ * @api private
+ */
+
+
+function isPromise(obj) {
+  return 'function' == typeof obj.then;
+}
+/**
+ * Check if `obj` is a generator.
+ *
+ * @param {Mixed} obj
+ * @return {Boolean}
+ * @api private
+ */
+
+
+function isGenerator(obj) {
+  return 'function' == typeof obj.next && 'function' == typeof obj.throw;
+}
+/**
+ * Check if `obj` is a generator function.
+ *
+ * @param {Mixed} obj
+ * @return {Boolean}
+ * @api private
+ */
+
+
+function isGeneratorFunction(obj) {
+  var constructor = obj.constructor;
+  if (!constructor) return false;
+  if ('GeneratorFunction' === constructor.name || 'GeneratorFunction' === constructor.displayName) return true;
+  return isGenerator(constructor.prototype);
+}
+/**
+ * Check for plain object.
+ *
+ * @param {Mixed} val
+ * @return {Boolean}
+ * @api private
+ */
+
+
+function isObject(val) {
+  return Object == val.constructor;
+}
+},{"./resolvers":"../../src/utils/resolvers.ts"}],"../../src/utils/index.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -48578,7 +48845,11 @@ exports.ResolverContext = resolvers_1.ResolverContext;
 exports.withContext = resolvers_1.withContext;
 exports.field = resolvers_1.field;
 exports.value = resolvers_1.value;
-},{"./resolvers":"../../src/utils/resolvers.ts"}],"../../src/hooks/useAutoruns.ts":[function(require,module,exports) {
+
+var asyncEffect_1 = require("./asyncEffect");
+
+exports.asyncEffect = asyncEffect_1.asyncEffect;
+},{"./resolvers":"../../src/utils/resolvers.ts","./asyncEffect":"../../src/utils/asyncEffect.ts"}],"../../src/hooks/useAutoruns.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -50259,14 +50530,50 @@ var App = function App() {
     form: form,
     reactions: [function () {
       return src_1.value('greeting');
-    }, function (greeting) {
-      src_1.field('greetingSync').setValue(greeting);
-      setTimeout(src_1.withContext(function () {
-        src_1.field('greetingAsync').setValue(greeting);
-      }), 1000);
-    }]
+    }, src_1.asyncEffect( /*#__PURE__*/regeneratorRuntime.mark(function _callee(greeting) {
+      var randomNumber;
+      return regeneratorRuntime.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              src_1.field('greetingSync').setValue(greeting);
+              randomNumber = Math.floor(Math.random() * 1000 * 5);
+              _context.next = 4;
+              return delay(randomNumber);
+
+            case 4:
+              src_1.field('greetingAsync').setValue(greeting);
+
+            case 5:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee);
+    }))]
   }, react_1.default.createElement(src_1.Scope, {
-    name: "TestCase1"
+    name: "TestCase1",
+    reactions: [[function () {
+      return src_1.value('总价');
+    }, function (totalValue) {
+      if (src_1.value('单价')) {
+        src_1.field('数量').setValue(totalValue / src_1.value('单价'));
+      }
+    }], [function () {
+      return src_1.value('单价');
+    }, function (priceValue) {
+      if (src_1.value('数量')) {
+        src_1.field('总价').setValue(priceValue * src_1.value('数量'));
+      } else if (src_1.value('总价')) {
+        src_1.field('数量').setValue(src_1.value('总价') / priceValue);
+      }
+    }], [function () {
+      return src_1.value('数量');
+    }, function (count) {
+      if (src_1.value('单价')) {
+        src_1.field('总价').setValue(count * src_1.value('单价'));
+      }
+    }]]
   }, react_1.default.createElement(src_1.Item, {
     name: "\u603B\u4EF7"
   }, function (_ref) {
