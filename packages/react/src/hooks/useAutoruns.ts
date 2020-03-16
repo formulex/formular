@@ -1,16 +1,15 @@
-import { useFormContext } from '../contexts/form';
-import { useResolvers, Resolvers } from './useResolvers';
 import { useScopeContext } from '../contexts/scope';
 import { useEffect, useMemo } from 'react';
-import { autorun, reaction } from 'mobx';
+import { autorun } from 'mobx';
 import { FieldGroupInstance } from '@formular/core';
+import { ResolverContextManager, ResolverContext } from '../utils';
 
 export interface AutorunsOptions {
   scope?: FieldGroupInstance;
 }
 
 export interface AutorunEffect {
-  (resolvers: Resolvers): void;
+  (): void;
 }
 
 export function useAutoruns(
@@ -21,15 +20,14 @@ export function useAutoruns(
   if (typeof outterScope === 'object' && outterScope !== null) {
     scopeCtx = outterScope;
   }
-  const resolvers = useResolvers({ base: scopeCtx });
   const effects = useMemo(() => {
     const fns = Array.isArray(autoruns)
       ? autoruns
       : typeof autoruns === 'function'
       ? [autoruns]
       : void 0;
-    return fns?.map(f => () => f(resolvers));
-  }, [autoruns, resolvers]);
+    return fns;
+  }, [autoruns]);
 
   effects?.forEach(fn => {
     if (typeof fn !== 'function') {
@@ -41,14 +39,21 @@ export function useAutoruns(
 
   useEffect(() => {
     const disposers = effects?.map(effect =>
-      autorun(effect, {
-        name: `FormularAutorunWithTheseFieldNames:(${Object.keys(
-          scopeCtx.value
-        ).join('|')})`
-      })
+      autorun(
+        () => {
+          ResolverContextManager.push(new ResolverContext(scopeCtx));
+          effect();
+          ResolverContextManager.pop();
+        },
+        {
+          name: `FormularAutorunWithTheseFieldNames:(${Object.keys(
+            scopeCtx.value
+          ).join('|')})`
+        }
+      )
     );
     return () => {
       disposers?.forEach(f => f());
     };
-  }, [effects, scopeCtx, resolvers]);
+  }, [effects, scopeCtx]);
 }

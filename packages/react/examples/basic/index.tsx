@@ -1,6 +1,6 @@
-import { createForm, FormInstance, FieldInstance } from '@formular/core';
+import { createForm } from '@formular/core';
 import { render } from 'react-dom';
-import { Container, Item, Scope } from '../../src';
+import { Container, Item, Scope, value, field, withContext } from '../../src';
 import React from 'react';
 import { useForm } from '../../src/hooks/useForm';
 import * as m from 'mobx';
@@ -11,67 +11,57 @@ import { Observer } from 'mobx-react';
   initialValues: { daddy: 'hello' }
 });
 
+const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 const App: React.FC = () => {
   const form = useForm();
 
   return (
-    <Container form={form}>
+    <Container
+      form={form}
+      reactions={[
+        () => value<string>('greeting'),
+        greeting => {
+          field('greetingSync').setValue(greeting);
+          setTimeout(
+            withContext(() => {
+              field('greetingAsync').setValue(greeting);
+            }),
+            1000
+          );
+        }
+      ]}
+    >
       <Scope
         name="TestCase1"
-        // autoRuns={[
-        //   ({ field }) => {
-        //     if (!field('数量').value || !field('单价').value) {
-        //       return;
+        // reactions={[
+        //   [
+        //     () => value('总价'),
+        //     totalValue => {
+        //       if (value('单价')) {
+        //         field('数量').setValue(totalValue / value<number>('单价'));
+        //       }
         //     }
-        //     field('总价').setValue(
-        //       (field('数量').value as number) * (field('单价').value as number)
-        //     );
-        //   },
-        //   ({ field }) => {
-        //     if (!field('总价').value || !field('单价').value) {
-        //       return;
+        //   ],
+        //   [
+        //     () => value('单价'),
+        //     priceValue => {
+        //       if (value('数量')) {
+        //         field('总价').setValue(priceValue * value<number>('数量'));
+        //       } else if (value('总价')) {
+        //         field('数量').setValue(value<number>('总价') / priceValue);
+        //       }
         //     }
-        //     field('数量').setValue(
-        //       (field('总价').value as number) / (field('单价').value as number)
-        //     );
-        //   },
-        //   ({ field }) => {
-        //     if (!field('总价').value || !field('数量').value) {
-        //       return;
+        //   ],
+        //   [
+        //     () => value('数量'),
+        //     count => {
+        //       if (value('单价')) {
+        //         field('总价').setValue(count * value<number>('单价'));
+        //       }
         //     }
-        //     field('单价').setValue(
-        //       (field('总价').value as number) / (field('数量').value as number)
-        //     );
-        //   }
+        //   ]
         // ]}
-        reactions={[
-          [
-            ({ value }) => value('总价'),
-            (totalValue, { field, value }) => {
-              if (value('单价')) {
-                field('数量').setValue(totalValue / value<number>('单价'));
-              }
-            }
-          ],
-          [
-            ({ value }) => value('单价'),
-            (priceValue, { field, value }) => {
-              if (value('数量')) {
-                field('总价').setValue(priceValue * value<number>('数量'));
-              } else if (value('总价')) {
-                field('数量').setValue(value<number>('总价') / priceValue);
-              }
-            }
-          ],
-          [
-            ({ value }) => value('数量'),
-            (count, { field, value }) => {
-              if (value('单价')) {
-                field('总价').setValue(count * value<number>('单价'));
-              }
-            }
-          ]
-        ]}
       >
         <Item name="总价">
           {({ field, name }) => (
@@ -124,6 +114,57 @@ const App: React.FC = () => {
           )}
         </Item>
       </Scope>
+      <Item name="greeting">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                style={{ width: '500px' }}
+                type="text"
+                value={field.value || ''}
+                onChange={e => {
+                  field.setValue(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </Item>
+      <Item name="greetingSync">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                style={{ width: '500px' }}
+                type="text"
+                value={field.value || ''}
+                onChange={e => {
+                  field.setValue(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </Item>
+      <Item name="greetingAsync">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                style={{ width: '500px' }}
+                type="text"
+                value={field.value || ''}
+                onChange={e => {
+                  field.setValue(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </Item>
       <div>
         <Observer>
           {() => <pre>{JSON.stringify(form.value, null, 2)}</pre>}

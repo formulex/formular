@@ -48463,7 +48463,265 @@ if (typeof __MOBX_DEVTOOLS_GLOBAL_HOOK__ === "object") {
     $mobx: $mobx
   });
 }
-},{"process":"../../node_modules/process/browser.js"}],"../../node_modules/mobx-react-lite/dist/index.module.js":[function(require,module,exports) {
+},{"process":"../../node_modules/process/browser.js"}],"../../src/utils/resolvers.ts":[function(require,module,exports) {
+"use strict";
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var core_1 = require("@formular/core");
+
+var ResolverContext = function ResolverContext(scopeNode) {
+  _classCallCheck(this, ResolverContext);
+
+  this.scopeNode = scopeNode;
+};
+
+exports.ResolverContext = ResolverContext;
+
+var ResolverContextManager = /*#__PURE__*/function () {
+  function ResolverContextManager() {
+    _classCallCheck(this, ResolverContextManager);
+  }
+
+  _createClass(ResolverContextManager, null, [{
+    key: "push",
+    value: function push() {
+      var _this$stack;
+
+      return (_this$stack = this.stack).push.apply(_this$stack, arguments);
+    }
+  }, {
+    key: "pop",
+    value: function pop() {
+      return this.stack.pop();
+    }
+  }, {
+    key: "top",
+    get: function get() {
+      var last = this.stack[this.stack.length - 1];
+      return last;
+    }
+  }]);
+
+  return ResolverContextManager;
+}();
+
+exports.ResolverContextManager = ResolverContextManager;
+ResolverContextManager.stack = [];
+
+function resolver(name) {
+  var _ResolverContextManag;
+
+  if ((_ResolverContextManag = ResolverContextManager.top) === null || _ResolverContextManag === void 0 ? void 0 : _ResolverContextManag.scopeNode) {
+    var _ResolverContextManag2;
+
+    return core_1.fieldResolver((_ResolverContextManag2 = ResolverContextManager.top) === null || _ResolverContextManag2 === void 0 ? void 0 : _ResolverContextManag2.scopeNode, name);
+  } else {
+    throw new Error('resolver should run in <Scope /> or <Container /> or withContext(() => any).');
+  }
+}
+
+exports.resolver = resolver;
+
+function field(name) {
+  return resolver(name);
+}
+
+exports.field = field;
+
+function value(name) {
+  var _resolver;
+
+  return (_resolver = resolver(name)) === null || _resolver === void 0 ? void 0 : _resolver.value;
+}
+
+exports.value = value;
+
+function withContext(f) {
+  var _ResolverContextManag3;
+
+  var temp = (_ResolverContextManag3 = ResolverContextManager.top) === null || _ResolverContextManag3 === void 0 ? void 0 : _ResolverContextManag3.scopeNode;
+
+  if (!temp) {
+    throw new Error('withContent(() => any) should run in <Scope /> or <Container /> or withContext(() => any).');
+  }
+
+  return function () {
+    ResolverContextManager.push(new ResolverContext(temp));
+    var result = f();
+    ResolverContextManager.pop();
+    return result;
+  };
+}
+
+exports.withContext = withContext;
+},{"@formular/core":"../../node_modules/@formular/core/es/index.js"}],"../../src/utils/index.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var resolvers_1 = require("./resolvers");
+
+exports.resolver = resolvers_1.resolver;
+exports.ResolverContextManager = resolvers_1.ResolverContextManager;
+exports.ResolverContext = resolvers_1.ResolverContext;
+exports.withContext = resolvers_1.withContext;
+exports.field = resolvers_1.field;
+exports.value = resolvers_1.value;
+},{"./resolvers":"../../src/utils/resolvers.ts"}],"../../src/hooks/useAutoruns.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var scope_1 = require("../contexts/scope");
+
+var react_1 = require("react");
+
+var mobx_1 = require("mobx");
+
+var utils_1 = require("../utils");
+
+function useAutoruns(autoruns) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+      outterScope = _ref.scope;
+
+  var scopeCtx = scope_1.useScopeContext();
+
+  if (_typeof(outterScope) === 'object' && outterScope !== null) {
+    scopeCtx = outterScope;
+  }
+
+  var effects = react_1.useMemo(function () {
+    var fns = Array.isArray(autoruns) ? autoruns : typeof autoruns === 'function' ? [autoruns] : void 0;
+    return fns;
+  }, [autoruns]);
+  effects === null || effects === void 0 ? void 0 : effects.forEach(function (fn) {
+    if (typeof fn !== 'function') {
+      throw new Error("Autorun effect should be a function, but got ".concat(fn, " with type ").concat(_typeof(fn)));
+    }
+  });
+  react_1.useEffect(function () {
+    var disposers = effects === null || effects === void 0 ? void 0 : effects.map(function (effect) {
+      return mobx_1.autorun(function () {
+        utils_1.ResolverContextManager.push(new utils_1.ResolverContext(scopeCtx));
+        effect();
+        utils_1.ResolverContextManager.pop();
+      }, {
+        name: "FormularAutorunWithTheseFieldNames:(".concat(Object.keys(scopeCtx.value).join('|'), ")")
+      });
+    });
+    return function () {
+      disposers === null || disposers === void 0 ? void 0 : disposers.forEach(function (f) {
+        return f();
+      });
+    };
+  }, [effects, scopeCtx]);
+}
+
+exports.useAutoruns = useAutoruns;
+},{"../contexts/scope":"../../src/contexts/scope.tsx","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js","../utils":"../../src/utils/index.ts"}],"../../src/hooks/useReactions.ts":[function(require,module,exports) {
+"use strict";
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var scope_1 = require("../contexts/scope");
+
+var react_1 = require("react");
+
+var mobx_1 = require("mobx");
+
+var utils_1 = require("../utils");
+
+function useReactions(reactions) {
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+      outterScope = _ref.scope,
+      fireImmediately = _ref.fireImmediately;
+
+  var scopeCtx = scope_1.useScopeContext();
+
+  if (_typeof(outterScope) === 'object' && outterScope !== null) {
+    scopeCtx = outterScope;
+  }
+
+  var effects = react_1.useMemo(function () {
+    var fns = Array.isArray(reactions) ? reactions : void 0;
+
+    if (!fns) {
+      return fns;
+    }
+
+    if (typeof fns[0] === 'function' && typeof fns[1] === 'function') {
+      fns = [fns];
+    }
+
+    return fns;
+  }, [reactions]);
+  effects === null || effects === void 0 ? void 0 : effects.forEach(function (_ref2) {
+    var _ref3 = _slicedToArray(_ref2, 2),
+        f = _ref3[0],
+        g = _ref3[1];
+
+    if (typeof f !== 'function' || typeof g !== 'function') {
+      throw new Error("Reaction effect should be a function, but got ".concat([f, g], "."));
+    }
+  });
+  react_1.useEffect(function () {
+    var disposers = effects === null || effects === void 0 ? void 0 : effects.map(function (_ref4) {
+      var _ref5 = _slicedToArray(_ref4, 2),
+          f = _ref5[0],
+          g = _ref5[1];
+
+      return mobx_1.reaction(function (r) {
+        utils_1.ResolverContextManager.push(new utils_1.ResolverContext(scopeCtx));
+        var result = f(r);
+        utils_1.ResolverContextManager.pop();
+        return result;
+      }, function (arg, r) {
+        utils_1.ResolverContextManager.push(new utils_1.ResolverContext(scopeCtx));
+        var result = g(arg, r);
+        utils_1.ResolverContextManager.pop();
+        return result;
+      }, {
+        name: "FormularReactionWithTheseFieldNames:(".concat(Object.keys(scopeCtx.value).join('|'), ")"),
+        fireImmediately: fireImmediately
+      });
+    });
+    return function () {
+      disposers === null || disposers === void 0 ? void 0 : disposers.forEach(function (f) {
+        return f();
+      });
+    };
+  }, [effects, scopeCtx, fireImmediately]);
+}
+
+exports.useReactions = useReactions;
+},{"../contexts/scope":"../../src/contexts/scope.tsx","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js","../utils":"../../src/utils/index.ts"}],"../../node_modules/mobx-react-lite/dist/index.module.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -49728,199 +49986,7 @@ if (!_mobx.observable) throw new Error("mobx-react requires mobx to be available
 if (typeof _reactDom.unstable_batchedUpdates === "function") (0, _mobx.configure)({
   reactionScheduler: _reactDom.unstable_batchedUpdates
 });
-},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useResolvers.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var core_1 = require("@formular/core");
-
-var react_1 = require("react");
-
-var mobx_react_1 = require("mobx-react");
-
-function useResolvers(_ref) {
-  var root = _ref.base;
-  var resolver = react_1.useMemo(function () {
-    return function (base) {
-      return function (name) {
-        return core_1.fieldResolver(base, name);
-      };
-    }(root);
-  }, [root]);
-  var value = react_1.useMemo(function () {
-    return function (name) {
-      var _resolver;
-
-      return (_resolver = resolver(name)) === null || _resolver === void 0 ? void 0 : _resolver.value;
-    };
-  }, [resolver]);
-  console.log('valueOf', _typeof(value));
-  var resolvers = mobx_react_1.useAsObservableSource({
-    field: resolver,
-    group: resolver,
-    array: resolver,
-    value: value
-  });
-  console.log(resolvers);
-  return resolvers;
-}
-
-exports.useResolvers = useResolvers;
-},{"@formular/core":"../../node_modules/@formular/core/es/index.js","react":"../../node_modules/react/index.js","mobx-react":"../../node_modules/mobx-react/dist/mobxreact.esm.js"}],"../../src/hooks/useAutoruns.ts":[function(require,module,exports) {
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var useResolvers_1 = require("./useResolvers");
-
-var scope_1 = require("../contexts/scope");
-
-var react_1 = require("react");
-
-var mobx_1 = require("mobx");
-
-function useAutoruns(autoruns) {
-  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-      outterScope = _ref.scope;
-
-  var scopeCtx = scope_1.useScopeContext();
-
-  if (_typeof(outterScope) === 'object' && outterScope !== null) {
-    scopeCtx = outterScope;
-  }
-
-  var resolvers = useResolvers_1.useResolvers({
-    base: scopeCtx
-  });
-  var effects = react_1.useMemo(function () {
-    var fns = Array.isArray(autoruns) ? autoruns : typeof autoruns === 'function' ? [autoruns] : void 0;
-    return fns === null || fns === void 0 ? void 0 : fns.map(function (f) {
-      return function () {
-        return f(resolvers);
-      };
-    });
-  }, [autoruns, resolvers]);
-  effects === null || effects === void 0 ? void 0 : effects.forEach(function (fn) {
-    if (typeof fn !== 'function') {
-      throw new Error("Autorun effect should be a function, but got ".concat(fn, " with type ").concat(_typeof(fn)));
-    }
-  });
-  react_1.useEffect(function () {
-    var disposers = effects === null || effects === void 0 ? void 0 : effects.map(function (effect) {
-      return mobx_1.autorun(effect, {
-        name: "FormularAutorunWithTheseFieldNames:(".concat(Object.keys(scopeCtx.value).join('|'), ")")
-      });
-    });
-    return function () {
-      disposers === null || disposers === void 0 ? void 0 : disposers.forEach(function (f) {
-        return f();
-      });
-    };
-  }, [effects, scopeCtx, resolvers]);
-}
-
-exports.useAutoruns = useAutoruns;
-},{"./useResolvers":"../../src/hooks/useResolvers.ts","../contexts/scope":"../../src/contexts/scope.tsx","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js"}],"../../src/hooks/useReactions.ts":[function(require,module,exports) {
-"use strict";
-
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var useResolvers_1 = require("./useResolvers");
-
-var scope_1 = require("../contexts/scope");
-
-var react_1 = require("react");
-
-var mobx_1 = require("mobx");
-
-function useReactions(reactions) {
-  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-      outterScope = _ref.scope,
-      fireImmediately = _ref.fireImmediately;
-
-  var scopeCtx = scope_1.useScopeContext();
-
-  if (_typeof(outterScope) === 'object' && outterScope !== null) {
-    scopeCtx = outterScope;
-  }
-
-  var resolvers = useResolvers_1.useResolvers({
-    base: scopeCtx
-  });
-  var effects = react_1.useMemo(function () {
-    var fns = Array.isArray(reactions) ? reactions : void 0;
-
-    if (!fns) {
-      return fns;
-    }
-
-    if (typeof fns[0] === 'function' && typeof fns[1] === 'function') {
-      fns = [fns];
-    }
-
-    return fns.map(function (_ref2) {
-      var _ref3 = _slicedToArray(_ref2, 2),
-          f = _ref3[0],
-          g = _ref3[1];
-
-      return [function () {
-        return f(resolvers);
-      }, function (data, reaction) {
-        return g(data, resolvers, reaction);
-      }];
-    });
-  }, [reactions, resolvers]);
-  effects === null || effects === void 0 ? void 0 : effects.forEach(function (_ref4) {
-    var _ref5 = _slicedToArray(_ref4, 2),
-        f = _ref5[0],
-        g = _ref5[1];
-
-    if (typeof f !== 'function' || typeof g !== 'function') {
-      throw new Error("Reaction effect should be a function, but got ".concat([f, g], "."));
-    }
-  });
-  react_1.useEffect(function () {
-    var disposers = effects === null || effects === void 0 ? void 0 : effects.map(function (_ref6) {
-      var _ref7 = _slicedToArray(_ref6, 2),
-          f = _ref7[0],
-          g = _ref7[1];
-
-      return mobx_1.reaction(f, g, {
-        name: "FormularReactionWithTheseFieldNames:(".concat(Object.keys(scopeCtx.value).join('|'), ")"),
-        fireImmediately: fireImmediately
-      });
-    });
-    return function () {
-      disposers === null || disposers === void 0 ? void 0 : disposers.forEach(function (f) {
-        return f();
-      });
-    };
-  }, [effects, scopeCtx, resolvers, fireImmediately]);
-}
-
-exports.useReactions = useReactions;
-},{"./useResolvers":"../../src/hooks/useResolvers.ts","../contexts/scope":"../../src/contexts/scope.tsx","react":"../../node_modules/react/index.js","mobx":"../../node_modules/mobx/lib/mobx.module.js"}],"../../src/hooks/useField.ts":[function(require,module,exports) {
+},{"mobx":"../../node_modules/mobx/lib/mobx.module.js","react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","mobx-react-lite":"../../node_modules/mobx-react-lite/dist/index.module.js"}],"../../src/hooks/useField.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -50056,7 +50122,8 @@ exports.Container = react_1.default.forwardRef(function (_ref, ref) {
   var form = _ref.form,
       children = _ref.children,
       autoRuns = _ref.autoRuns,
-      options = _objectWithoutProperties(_ref, ["form", "children", "autoRuns"]);
+      reactions = _ref.reactions,
+      options = _objectWithoutProperties(_ref, ["form", "children", "autoRuns", "reactions"]);
 
   var formInstance = useForm_1.useForm(options, form);
   react_1.useImperativeHandle(ref, function () {
@@ -50067,7 +50134,8 @@ exports.Container = react_1.default.forwardRef(function (_ref, ref) {
   }, react_1.default.createElement(scope_1.ScopeConext.Provider, {
     value: formInstance.root
   }, react_1.default.createElement(Scope_1.Scope, {
-    autoRuns: autoRuns
+    autoRuns: autoRuns,
+    reactions: reactions
   }, children)));
 });
 },{"react":"../../node_modules/react/index.js","../hooks/useForm":"../../src/hooks/useForm.ts","../contexts":"../../src/contexts/index.ts","../contexts/scope":"../../src/contexts/scope.tsx","./Scope":"../../src/components/Scope.tsx"}],"../../src/components/Item.tsx":[function(require,module,exports) {
@@ -50133,7 +50201,9 @@ Object.defineProperty(exports, "__esModule", {
 __export(require("./components"));
 
 __export(require("./hooks"));
-},{"./components":"../../src/components/index.ts","./hooks":"../../src/hooks/index.ts"}],"index.tsx":[function(require,module,exports) {
+
+__export(require("./utils"));
+},{"./components":"../../src/components/index.ts","./hooks":"../../src/hooks/index.ts","./utils":"../../src/utils/index.ts"}],"index.tsx":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -50177,76 +50247,31 @@ window.base = core_1.createForm({
   }
 });
 
+var delay = function delay(ms) {
+  return new Promise(function (r) {
+    return setTimeout(r, ms);
+  });
+};
+
 var App = function App() {
   var form = useForm_1.useForm();
   return react_1.default.createElement(src_1.Container, {
-    form: form
+    form: form,
+    reactions: [function () {
+      return src_1.value('greeting');
+    }, function (greeting) {
+      src_1.field('greetingSync').setValue(greeting);
+      setTimeout(src_1.withContext(function () {
+        src_1.field('greetingAsync').setValue(greeting);
+      }), 1000);
+    }]
   }, react_1.default.createElement(src_1.Scope, {
-    name: "TestCase1",
-    // autoRuns={[
-    //   ({ field }) => {
-    //     if (!field('数量').value || !field('单价').value) {
-    //       return;
-    //     }
-    //     field('总价').setValue(
-    //       (field('数量').value as number) * (field('单价').value as number)
-    //     );
-    //   },
-    //   ({ field }) => {
-    //     if (!field('总价').value || !field('单价').value) {
-    //       return;
-    //     }
-    //     field('数量').setValue(
-    //       (field('总价').value as number) / (field('单价').value as number)
-    //     );
-    //   },
-    //   ({ field }) => {
-    //     if (!field('总价').value || !field('数量').value) {
-    //       return;
-    //     }
-    //     field('单价').setValue(
-    //       (field('总价').value as number) / (field('数量').value as number)
-    //     );
-    //   }
-    // ]}
-    reactions: [[function (_ref) {
-      var value = _ref.value;
-      return value('总价');
-    }, function (totalValue, _ref2) {
-      var field = _ref2.field,
-          value = _ref2.value;
-
-      if (value('单价')) {
-        field('数量').setValue(totalValue / value('单价'));
-      }
-    }], [function (_ref3) {
-      var value = _ref3.value;
-      return value('单价');
-    }, function (priceValue, _ref4) {
-      var field = _ref4.field,
-          value = _ref4.value;
-
-      if (value('数量')) {
-        field('总价').setValue(priceValue * value('数量'));
-      } else if (value('总价')) {
-        field('数量').setValue(value('总价') / priceValue);
-      }
-    }], [function (_ref5) {
-      var value = _ref5.value;
-      return value('数量');
-    }, function (count, _ref6) {
-      var field = _ref6.field,
-          value = _ref6.value;
-
-      if (value('单价')) {
-        field('总价').setValue(count * value('单价'));
-      }
-    }]]
+    name: "TestCase1"
   }, react_1.default.createElement(src_1.Item, {
     name: "\u603B\u4EF7"
-  }, function (_ref7) {
-    var field = _ref7.field,
-        name = _ref7.name;
+  }, function (_ref) {
+    var field = _ref.field,
+        name = _ref.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       type: "text",
       value: field.value || '',
@@ -50256,9 +50281,9 @@ var App = function App() {
     })));
   }), react_1.default.createElement(src_1.Item, {
     name: "\u5355\u4EF7"
-  }, function (_ref8) {
-    var field = _ref8.field,
-        name = _ref8.name;
+  }, function (_ref2) {
+    var field = _ref2.field,
+        name = _ref2.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       type: "text",
       value: field.value || '',
@@ -50268,9 +50293,9 @@ var App = function App() {
     })));
   }), react_1.default.createElement(src_1.Item, {
     name: "\u6570\u91CF"
-  }, function (_ref9) {
-    var field = _ref9.field,
-        name = _ref9.name;
+  }, function (_ref3) {
+    var field = _ref3.field,
+        name = _ref3.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       style: {
         width: '500px'
@@ -50281,7 +50306,52 @@ var App = function App() {
         field.setValue(Number.parseFloat(e.target.value));
       }
     })));
-  })), react_1.default.createElement("div", null, react_1.default.createElement(mobx_react_1.Observer, null, function () {
+  })), react_1.default.createElement(src_1.Item, {
+    name: "greeting"
+  }, function (_ref4) {
+    var field = _ref4.field,
+        name = _ref4.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      style: {
+        width: '500px'
+      },
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "greetingSync"
+  }, function (_ref5) {
+    var field = _ref5.field,
+        name = _ref5.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      style: {
+        width: '500px'
+      },
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "greetingAsync"
+  }, function (_ref6) {
+    var field = _ref6.field,
+        name = _ref6.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      style: {
+        width: '500px'
+      },
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  }), react_1.default.createElement("div", null, react_1.default.createElement(mobx_react_1.Observer, null, function () {
     return react_1.default.createElement("pre", null, JSON.stringify(form.value, null, 2));
   }), react_1.default.createElement(mobx_react_1.Observer, null, function () {
     return react_1.default.createElement("pre", null, JSON.stringify(form, null, 2));
@@ -50317,7 +50387,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62494" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57127" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
