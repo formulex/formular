@@ -1,10 +1,7 @@
 import { CreateFormOptions, FormInstance, createForm } from '@formular/core';
 import { useMemo, useEffect } from 'react';
-import { Resolvers } from './useResolvers';
 
-export interface FormOptions<Values> extends CreateFormOptions<Values> {
-  setup?: (resolvers: Resolvers) => void;
-}
+export interface FormOptions<Values> extends CreateFormOptions<Values> {}
 
 export function useForm<Values = any>(
   options: FormOptions<Values> = {},
