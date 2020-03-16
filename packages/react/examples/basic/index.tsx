@@ -28,13 +28,22 @@ const App: React.FC = () => {
     <Container
       form={form}
       reactions={[
-        () => value<string>('greeting'),
-        asyncEffect(function*(greeting) {
-          field('greetingSync').setValue(greeting);
-          const randomNumber = Math.floor(Math.random() * 1000 * 5);
-          yield delay(randomNumber);
-          field('greetingAsync').setValue(greeting);
-        })
+        [
+          () => value<string>('greeting'),
+          asyncEffect(function*(greeting) {
+            field('greetingSync').setValue(greeting);
+            yield delay(5000);
+            field('greetingAsync').setValue(greeting);
+          })
+        ],
+        [
+          () => value<string>('greeting2'),
+          asyncEffect(function*(greeting) {
+            field('greetingSync2').setValue(greeting);
+            yield delay(2000);
+            field('greetingAsync2').setValue(greeting);
+          })
+        ]
       ]}
     >
       <Scope
@@ -154,6 +163,57 @@ const App: React.FC = () => {
         )}
       </Item>
       <Item name="greetingAsync">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                style={{ width: '500px' }}
+                type="text"
+                value={field.value || ''}
+                onChange={e => {
+                  field.setValue(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </Item>
+      <Item name="greeting2">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                style={{ width: '500px' }}
+                type="text"
+                value={field.value || ''}
+                onChange={e => {
+                  field.setValue(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </Item>
+      <Item name="greetingSync2">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                style={{ width: '500px' }}
+                type="text"
+                value={field.value || ''}
+                onChange={e => {
+                  field.setValue(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </Item>
+      <Item name="greetingAsync2">
         {({ field, name }) => (
           <div>
             <h3>{name}</h3>

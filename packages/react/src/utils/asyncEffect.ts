@@ -82,7 +82,6 @@ export function runAsyncEffect<R = any>(
         runWithContext(() => {
           ret = gen.next(res);
         });
-        console.log('after', ResolverContextManager.stack);
       } catch (e) {
         return reject(e);
       }
@@ -119,8 +118,7 @@ export function runAsyncEffect<R = any>(
 
     function next(ret: any) {
       if (ret.done) {
-        const result = resolve(ret.value);
-        return result;
+        return resolve(ret.value);
       }
       let value = toPromise.call(ctx, ret.value);
       if (value && isPromise(value)) return value.then(onFulfilled, onRejected);

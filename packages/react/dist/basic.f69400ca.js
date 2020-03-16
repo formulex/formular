@@ -48645,7 +48645,6 @@ function runAsyncEffect(gen) {
         runWithContext(function () {
           ret = gen.next(res);
         });
-        console.log('after', resolvers_1.ResolverContextManager.stack);
       } catch (e) {
         return reject(e);
       }
@@ -48685,8 +48684,7 @@ function runAsyncEffect(gen) {
 
     function next(ret) {
       if (ret.done) {
-        var result = resolve(ret.value);
-        return result;
+        return resolve(ret.value);
       }
 
       var value = toPromise.call(ctx, ret.value);
@@ -50528,29 +50526,47 @@ var App = function App() {
   var form = useForm_1.useForm();
   return react_1.default.createElement(src_1.Container, {
     form: form,
-    reactions: [function () {
+    reactions: [[function () {
       return src_1.value('greeting');
     }, src_1.asyncEffect( /*#__PURE__*/regeneratorRuntime.mark(function _callee(greeting) {
-      var randomNumber;
       return regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
               src_1.field('greetingSync').setValue(greeting);
-              randomNumber = Math.floor(Math.random() * 1000 * 5);
-              _context.next = 4;
-              return delay(randomNumber);
+              _context.next = 3;
+              return delay(5000);
 
-            case 4:
+            case 3:
               src_1.field('greetingAsync').setValue(greeting);
 
-            case 5:
+            case 4:
             case "end":
               return _context.stop();
           }
         }
       }, _callee);
-    }))]
+    }))], [function () {
+      return src_1.value('greeting2');
+    }, src_1.asyncEffect( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(greeting) {
+      return regeneratorRuntime.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              src_1.field('greetingSync2').setValue(greeting);
+              _context2.next = 3;
+              return delay(2000);
+
+            case 3:
+              src_1.field('greetingAsync2').setValue(greeting);
+
+            case 4:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, _callee2);
+    }))]]
   }, react_1.default.createElement(src_1.Scope, {
     name: "TestCase1",
     reactions: [[function () {
@@ -50648,6 +50664,51 @@ var App = function App() {
   }, function (_ref6) {
     var field = _ref6.field,
         name = _ref6.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      style: {
+        width: '500px'
+      },
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "greeting2"
+  }, function (_ref7) {
+    var field = _ref7.field,
+        name = _ref7.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      style: {
+        width: '500px'
+      },
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "greetingSync2"
+  }, function (_ref8) {
+    var field = _ref8.field,
+        name = _ref8.name;
+    return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
+      style: {
+        width: '500px'
+      },
+      type: "text",
+      value: field.value || '',
+      onChange: function onChange(e) {
+        field.setValue(e.target.value);
+      }
+    })));
+  }), react_1.default.createElement(src_1.Item, {
+    name: "greetingAsync2"
+  }, function (_ref9) {
+    var field = _ref9.field,
+        name = _ref9.name;
     return react_1.default.createElement("div", null, react_1.default.createElement("h3", null, name), react_1.default.createElement("div", null, react_1.default.createElement("input", {
       style: {
         width: '500px'
