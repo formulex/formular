@@ -1,12 +1,7 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "esnext",
-    "moduleResolution": "node",
-    "strict": true,
-    "isolatedModules": false,
-    "esModuleInterop": true,
-    "declaration": true,
-    "jsx": "react"
+    "jsx": "preserve"
   },
   "include": ["src"]
 }

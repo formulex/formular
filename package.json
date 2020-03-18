@@ -1,13 +1,33 @@
 {
   "name": "formular",
   "private": true,
-  "devDependencies": {
-    "lerna": "^3.20.2"
-  },
-  "scripts": {
-    "bootstrap": "lerna bootstrap"
-  },
   "repository": "git@github.com:formularx/formular.git",
   "author": "HeskeyBaozi <hezhiyu233@foxmail.com>",
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "bootstrap:china": "lerna bootstrap --registry=https://registry.npm.taobao.org",
+    "build": "lerna run build",
+    "lint": "lerna run lint",
+    "type-check": "lerna run type-check"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.7",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.8.3",
+    "@babel/preset-env": "^7.8.7",
+    "@babel/preset-typescript": "^7.8.3",
+    "@types/react": "^16.9.23",
+    "@types/react-dom": "^16.9.5",
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "@typescript-eslint/parser": "^2.24.0",
+    "cross-env": "^7.0.2",
+    "eslint": "^6.8.0",
+    "lerna": "^3.20.2",
+    "mobx": "^5.15.4",
+    "mobx-state-tree": "^3.15.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.8.3"
+  },
   "license": "MIT"
 }

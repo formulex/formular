@@ -8,3 +8,7 @@
 *.zip
 .cache
 *.log
+packages/**/es
+packages/**/lib
+packages/**/node_modules
+packages/**/.vscode
