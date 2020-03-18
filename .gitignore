@@ -8,6 +8,7 @@ yarn.lock
 *.zip
 .cache
 *.log
+packages/**/dist
 packages/**/es
 packages/**/lib
 packages/**/node_modules

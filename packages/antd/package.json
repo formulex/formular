@@ -1,5 +1,5 @@
 {
-  "name": "@formular/react",
+  "name": "@formular/antd",
   "version": "1.0.0",
   "sideEffects": false,
   "type": "module",
@@ -21,18 +21,17 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.8.7",
-    "@formular/core": "^1.0.0"
+    "@formular/react": "^1.0.0"
   },
   "peerDependencies": {
-    "mobx": "5.x",
-    "mobx-react": "6.x",
-    "mobx-state-tree": "3.x",
+    "antd": "4.x",
     "react": "16.x"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.8.3",
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
+    "antd": "^4.0.3",
     "mobx-react": "^6.1.8",
     "parcel-bundler": "^1.12.4",
     "react": "^16.13.0",

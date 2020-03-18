@@ -30,7 +30,7 @@ const App: React.FC = () => {
       reactions={[
         [
           () => value<string>('greeting'),
-          asyncEffect(function*(greeting) {
+          asyncEffect(function*(greeting: string) {
             field('greetingSync').setValue(greeting);
             yield delay(5000);
             field('greetingAsync').setValue(greeting);
@@ -38,7 +38,7 @@ const App: React.FC = () => {
         ],
         [
           () => value<string>('greeting2'),
-          asyncEffect(function*(greeting) {
+          asyncEffect(function*(greeting: string) {
             field('greetingSync2').setValue(greeting);
             yield delay(2000);
             field('greetingAsync2').setValue(greeting);
@@ -84,7 +84,7 @@ const App: React.FC = () => {
               <div>
                 <input
                   type="text"
-                  value={field.value || ''}
+                  value={(field.value as any) || ''}
                   onChange={e => {
                     field.setValue(Number.parseFloat(e.target.value));
                   }}
@@ -100,7 +100,7 @@ const App: React.FC = () => {
               <div>
                 <input
                   type="text"
-                  value={field.value || ''}
+                  value={(field.value as any) || ''}
                   onChange={e => {
                     field.setValue(Number.parseFloat(e.target.value));
                   }}
@@ -118,7 +118,7 @@ const App: React.FC = () => {
                 <input
                   style={{ width: '500px' }}
                   type="text"
-                  value={field.value || ''}
+                  value={(field.value as any) || ''}
                   onChange={e => {
                     field.setValue(Number.parseFloat(e.target.value));
                   }}
@@ -136,7 +136,7 @@ const App: React.FC = () => {
               <input
                 style={{ width: '500px' }}
                 type="text"
-                value={field.value || ''}
+                value={(field.value as any) || ''}
                 onChange={e => {
                   field.setValue(e.target.value);
                 }}
@@ -153,7 +153,7 @@ const App: React.FC = () => {
               <input
                 style={{ width: '500px' }}
                 type="text"
-                value={field.value || ''}
+                value={(field.value as any) || ''}
                 onChange={e => {
                   field.setValue(e.target.value);
                 }}
@@ -170,7 +170,7 @@ const App: React.FC = () => {
               <input
                 style={{ width: '500px' }}
                 type="text"
-                value={field.value || ''}
+                value={(field.value as any) || ''}
                 onChange={e => {
                   field.setValue(e.target.value);
                 }}
@@ -187,7 +187,7 @@ const App: React.FC = () => {
               <input
                 style={{ width: '500px' }}
                 type="text"
-                value={field.value || ''}
+                value={(field.value as any) || ''}
                 onChange={e => {
                   field.setValue(e.target.value);
                 }}
@@ -204,7 +204,7 @@ const App: React.FC = () => {
               <input
                 style={{ width: '500px' }}
                 type="text"
-                value={field.value || ''}
+                value={(field.value as any) || ''}
                 onChange={e => {
                   field.setValue(e.target.value);
                 }}
@@ -221,7 +221,7 @@ const App: React.FC = () => {
               <input
                 style={{ width: '500px' }}
                 type="text"
-                value={field.value || ''}
+                value={(field.value as any) || ''}
                 onChange={e => {
                   field.setValue(e.target.value);
                 }}

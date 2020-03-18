@@ -15,7 +15,9 @@ export interface CreateFieldOptions {
 
 export interface FieldMeta {
   name: string;
-  field: FieldInstance | FieldGroupInstance | FieldArrayInstance;
+  field: FieldInstance;
+  group: FieldGroupInstance;
+  array: FieldArrayInstance;
 }
 
 export function useField({
@@ -23,15 +25,30 @@ export function useField({
   initialValue
 }: CreateFieldOptions): FieldMeta {
   const scope = useScopeContext();
-  const fieldInstance = useAsObservableSource({
+  const firstRenderedFieldOrGroupOrArray:
+    | FieldInstance
+    | FieldGroupInstance
+    | FieldArrayInstance = getOrCreateNodeFromBase(name, {
+    initialValue,
+    base: scope
+  });
+  const meta = useAsObservableSource({
     name,
-    field: getOrCreateNodeFromBase(name, { initialValue, base: scope })
+    field: firstRenderedFieldOrGroupOrArray as FieldInstance,
+    group: firstRenderedFieldOrGroupOrArray as FieldGroupInstance,
+    array: firstRenderedFieldOrGroupOrArray as FieldArrayInstance
   });
   useEffect(() => {
-    fieldInstance.field = getOrCreateNodeFromBase(name, {
+    const fieldOrGroupOrArray:
+      | FieldInstance
+      | FieldGroupInstance
+      | FieldArrayInstance = getOrCreateNodeFromBase(name, {
       initialValue,
       base: scope
     });
+    meta.field = fieldOrGroupOrArray as FieldInstance;
+    meta.group = fieldOrGroupOrArray as FieldGroupInstance;
+    meta.array = fieldOrGroupOrArray as FieldArrayInstance;
   }, [initialValue, scope]);
-  return fieldInstance;
+  return meta;
 }
