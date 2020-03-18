@@ -1,6 +1,9 @@
 {
   "name": "formular",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "repository": "git@github.com:formularx/formular.git",
   "author": "HeskeyBaozi <hezhiyu233@foxmail.com>",
   "scripts": {
