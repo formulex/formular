@@ -28,6 +28,7 @@ const App: React.FC = () => {
         <FormItem
           name="greetingSync"
           component={FInput}
+          componentProps={{ disabled: true }}
           extra="This will sync with greeting..."
         />
       </Form>

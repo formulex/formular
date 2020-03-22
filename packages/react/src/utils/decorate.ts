@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ComponentType } from 'react';
 import { FieldMeta } from '../hooks/useField';
 import { observer } from 'mobx-react';
 
@@ -21,13 +21,14 @@ export function decorate({
   getValueFromEvent = defaultGetValueFromEvent,
   trigger = 'onChange'
 }: DecorateOptions = {}) {
-  return (Component: React.JSXElementConstructor<any>) => {
+  return <P extends any>(
+    Component: React.JSXElementConstructor<P>
+  ): ComponentType<FieldMeta & { componentProps: P }> => {
     const decoratedComponent = observer(
       ({
         field,
-        name,
-        componentProps = {}
-      }: FieldMeta & { componentProps?: { [key: string]: any } }) => {
+        componentProps = {} as any
+      }: FieldMeta & { componentProps?: P }) => {
         return React.createElement(Component, {
           ...componentProps,
           [valuePropName]: field.value || '',
@@ -41,6 +42,6 @@ export function decorate({
       }
     );
     (decoratedComponent as any)[SymbolKey] = true;
-    return decoratedComponent;
+    return decoratedComponent as any;
   };
 }
