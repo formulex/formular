@@ -1,2 +1,2 @@
-export { FormContext } from './form';
-export { ScopeConext } from './scope';
+export { FormContext, useFormContext } from './form';
+export { ScopeConext, useScopeContext } from './scope';

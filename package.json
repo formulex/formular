@@ -9,10 +9,11 @@
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "bootstrap:china": "lerna bootstrap --registry=https://registry.npm.taobao.org",
-    "build": "lerna run build",
-    "lint": "lerna run lint",
-    "type-check": "lerna run type-check",
-    "example:react": "lerna run start --scope @formular/react"
+    "build": "yarn workspaces run build",
+    "lint": "yarn workspaces run lint",
+    "type-check": "yarn workspaces run type-check",
+    "example:react": "yarn workspace @formular/react run start",
+    "example:antd": "yarn workspace @formular/antd run start"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
