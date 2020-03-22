@@ -1,4 +1,4 @@
-import { createForm } from '@formular/core';
+import { createForm, FormInstance } from '@formular/core';
 import { render } from 'react-dom';
 import {
   Container,
@@ -9,7 +9,13 @@ import {
   withContext,
   asyncEffect
 } from '../../src';
-import React from 'react';
+import React, {
+  createRef,
+  useCallback,
+  useMemo,
+  useEffect,
+  useState
+} from 'react';
 import { useForm } from '../../src/hooks/useForm';
 import * as m from 'mobx';
 import { Observer } from 'mobx-react';
@@ -21,18 +27,47 @@ import { Observer } from 'mobx-react';
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+function useRefCurrent<S>(ref: React.RefObject<S>): S | null {
+  const [current, setCurrent] = useState<null | S>(null);
+
+  useEffect(() => {
+    setCurrent(ref.current);
+  }, []);
+
+  return current;
+}
+
 const App: React.FC = () => {
-  const form = useForm();
+  const formRef = createRef<FormInstance>();
+  const form = useRefCurrent<FormInstance>(formRef);
+
+  const handleClick = useCallback(() => {
+    console.log(form?.value);
+  }, [form]);
+
+  const handleReset = useCallback(async () => {
+    await form?.reset();
+    console.log(form?.value);
+  }, [form]);
 
   return (
     <Container
-      form={form}
+      ref={formRef}
+      initialValues={{
+        greeting: 'daddy',
+        greeting2: 'mommy',
+        TestCase1: {
+          数量: 30
+        }
+      }}
+      autoRuns={() => {
+        field('greetingSync').setValue(value<string>('greeting'));
+      }}
       reactions={[
         [
           () => value<string>('greeting'),
           asyncEffect(function*(greeting: string) {
-            field('greetingSync').setValue(greeting);
-            yield delay(5000);
+            yield delay(1000);
             field('greetingAsync').setValue(greeting);
           })
         ],
@@ -40,7 +75,7 @@ const App: React.FC = () => {
           () => value<string>('greeting2'),
           asyncEffect(function*(greeting: string) {
             field('greetingSync2').setValue(greeting);
-            yield delay(2000);
+            yield delay(1000);
             field('greetingAsync2').setValue(greeting);
           })
         ]
@@ -232,9 +267,13 @@ const App: React.FC = () => {
       </Item>
       <div>
         <Observer>
-          {() => <pre>{JSON.stringify(form.value, null, 2)}</pre>}
+          {() => <pre>{JSON.stringify(form?.value, null, 2)}</pre>}
         </Observer>
         <Observer>{() => <pre>{JSON.stringify(form, null, 2)}</pre>}</Observer>
+      </div>
+      <div>
+        <button onClick={handleClick}>Submit</button>
+        <button onClick={handleReset}>Reset</button>
       </div>
     </Container>
   );

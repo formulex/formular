@@ -1,6 +1,6 @@
 import { useScopeContext } from '../contexts/scope';
-import { useEffect, useMemo } from 'react';
-import { reaction, IReactionPublic } from 'mobx';
+import { useEffect, useMemo, useState } from 'react';
+import { reaction, IReactionPublic, autorun } from 'mobx';
 import { FieldGroupInstance } from '@formular/core';
 import { ResolverContextManager, ResolverContext } from '../utils';
 
@@ -27,6 +27,7 @@ export function useReactions(
   if (typeof outterScope === 'object' && outterScope !== null) {
     scopeCtx = outterScope;
   }
+
   const effects = useMemo(() => {
     let fns = Array.isArray(reactions) ? reactions : void 0;
     if (!fns) {
@@ -46,31 +47,42 @@ export function useReactions(
     }
   });
 
+  const [isEffectDisabled, setIsEffectDisabled] = useState<boolean>(false);
+  useEffect(
+    () =>
+      autorun(() => {
+        setIsEffectDisabled(scopeCtx.isEffectDisabled);
+      }),
+    []
+  );
+
   useEffect(() => {
-    const disposers = effects?.map(([f, g]) =>
-      reaction(
-        r => {
-          ResolverContextManager.push(new ResolverContext(scopeCtx));
-          const result = f(r);
-          ResolverContextManager.pop();
-          return result;
-        },
-        (arg, r) => {
-          ResolverContextManager.push(new ResolverContext(scopeCtx));
-          const result = g(arg, r);
-          ResolverContextManager.pop();
-          return result;
-        },
-        {
-          name: `FormularReactionWithTheseFieldNames:(${Object.keys(
-            scopeCtx.value
-          ).join('|')})`,
-          fireImmediately
-        }
-      )
-    );
+    const disposers = isEffectDisabled
+      ? []
+      : effects?.map(([f, g]) =>
+          reaction(
+            r => {
+              ResolverContextManager.push(new ResolverContext(scopeCtx));
+              const result = f(r);
+              ResolverContextManager.pop();
+              return result;
+            },
+            (arg, r) => {
+              ResolverContextManager.push(new ResolverContext(scopeCtx));
+              const result = g(arg, r);
+              ResolverContextManager.pop();
+              return result;
+            },
+            {
+              name: `FormularReactionWithTheseFieldNames:(${Object.keys(
+                scopeCtx.value
+              ).join('|')})`,
+              fireImmediately
+            }
+          )
+        );
     return () => {
       disposers?.forEach(f => f());
     };
-  }, [effects, scopeCtx, fireImmediately]);
+  }, [effects, scopeCtx, isEffectDisabled, fireImmediately]);
 }

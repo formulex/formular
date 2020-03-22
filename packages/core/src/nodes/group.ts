@@ -2,6 +2,7 @@ import { types, IAnyModelType, Instance, getType } from 'mobx-state-tree';
 import { Field, createField } from './field';
 import { FieldArray, createFieldArray } from './array';
 import { dispatcher } from './helper';
+import { transaction, runInAction } from 'mobx';
 
 export const FieldGroup = types
   .model('FieldGroup', {
@@ -12,7 +13,8 @@ export const FieldGroup = types
         types.late((): IAnyModelType => FieldGroup),
         types.late((): IAnyModelType => FieldArray)
       )
-    )
+    ),
+    isEffectDisabled: types.boolean
   })
   .views(self => ({
     get value() {
@@ -28,6 +30,11 @@ export const FieldGroup = types
         result[key] = node.initialValue;
       }
       return result;
+    }
+  }))
+  .actions(self => ({
+    setEffectDisabled(val: boolean) {
+      self.isEffectDisabled = val;
     }
   }))
   .actions(self => {
@@ -92,7 +99,18 @@ export const FieldGroup = types
         self.setInitialValue(self.value);
       },
       reset() {
-        self.setValue(self.initialValue);
+        self.setEffectDisabled(true);
+        return new Promise<void>((resolve, reject) => {
+          setTimeout(() => {
+            runInAction(() => {
+              transaction(() => {
+                self.setValue(self.initialValue);
+                self.setEffectDisabled(false);
+              });
+              resolve();
+            });
+          });
+        });
       },
       clear() {
         for (const node of self.children.values()) {
@@ -119,7 +137,7 @@ export function createFieldGroup(value: {
       Object.assign(children, { [name]: createField(target) });
     }
   });
-  return FieldGroup.create({ children });
+  return FieldGroup.create({ children, isEffectDisabled: false });
 }
 
 export function isFieldGroupInstance(node: any): node is FieldGroupInstance {

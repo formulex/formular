@@ -27,7 +27,7 @@ export const Field = types
     afterCreate() {
       self.setInitialValue(self.value);
     },
-    reset() {
+    async reset() {
       self.setValue(self.initialValue);
     },
     clear() {
