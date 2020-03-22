@@ -102,13 +102,11 @@ export const FieldGroup = types
         self.setEffectDisabled(true);
         return new Promise<void>((resolve, reject) => {
           setTimeout(() => {
-            runInAction(() => {
-              transaction(() => {
-                self.setValue(self.initialValue);
-                self.setEffectDisabled(false);
-              });
-              resolve();
+            transaction(() => {
+              self.setValue(self.initialValue);
+              self.setEffectDisabled(false);
             });
+            resolve();
           });
         });
       },
