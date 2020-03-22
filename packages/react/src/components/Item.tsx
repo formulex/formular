@@ -7,7 +7,7 @@ export interface ItemProps extends CreateFieldOptions {
 }
 
 export const Item: React.FC<ItemProps> = ({ name, initialValue, children }) => {
-  const fieldInstace = useField({ name, initialValue });
+  const [fieldInstace] = useField({ name, initialValue });
 
   const render = typeof children === 'function' && children;
   if (typeof render !== 'function') {

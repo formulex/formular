@@ -47,7 +47,7 @@ const App: React.FC = () => {
 
   const handleReset = useCallback(async () => {
     await form?.reset();
-    console.log(form?.value);
+    console.log('after', form?.value);
   }, [form]);
 
   return (

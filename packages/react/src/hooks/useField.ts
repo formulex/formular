@@ -23,7 +23,7 @@ export interface FieldMeta {
 export function useField({
   name,
   initialValue
-}: CreateFieldOptions): FieldMeta {
+}: CreateFieldOptions): [FieldMeta] {
   const scope = useScopeContext();
   const firstRenderedFieldOrGroupOrArray:
     | FieldInstance
@@ -50,5 +50,5 @@ export function useField({
     meta.group = fieldOrGroupOrArray as FieldGroupInstance;
     meta.array = fieldOrGroupOrArray as FieldArrayInstance;
   }, [initialValue, scope]);
-  return meta;
+  return [meta];
 }

@@ -1,5 +1,5 @@
 import React, { useImperativeHandle } from 'react';
-import { FormInstance } from '@formular/core';
+import { FormInstance, FieldGroupInstance } from '@formular/core';
 import { useForm, FormOptions } from '../hooks/useForm';
 import { FormContext } from '../contexts';
 import { ScopeConext } from '../contexts/scope';
@@ -13,17 +13,22 @@ export interface ContainerProps extends FormOptions<any> {
   reactions?:
     | [ReactionTrace, ReactionEffect]
     | [ReactionTrace, ReactionEffect][];
+  children?:
+    | React.ReactNode
+    | ((FormInstance: FormInstance) => React.ReactNode);
 }
 
 export const Container: React.FC<ContainerProps> = React.forwardRef(
   ({ form, children, autoRuns, reactions, ...options }, ref) => {
-    const formInstance = useForm(options, form);
+    const [formInstance] = useForm(options, form);
     useImperativeHandle(ref, () => formInstance);
     return (
       <FormContext.Provider value={formInstance}>
-        <ScopeConext.Provider value={formInstance.root}>
+        <ScopeConext.Provider value={formInstance.root as FieldGroupInstance}>
           <Scope autoRuns={autoRuns} reactions={reactions}>
-            {children}
+            {typeof children === 'function'
+              ? (children as any)(formInstance)
+              : children}
           </Scope>
         </ScopeConext.Provider>
       </FormContext.Provider>

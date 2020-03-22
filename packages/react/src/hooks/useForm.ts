@@ -6,7 +6,7 @@ export interface FormOptions<Values> extends CreateFormOptions<Values> {}
 export function useForm<Values = any>(
   options: FormOptions<Values> = {},
   previousForm?: FormInstance
-): FormInstance {
+): [FormInstance] {
   const form = useMemo(() => {
     return previousForm || createForm(options);
   }, []);
@@ -23,5 +23,5 @@ export function useForm<Values = any>(
     }
   }, [options.initialValues, form, previousForm]);
 
-  return form;
+  return [form];
 }
