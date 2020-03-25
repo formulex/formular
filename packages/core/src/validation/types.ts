@@ -1,11 +1,20 @@
-import { AbstractField } from '../shared';
+import {
+  FieldInstance,
+  FieldGroupInstance,
+  FieldArrayInstance
+} from '../nodes';
+
+type ValidationFieldType =
+  | FieldInstance
+  | FieldGroupInstance
+  | FieldArrayInstance;
 
 export interface ValidationErrors {
   [key: string]: any;
 }
 
 export interface ValidatorFn {
-  (field: AbstractField): ValidationErrors | null;
+  (field: ValidationFieldType): ValidationErrors | null;
 }
 
 export interface ValidatorFnFactory {
@@ -13,7 +22,7 @@ export interface ValidatorFnFactory {
 }
 
 export interface AsyncValidatorFn {
-  (field: AbstractField): Promise<ValidationErrors | null>;
+  (field: ValidationFieldType): Promise<ValidationErrors | null>;
 }
 
 export interface AsyncValidatorFnFactory {
@@ -28,4 +37,8 @@ export type ValidatorOrValidatorFactory =
 
 export type ValidateTriggers = 'change' | 'blur';
 export type ValidateStrategy = 'all' | 'bail';
-export type AsyncValidateStrategy = 'parallel' | 'parallelBail' | 'series' | 'seriesBail';
+export type AsyncValidateStrategy =
+  | 'parallel'
+  | 'parallelBail'
+  | 'series'
+  | 'seriesBail';

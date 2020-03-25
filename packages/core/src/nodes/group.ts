@@ -2,7 +2,7 @@ import { types, IAnyModelType, Instance, getType } from 'mobx-state-tree';
 import { Field, createField } from './field';
 import { FieldArray, createFieldArray } from './array';
 import { dispatcher } from './helper';
-import { transaction, runInAction } from 'mobx';
+import { transaction } from 'mobx';
 
 export const FieldGroup = types
   .model('FieldGroup', {
@@ -100,7 +100,7 @@ export const FieldGroup = types
       },
       reset() {
         self.setEffectDisabled(true);
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>(resolve => {
           setTimeout(() => {
             transaction(() => {
               self.setValue(self.initialValue);

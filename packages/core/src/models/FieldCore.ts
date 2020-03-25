@@ -51,41 +51,41 @@ export const FieldCore = types
     get isTouched() {
       return self.__everBlured && self.__everFoucused;
     },
-    get validatorFunctions(): ValidatorFn[] {
-      const { Validators } = getEnv<typeof environment>(self);
-      return self.validators
-        .map(nameWithOrWithoutArgs =>
-          nameWithOrWithoutArgs
-            ? (Validators.resolveValidator(nameWithOrWithoutArgs) as ValidatorFn | null)
-            : null
-        )
-        .filter(isPresent);
-    },
-    get asyncValidatorFunctions(): AsyncValidatorFn[] {
-      const { Validators } = getEnv<typeof environment>(self);
-      return self.asyncValidators
-        .map(nameWithOrWithoutArgs =>
-          nameWithOrWithoutArgs
-            ? (Validators.resolveValidator(nameWithOrWithoutArgs) as AsyncValidatorFn | null)
-            : null
-        )
-        .filter(isPresent);
-    }
+    // get validatorFunctions(): ValidatorFn[] {
+    //   const { Validators } = getEnv<typeof environment>(self);
+    //   return self.validators
+    //     .map(nameWithOrWithoutArgs =>
+    //       nameWithOrWithoutArgs
+    //         ? (Validators.resolveValidator(nameWithOrWithoutArgs) as ValidatorFn | null)
+    //         : null
+    //     )
+    //     .filter(isPresent);
+    // },
+    // get asyncValidatorFunctions(): AsyncValidatorFn[] {
+    //   const { Validators } = getEnv<typeof environment>(self);
+    //   return self.asyncValidators
+    //     .map(nameWithOrWithoutArgs =>
+    //       nameWithOrWithoutArgs
+    //         ? (Validators.resolveValidator(nameWithOrWithoutArgs) as AsyncValidatorFn | null)
+    //         : null
+    //     )
+    //     .filter(isPresent);
+    // }
   }))
   .views(self => ({
     get isUntouched() {
       return !self.isTouched;
     },
-    get validator(): ValidatorFn | null {
-      const { Validators } = getEnv<typeof environment>(self);
-      return Validators.compose(self.validatorFunctions, { strategy: self.validateStrategy });
-    },
-    get asyncValidator(): AsyncValidatorFn | null {
-      const { Validators } = getEnv<typeof environment>(self);
-      return Validators.composeAsync(self.asyncValidatorFunctions, {
-        strategy: self.asyncValidateStrategy
-      });
-    }
+    // get validator(): ValidatorFn | null {
+    //   const { Validators } = getEnv<typeof environment>(self);
+    //   return Validators.compose(self.validatorFunctions, { strategy: self.validateStrategy });
+    // },
+    // get asyncValidator(): AsyncValidatorFn | null {
+    //   const { Validators } = getEnv<typeof environment>(self);
+    //   return Validators.composeAsync(self.asyncValidatorFunctions, {
+    //     strategy: self.asyncValidateStrategy
+    //   });
+    // }
   }))
   .actions(self => ({
     blur() {

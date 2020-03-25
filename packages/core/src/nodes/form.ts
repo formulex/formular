@@ -2,11 +2,9 @@ import { types, Instance, flow } from 'mobx-state-tree';
 import { FieldGroup, createFieldGroup, FieldGroupInstance } from './group';
 import { FieldInstance } from './field';
 import { FieldArrayInstance } from './array';
-import {
-  fieldResolver,
-  name2PathArray,
-  getOrCreateNodeFromBase
-} from './helper';
+import { getOrCreateNodeFromBase } from './helper';
+import { Validators } from '../validation';
+import { ValidatorOrValidatorFactory } from '../validation/types';
 
 export const Form = types
   .model('Form', {
@@ -58,20 +56,36 @@ export type FormInstance = Instance<typeof Form>;
 export interface CreateFormOptions<Values> {
   initialValues?: Partial<Values>;
   values?: Partial<Values>;
+  localValidatorPresets?: { [name: string]: ValidatorOrValidatorFactory };
+}
+
+export interface FormEnvironment {
+  validators: Validators;
 }
 
 export function createForm<Values = any>({
   initialValues = {},
-  values = {}
+  values = {},
+  localValidatorPresets = {}
 }: CreateFormOptions<Values>): FormInstance {
   const root = createFieldGroup(initialValues);
+
+  const validators = new Validators();
+  Object.keys(localValidatorPresets).forEach(name => {
+    const validator = localValidatorPresets[name];
+    validators.registerValidator(name, validator);
+  });
+
   // fixme: debug for "walk" method in "mobx-state-tree"
   // see https://github.com/mobxjs/mobx-state-tree/issues/1433
   !root.value;
   !root.initialValue;
   root.patchValue(values);
-  return Form.create({
-    root,
-    isSubmitting: false
-  });
+  return Form.create(
+    {
+      root,
+      isSubmitting: false
+    },
+    { validators } as FormEnvironment
+  );
 }

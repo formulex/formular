@@ -6,6 +6,7 @@ import { walk, getType, tryResolve } from 'mobx-state-tree';
 import { Field, FieldInstance, createField } from '../field';
 import { FieldGroup, FieldGroupInstance, createFieldGroup } from '../group';
 import { FieldArray, FieldArrayInstance, createFieldArray } from '../array';
+import { ValidatorFn, AsyncValidatorFn } from '../../validation/types';
 
 export const dispatcher: ITypeDispatcher = snapshot => {
   if (
@@ -122,4 +123,10 @@ export function getOrCreateNodeFromBase(
 
   // 3. offer node
   return node;
+}
+
+export function isFunctionPresent<F extends ValidatorFn | AsyncValidatorFn>(
+  fn: F | null
+): fn is F {
+  return typeof fn === 'function';
 }

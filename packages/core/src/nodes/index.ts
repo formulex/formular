@@ -6,5 +6,11 @@ export {
   isFieldGroupInstance
 } from './group';
 export { FieldArray, FieldArrayInstance, createFieldArray } from './array';
-export { Form, FormInstance, createForm, CreateFormOptions } from './form';
+export {
+  Form,
+  FormInstance,
+  createForm,
+  CreateFormOptions,
+  FormEnvironment
+} from './form';
 export { fieldResolver, getOrCreateNodeFromBase } from './helper';
