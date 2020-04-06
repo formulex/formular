@@ -8,28 +8,30 @@ import { FieldGroup, FieldGroupInstance, createFieldGroup } from '../group';
 import { FieldArray, FieldArrayInstance, createFieldArray } from '../array';
 import { ValidatorFn, AsyncValidatorFn } from '../../validation/types';
 
-export const dispatcher: ITypeDispatcher = snapshot => {
+export const dispatcher: ITypeDispatcher = (snapshot) => {
   if (
     typeof snapshot.children === 'object' &&
     snapshot.children !== null &&
     !Array.isArray(snapshot.children)
   ) {
     return FieldGroup;
-  }
-  if (
+  } else if (
     typeof snapshot.children === 'object' &&
     Array.isArray(snapshot.children)
   ) {
     return FieldArray;
+  } else if (typeof snapshot.children === 'undefined') {
+    return Field;
   }
   return Field;
+  // throw new Error(`Cannot find type for ${snapshot}`);
 };
 
 export function walkFieldNode(
   root: IAnyStateTreeNode,
   fn: (node: IAnyStateTreeNode) => void
 ) {
-  walk(root, node => {
+  walk(root, (node) => {
     const type = getType(node);
     if (type === Field || type === FieldGroup || type === FieldArray) {
       fn(node);

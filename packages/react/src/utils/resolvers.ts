@@ -37,7 +37,7 @@ export function resolver(
     return fieldResolver(ResolverContextManager.top?.scopeNode, name);
   } else {
     throw new Error(
-      'resolver should run in <Scope /> or <Container /> or withContext(() => any).'
+      'resolver (e.g. feild(\'...\'), value(\'...\')) should run with scope context. Check that call in <Scope /> or <Container />, or scopeFlow(<generator>) or oflow(<generator>), or withContext(() => any).'
     );
   }
 }

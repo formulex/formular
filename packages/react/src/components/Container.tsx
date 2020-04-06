@@ -9,8 +9,8 @@ import { Scope } from './Scope';
 export interface ContainerProps extends FormOptions<any> {
   form?: FormInstance;
   ref?: React.RefObject<FormInstance>;
-  autoRuns?: AutorunEffect | AutorunEffect[];
-  reactions?:
+  auto?: AutorunEffect | AutorunEffect[];
+  watch?:
     | [ReactionTrace, ReactionEffect]
     | [ReactionTrace, ReactionEffect][];
   children?:
@@ -19,13 +19,13 @@ export interface ContainerProps extends FormOptions<any> {
 }
 
 export const Container: React.FC<ContainerProps> = React.forwardRef(
-  ({ form, children, autoRuns, reactions, ...options }, ref) => {
+  ({ form, children, auto, watch, ...options }, ref) => {
     const [formInstance] = useForm(options, form);
     useImperativeHandle(ref, () => formInstance);
     return (
       <FormContext.Provider value={formInstance}>
         <ScopeConext.Provider value={formInstance.root as FieldGroupInstance}>
-          <Scope autoRuns={autoRuns} reactions={reactions}>
+          <Scope auto={auto} watch={watch}>
             {typeof children === 'function'
               ? (children as any)(formInstance)
               : children}

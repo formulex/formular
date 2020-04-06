@@ -1,31 +1,10 @@
-import { createForm, FormInstance } from '@formular/core';
+import { FormInstance } from '@formular/core';
 import { render } from 'react-dom';
-import {
-  Container,
-  Item,
-  Scope,
-  value,
-  field,
-  withContext,
-  asyncEffect
-} from '../../src';
-import React, {
-  createRef,
-  useCallback,
-  useMemo,
-  useEffect,
-  useState
-} from 'react';
-import { useForm } from '../../src/hooks/useForm';
-import * as m from 'mobx';
+import { Container, Item, Scope, value, field, oflow } from '../../src';
+import React, { createRef, useCallback, useEffect, useState } from 'react';
 import { Observer } from 'mobx-react';
-(window as any).m = m;
 
-(window as any).base = createForm({
-  initialValues: { daddy: 'hello' }
-});
-
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function useRefCurrent<S>(ref: React.RefObject<S>): S | null {
   const [current, setCurrent] = useState<null | S>(null);
@@ -60,33 +39,40 @@ const App: React.FC = () => {
           数量: 30
         }
       }}
-      autoRuns={() => {
-        field('greetingSync').setValue(value<string>('greeting'));
+      auto={() => {
+        field('greetingSync').value = value<string>('greeting');
       }}
-      reactions={[
+      watch={[
         [
           () => value<string>('greeting'),
-          asyncEffect(function*(greeting: string) {
+          oflow(function* (greeting: string) {
             yield delay(1000);
-            field('greetingAsync').setValue(greeting);
+            field('greetingAsync').value = greeting;
           })
         ],
         [
+          () => value<string>('greeting'),
+          async (greeting: string) => {
+            await delay(1000);
+            field('greetingAsync').value = greeting;
+          }
+        ],
+        [
           () => value<string>('greeting2'),
-          asyncEffect(function*(greeting: string) {
-            field('greetingSync2').setValue(greeting);
+          oflow(function* (greeting: string) {
+            field('greetingSync2').value = greeting;
             yield delay(1000);
-            field('greetingAsync2').setValue(greeting);
+            field('greetingAsync2').value = greeting;
           })
         ]
       ]}
     >
       <Scope
         name="TestCase1"
-        reactions={[
+        watch={[
           [
             () => value('总价'),
-            totalValue => {
+            (totalValue) => {
               if (value('单价')) {
                 field('数量').setValue(totalValue / value<number>('单价'));
               }
@@ -94,7 +80,7 @@ const App: React.FC = () => {
           ],
           [
             () => value('单价'),
-            priceValue => {
+            (priceValue) => {
               if (value('数量')) {
                 field('总价').setValue(priceValue * value<number>('数量'));
               } else if (value('总价')) {
@@ -104,7 +90,7 @@ const App: React.FC = () => {
           ],
           [
             () => value('数量'),
-            count => {
+            (count) => {
               if (value('单价')) {
                 field('总价').setValue(count * value<number>('单价'));
               }
@@ -120,7 +106,7 @@ const App: React.FC = () => {
                 <input
                   type="text"
                   value={(field.value as any) || ''}
-                  onChange={e => {
+                  onChange={(e) => {
                     field.setValue(Number.parseFloat(e.target.value));
                   }}
                 />
@@ -136,7 +122,7 @@ const App: React.FC = () => {
                 <input
                   type="text"
                   value={(field.value as any) || ''}
-                  onChange={e => {
+                  onChange={(e) => {
                     field.setValue(Number.parseFloat(e.target.value));
                   }}
                 />
@@ -154,7 +140,7 @@ const App: React.FC = () => {
                   style={{ width: '500px' }}
                   type="text"
                   value={(field.value as any) || ''}
-                  onChange={e => {
+                  onChange={(e) => {
                     field.setValue(Number.parseFloat(e.target.value));
                   }}
                 />
@@ -172,7 +158,7 @@ const App: React.FC = () => {
                 style={{ width: '500px' }}
                 type="text"
                 value={(field.value as any) || ''}
-                onChange={e => {
+                onChange={(e) => {
                   field.setValue(e.target.value);
                 }}
               />
@@ -189,7 +175,7 @@ const App: React.FC = () => {
                 style={{ width: '500px' }}
                 type="text"
                 value={(field.value as any) || ''}
-                onChange={e => {
+                onChange={(e) => {
                   field.setValue(e.target.value);
                 }}
               />
@@ -206,7 +192,7 @@ const App: React.FC = () => {
                 style={{ width: '500px' }}
                 type="text"
                 value={(field.value as any) || ''}
-                onChange={e => {
+                onChange={(e) => {
                   field.setValue(e.target.value);
                 }}
               />
@@ -223,7 +209,7 @@ const App: React.FC = () => {
                 style={{ width: '500px' }}
                 type="text"
                 value={(field.value as any) || ''}
-                onChange={e => {
+                onChange={(e) => {
                   field.setValue(e.target.value);
                 }}
               />
@@ -240,7 +226,7 @@ const App: React.FC = () => {
                 style={{ width: '500px' }}
                 type="text"
                 value={(field.value as any) || ''}
-                onChange={e => {
+                onChange={(e) => {
                   field.setValue(e.target.value);
                 }}
               />
@@ -257,7 +243,7 @@ const App: React.FC = () => {
                 style={{ width: '500px' }}
                 type="text"
                 value={(field.value as any) || ''}
-                onChange={e => {
+                onChange={(e) => {
                   field.setValue(e.target.value);
                 }}
               />

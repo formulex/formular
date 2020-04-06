@@ -21,13 +21,15 @@ let slice = Array.prototype.slice;
  * @api public
  */
 
-export function asyncEffect<R = any>(this: any, fn: Function) {
+export function scopeFlow<R = any>(this: any, fn: Function) {
   createPromise.__generatorFunction__ = fn;
   return createPromise as () => Promise<R>;
   function createPromise(this: any) {
     return runAsyncEffect.call(this, fn.apply(this, arguments as any));
   }
 }
+
+export const oflow = scopeFlow;
 
 /**
  * Execute the generator function or a generator
@@ -146,7 +148,7 @@ function toPromise(this: any, obj: any) {
   if (!obj) return obj;
   if (isPromise(obj)) return obj;
   if (isGeneratorFunction(obj) || isGenerator(obj))
-    return asyncEffect.call(this, obj);
+    return scopeFlow.call(this, obj);
   if ('function' == typeof obj) return thunkToPromise.call(this, obj);
   if (Array.isArray(obj)) return arrayToPromise.call(this, obj);
   if (isObject(obj)) return objectToPromise.call(this, obj);

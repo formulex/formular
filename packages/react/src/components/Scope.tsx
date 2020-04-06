@@ -11,20 +11,20 @@ import {
 
 export interface ScopeProps {
   name?: string;
-  autoRuns?: AutorunEffect | AutorunEffect[];
-  reactions?:
+  auto?: AutorunEffect | AutorunEffect[];
+  watch?:
     | [ReactionTrace, ReactionEffect]
     | [ReactionTrace, ReactionEffect][];
 }
 
 export const Scope: React.FC<ScopeProps> = ({
   name,
-  autoRuns,
-  reactions,
+  auto,
+  watch,
   children
 }) => {
   const scope = useScope({ name });
-  useAutoruns(autoRuns, { scope });
-  useReactions(reactions, { scope, fireImmediately: false });
+  useAutoruns(auto, { scope });
+  useReactions(watch, { scope, fireImmediately: false });
   return <ScopeConext.Provider value={scope}>{children}</ScopeConext.Provider>;
 };

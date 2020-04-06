@@ -11,14 +11,9 @@ export interface FormProps
     Omit<InnerContainerProps, 'children'> {}
 
 export const Form: React.FC<FormProps> = React.forwardRef(
-  ({ children, form, autoRuns, reactions, ref: rawRaf, ...antdProps }, ref) => {
+  ({ children, form, auto, watch, ref: rawRaf, ...antdProps }, ref) => {
     return (
-      <InnerContainer
-        ref={ref as any}
-        form={form}
-        autoRuns={autoRuns}
-        reactions={reactions}
-      >
+      <InnerContainer ref={ref as any} form={form} auto={auto} watch={watch}>
         {(formInstance: FormInstance) => (
           <AntDesignForm
             {...antdProps}

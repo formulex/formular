@@ -11,6 +11,7 @@
     "bootstrap:china": "lerna bootstrap --registry=https://registry.npm.taobao.org",
     "build": "yarn workspaces run build",
     "build:react": "yarn workspace @formular/react run build",
+    "build:core": "yarn workspace @formular/core run build",
     "lint": "yarn workspaces run lint",
     "type-check": "yarn workspaces run type-check",
     "example:react": "yarn workspace @formular/react run start",
