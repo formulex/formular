@@ -1,6 +1,6 @@
 import { ValidationErrors } from './types';
 
-export function withErrorType(
+export function anError(
   o: Omit<ValidationErrors, '$$typeof'>
 ): Omit<ValidationErrors, '$$typeof'> & { $$typeof: 'error' } {
   return {
@@ -9,7 +9,7 @@ export function withErrorType(
   };
 }
 
-export function withWarningType(
+export function aWarning(
   o: Omit<ValidationErrors, '$$typeof'>
 ): Omit<ValidationErrors, '$$typeof'> & { $$typeof: 'warning' } {
   return {

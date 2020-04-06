@@ -1,10 +1,12 @@
-import { isEmptyInputValue, EMAIL_REGEXP } from './utils';
-import { withErrorType, withWarningType } from './decorators';
+import { isEmptyInputValue } from './utils';
+import { anError, aWarning } from './decorators';
 import {
   ValidatorFn,
   ValidatorOrValidatorFactory,
   ValidatorFnFactory
 } from './types';
+
+export const EMAIL_REGEXP = /^(?=.{1,254}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 const getPresets = (
   modifyFn: (o: any) => any
@@ -60,6 +62,6 @@ const getPresets = (
 ];
 
 export default [
-  ...getPresets(withErrorType),
-  ...getPresets(withWarningType).map(([key, f]) => ['warning:' + key, f])
+  ...getPresets(anError),
+  ...getPresets(aWarning).map(([key, f]) => ['warning:' + key, f])
 ] as [string, ValidatorOrValidatorFactory][];

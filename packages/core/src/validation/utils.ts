@@ -1,4 +1,11 @@
-import { ValidationErrors } from './types';
+import {
+  ValidationErrors,
+  ValidatorFn,
+  ValidateStrategy,
+  AsyncValidatorFn,
+  AsyncValidateStrategy
+} from './types';
+import pAny from 'p-any';
 
 export function isEmptyInputValue(value: any): boolean {
   // we don't check for string here so it also works with arrays
@@ -50,4 +57,92 @@ export function mergeResults(
   };
 }
 
-export const EMAIL_REGEXP = /^(?=.{1,254}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+export function compose(
+  validators: ValidatorFn[],
+  options: { strategy: ValidateStrategy } = { strategy: 'all' }
+): ValidatorFn | null {
+  if (!validators.length) {
+    return null;
+  }
+  switch (options.strategy) {
+    case 'all':
+    default:
+      return (field) => mergeResults(validators.map((v) => v(field)));
+    case 'bail':
+      return (field) => {
+        const results: (ValidationErrors | null)[] = [];
+        for (const v of validators) {
+          const errorOrNull = v(field);
+          if (errorOrNull) {
+            if (errorOrNull.$$typeof === 'warning') {
+              results.push(errorOrNull);
+            } else if (errorOrNull.$$typeof === 'error') {
+              return mergeResults([...results, errorOrNull]);
+            }
+          }
+        }
+        return mergeResults([...results]);
+      };
+  }
+}
+
+export function composeAsync(
+  asyncValidators: AsyncValidatorFn[],
+  options: { strategy: AsyncValidateStrategy } = { strategy: 'parallel' }
+): AsyncValidatorFn | null {
+  if (!asyncValidators.length) {
+    return null;
+  }
+  switch (options.strategy) {
+    case 'parallel':
+    default:
+      return async (field) => {
+        return mergeResults(
+          await Promise.all(asyncValidators.map((v) => v(field)))
+        );
+      };
+    case 'parallelBail':
+      return async (field) => {
+        const results: (ValidationErrors | null)[] = [];
+        const firstError = await pAny<ValidationErrors | null>(
+          asyncValidators.map((v) => v(field)),
+          {
+            filter: (errorOrNull) => {
+              if (errorOrNull) {
+                if (errorOrNull.$$typeof === 'warning') {
+                  results.push(errorOrNull);
+                } else if (errorOrNull.$$typeof === 'error') {
+                  return true;
+                }
+              }
+              return false;
+            }
+          }
+        );
+        return mergeResults([...results, firstError]);
+      };
+    case 'series':
+      return async (field) => {
+        const result: (ValidationErrors | null)[] = [];
+        for (const v of asyncValidators) {
+          result.push(await v(field));
+        }
+        return mergeResults(result);
+      };
+    case 'seriesBail':
+      return async (field) => {
+        const results: (ValidationErrors | null)[] = [];
+        for (const v of asyncValidators) {
+          const errorOrNull = await v(field);
+          if (errorOrNull) {
+            if (errorOrNull.$$typeof === 'warning') {
+              results.push(errorOrNull);
+            } else if (errorOrNull.$$typeof === 'error') {
+              return mergeResults([...results, errorOrNull]);
+            }
+          }
+        }
+        return mergeResults([...results]);
+      };
+  }
+}
