@@ -1,35 +1,50 @@
-import { types, getEnv } from 'mobx-state-tree';
+import { types } from 'mobx-state-tree';
 import {
   ValidateTriggers,
   ValidationErrors,
-  ValidatorFn,
-  AsyncValidatorFn,
   ValidateStrategy,
   AsyncValidateStrategy
 } from '../validation/types';
-import { StatusEnumerationType, VALID, INVALID, PENDING, DISABLED } from '../shared';
-import { environment } from '../environment';
-import { isPresent } from '../utils';
+import {
+  StatusEnumerationType,
+  VALID,
+  INVALID,
+  PENDING,
+  DISABLED
+} from '../shared';
 
 export const FieldCore = types
   .model('FieldCore', {
-    validators: types.array(types.union(types.string, types.array(types.frozen()))),
-    asyncValidators: types.array(types.union(types.string, types.array(types.frozen()))),
-    validateTrigger: types.enumeration<ValidateTriggers>('validateTrigger', ['change', 'blur']),
-    validateStrategy: types.enumeration<ValidateStrategy>('validateStrategy', ['all', 'bail']),
-    asyncValidateStrategy: types.enumeration<AsyncValidateStrategy>('asyncValidateStrategy', [
-      'parallel',
-      'parallelBail',
-      'series',
-      'seriesBail'
+    validators: types.array(
+      types.union(types.string, types.array(types.frozen()))
+    ),
+    asyncValidators: types.array(
+      types.union(types.string, types.array(types.frozen()))
+    ),
+    validateTrigger: types.enumeration<ValidateTriggers>('validateTrigger', [
+      'change',
+      'blur'
     ]),
-    status: types.enumeration<StatusEnumerationType>('status', [VALID, INVALID, PENDING, DISABLED]),
+    validateStrategy: types.enumeration<ValidateStrategy>('validateStrategy', [
+      'all',
+      'bail'
+    ]),
+    asyncValidateStrategy: types.enumeration<AsyncValidateStrategy>(
+      'asyncValidateStrategy',
+      ['parallel', 'parallelBail', 'series', 'seriesBail']
+    ),
+    status: types.enumeration<StatusEnumerationType>('status', [
+      VALID,
+      INVALID,
+      PENDING,
+      DISABLED
+    ]),
     errors: types.maybeNull(types.frozen<ValidationErrors>()),
     isPristine: types.optional(types.boolean, true),
     __everFoucused: types.optional(types.boolean, false),
     __everBlured: types.optional(types.boolean, false)
   })
-  .views(self => ({
+  .views((self) => ({
     get isValid() {
       return self.status === VALID;
     },
@@ -50,7 +65,7 @@ export const FieldCore = types
     },
     get isTouched() {
       return self.__everBlured && self.__everFoucused;
-    },
+    }
     // get validatorFunctions(): ValidatorFn[] {
     //   const { Validators } = getEnv<typeof environment>(self);
     //   return self.validators
@@ -72,10 +87,10 @@ export const FieldCore = types
     //     .filter(isPresent);
     // }
   }))
-  .views(self => ({
+  .views((self) => ({
     get isUntouched() {
       return !self.isTouched;
-    },
+    }
     // get validator(): ValidatorFn | null {
     //   const { Validators } = getEnv<typeof environment>(self);
     //   return Validators.compose(self.validatorFunctions, { strategy: self.validateStrategy });
@@ -87,7 +102,7 @@ export const FieldCore = types
     //   });
     // }
   }))
-  .actions(self => ({
+  .actions((self) => ({
     blur() {
       if (!self.__everBlured) {
         self.__everBlured = true;

@@ -3,7 +3,7 @@ const isProduction: boolean = typeof process === 'object' && process.env.NODE_EN
 
 import { ValidatorFn, AsyncValidatorFn } from './validation/types.js';
 
-export function warning(condition: boolean, message: string): void {
+export function warningAssert(condition: boolean, message: string): void {
   // don't do anything in production
   // wrapping in production check for better dead code elimination
   if (!isProduction) {

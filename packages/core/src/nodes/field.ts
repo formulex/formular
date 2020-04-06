@@ -8,14 +8,14 @@ import {
 } from '../validation/types';
 import { FormEnvironment } from './form';
 import { isFunctionPresent } from './helper';
-import { compose, composeAsync } from '../validation';
+import { compose, composeAsync, mergeResults } from '../validation';
 
 export const Field = types
   .model('Field', {
     initialValue: types.maybe(
       types.union(types.string, types.number, types.boolean, types.null)
     ),
-    value: types.maybe(
+    _value: types.maybe(
       types.union(types.string, types.number, types.boolean, types.null)
     ),
     validatorKeys: types.array(
@@ -31,13 +31,26 @@ export const Field = types
     asyncValidateStrategy: types.enumeration<AsyncValidateStrategy>(
       'asyncValidateStrategy',
       ['parallel', 'parallelBail', 'series', 'seriesBail']
-    )
+    ),
+    rulesResults: types.maybeNull(types.frozen()),
+    reactionsResults: types.maybeNull(types.frozen())
   })
-  .views(self => ({
+  .actions((self) => ({
+    setValue(val?: string | number | boolean | null) {
+      self._value = val === '' ? undefined : val;
+    },
+    addError(error: ValidationErrors | null) {
+      self.reactionsResults = mergeResults([self.reactionsResults, error]);
+    },
+    addWarning(warning: ValidationErrors | null) {
+      self.reactionsResults = mergeResults([self.reactionsResults, warning]);
+    }
+  }))
+  .views((self) => ({
     get validators(): ValidatorFn[] {
       const { validators } = getEnv<FormEnvironment>(self);
       return self.validatorKeys
-        .map(nameWithOrWithoutArgs =>
+        .map((nameWithOrWithoutArgs) =>
           nameWithOrWithoutArgs
             ? (validators.resolveValidator(
                 nameWithOrWithoutArgs
@@ -49,7 +62,7 @@ export const Field = types
     get asyncValidators(): AsyncValidatorFn[] {
       const { validators } = getEnv<FormEnvironment>(self);
       return self.asyncValidatorKeys
-        .map(nameWithOrWithoutArgs =>
+        .map((nameWithOrWithoutArgs) =>
           nameWithOrWithoutArgs
             ? (validators.resolveValidator(
                 nameWithOrWithoutArgs
@@ -57,9 +70,27 @@ export const Field = types
             : null
         )
         .filter(isFunctionPresent);
+    },
+    get errors(): ValidationErrors | null {
+      return mergeResults([self.rulesResults, self.reactionsResults]);
+    },
+    set errors(error: ValidationErrors | null) {
+      self.addError(error);
+    },
+    get warnings(): ValidationErrors | null {
+      return mergeResults([self.rulesResults, self.reactionsResults]);
+    },
+    set warnings(error: ValidationErrors | null) {
+      self.addWarning(error);
+    },
+    get value() {
+      return self._value;
+    },
+    set value(val: string | number | boolean | undefined | null) {
+      self.setValue(val);
     }
   }))
-  .views(self => ({
+  .views((self) => ({
     get validator(): ValidatorFn | null {
       return compose(self.validators, { strategy: self.validateStrategy });
     },
@@ -69,10 +100,7 @@ export const Field = types
       });
     }
   }))
-  .actions(self => ({
-    setValue(val?: string | number | boolean | null) {
-      self.value = val === '' ? undefined : val;
-    },
+  .actions((self) => ({
     setInitialValue(val?: string | number | boolean | null) {
       self.initialValue = val === '' ? undefined : val;
     },
@@ -104,7 +132,7 @@ export const Field = types
       return null;
     }
   }))
-  .actions(self => ({
+  .actions((self) => ({
     patchValue(val?: string | number | boolean | null) {
       self.setValue(val);
     },
@@ -119,6 +147,17 @@ export const Field = types
     },
     clear() {
       self.setValue(null);
+    },
+    async validate(): Promise<ValidationErrors | null> {
+      const errors = self.runValidator();
+      if (errors) {
+        return errors;
+      }
+      const asyncErrors = await self.runAsyncValidator();
+      if (asyncErrors) {
+        return asyncErrors;
+      }
+      return null;
     }
   }));
 
@@ -126,7 +165,7 @@ export type FieldInstance = Instance<typeof Field>;
 
 export function createField(value?: string | number | boolean): FieldInstance {
   return Field.create({
-    value,
+    _value: value,
     validateStrategy: 'all',
     asyncValidateStrategy: 'parallel',
     validatorKeys: [],

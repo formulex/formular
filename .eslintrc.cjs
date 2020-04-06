@@ -4,7 +4,10 @@ module.exports = {
     es6: true,
     node: true
   },
-  extends: ['plugin:@typescript-eslint/eslint-recommended'],
+  extends: [
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:react/recommended'
+  ],
   globals: {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly'
@@ -27,6 +30,8 @@ module.exports = {
         args: 'after-used',
         ignoreRestSiblings: true
       }
-    ]
+    ],
+    'react/display-name': 0,
+    'react/prop-types': 0
   }
 };

@@ -10,6 +10,7 @@ type ValidationFieldType =
   | FieldArrayInstance;
 
 export interface ValidationErrors {
+  $$typeof: 'error' | 'warning' | 'results';
   [key: string]: any;
 }
 

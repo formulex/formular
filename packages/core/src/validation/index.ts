@@ -8,15 +8,16 @@ import {
   ValidationErrors,
   AsyncValidateStrategy
 } from './types';
-import { warning } from '../utils';
+import { warningAssert } from '../utils';
 import pAny from 'p-any';
-import { mergeErrors } from './utils';
-import { presets } from './presets';
+import presets from './presets';
+import { mergeResults } from './utils';
+export { mergeWithoutType, mergeResults } from './utils';
 
 export class Validators {
-  private static _dictionary = new Map<string, ValidatorOrValidatorFactory>([
-    ...presets
-  ]);
+  private static _dictionary = new Map<string, ValidatorOrValidatorFactory>(
+    presets
+  );
 
   private _selfDictionary = new Map<string, ValidatorOrValidatorFactory>();
 
@@ -46,17 +47,18 @@ export class Validators {
         | undefined;
 
       if (typeof validator !== 'function') {
-        warning(
+        warningAssert(
           false,
           `Cannot find validator with name "${validatorNameWithOrWithoutArgs}"`
         );
         return null;
       }
+
       return validator;
     } else if (Array.isArray(validatorNameWithOrWithoutArgs)) {
       const [name, ...args] = validatorNameWithOrWithoutArgs;
       if (typeof name !== 'string') {
-        warning(
+        warningAssert(
           false,
           `The first element in validator name with args must be string, but got "${name}" with type "${typeof name}"`
         );
@@ -68,15 +70,15 @@ export class Validators {
         | AsyncValidatorFnFactory
         | undefined;
       if (typeof validatorFactory !== 'function') {
-        warning(
+        warningAssert(
           false,
           `Cannot find validator with name "${validatorNameWithOrWithoutArgs}"`
         );
         return null;
       }
-      return validatorFactory.apply(null, args);
+      return validatorFactory(args);
     } else {
-      warning(
+      warningAssert(
         false,
         `Expect a name or a name with args to resolve validator, but got "${validatorNameWithOrWithoutArgs}" with type "${typeof validatorNameWithOrWithoutArgs}"`
       );
@@ -95,16 +97,21 @@ export function compose(
   switch (options.strategy) {
     case 'all':
     default:
-      return field => mergeErrors(validators.map(v => v(field)));
+      return (field) => mergeResults(validators.map((v) => v(field)));
     case 'bail':
-      return field => {
+      return (field) => {
+        const results: (ValidationErrors | null)[] = [];
         for (const v of validators) {
           const errorOrNull = v(field);
           if (errorOrNull) {
-            return errorOrNull;
+            if (errorOrNull.$$typeof === 'warning') {
+              results.push(errorOrNull);
+            } else if (errorOrNull.$$typeof === 'error') {
+              return mergeResults([...results, errorOrNull]);
+            }
           }
         }
-        return null;
+        return mergeResults([...results]);
       };
   }
 }
@@ -119,37 +126,53 @@ export function composeAsync(
   switch (options.strategy) {
     case 'parallel':
     default:
-      return async field => {
-        return mergeErrors(
-          await Promise.all(asyncValidators.map(v => v(field)))
+      return async (field) => {
+        return mergeResults(
+          await Promise.all(asyncValidators.map((v) => v(field)))
         );
       };
     case 'parallelBail':
-      return async field => {
-        return await pAny(
-          asyncValidators.map(v => v(field)),
+      return async (field) => {
+        const results: (ValidationErrors | null)[] = [];
+        const firstError = await pAny<ValidationErrors | null>(
+          asyncValidators.map((v) => v(field)),
           {
-            filter: errorOrNull => Boolean(errorOrNull)
+            filter: (errorOrNull) => {
+              if (errorOrNull) {
+                if (errorOrNull.$$typeof === 'warning') {
+                  results.push(errorOrNull);
+                } else if (errorOrNull.$$typeof === 'error') {
+                  return true;
+                }
+              }
+              return false;
+            }
           }
         );
+        return mergeResults([...results, firstError]);
       };
     case 'series':
-      return async field => {
+      return async (field) => {
         const result: (ValidationErrors | null)[] = [];
         for (const v of asyncValidators) {
           result.push(await v(field));
         }
-        return mergeErrors(result);
+        return mergeResults(result);
       };
     case 'seriesBail':
-      return async field => {
+      return async (field) => {
+        const results: (ValidationErrors | null)[] = [];
         for (const v of asyncValidators) {
           const errorOrNull = await v(field);
           if (errorOrNull) {
-            return errorOrNull;
+            if (errorOrNull.$$typeof === 'warning') {
+              results.push(errorOrNull);
+            } else if (errorOrNull.$$typeof === 'error') {
+              return mergeResults([...results, errorOrNull]);
+            }
           }
         }
-        return null;
+        return mergeResults([...results]);
       };
   }
 }
