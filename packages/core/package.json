@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.8.7",
+    "lodash.template": "^4.5.0",
     "p-any": "^3.0.0"
   },
   "homepage": "https://github.com/formularx/formular#readme",
@@ -36,5 +37,8 @@
   },
   "publishConfig": {
     "access": "publish"
+  },
+  "devDependencies": {
+    "@types/lodash.template": "^4.4.6"
   }
 }

@@ -4,7 +4,7 @@ import {
   FieldArrayInstance
 } from '../nodes';
 
-type ValidationFieldType =
+export type ValidationFieldType =
   | FieldInstance
   | FieldGroupInstance
   | FieldArrayInstance;
