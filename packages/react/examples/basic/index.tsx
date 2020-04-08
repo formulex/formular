@@ -1,8 +1,16 @@
-import { FormInstance } from '@formular/core';
 import { render } from 'react-dom';
-import { Container, Item, Scope, value, field, oflow } from '../../src';
-import React, { createRef, useCallback, useEffect, useState } from 'react';
+import {
+  Container,
+  Item,
+  Scope,
+  value,
+  field,
+  oflow,
+  useForm
+} from '../../src';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Observer } from 'mobx-react';
+import { untracked } from 'mobx';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -17,8 +25,15 @@ function useRefCurrent<S>(ref: React.RefObject<S>): S | null {
 }
 
 const App: React.FC = () => {
-  const formRef = createRef<FormInstance>();
-  const form = useRefCurrent<FormInstance>(formRef);
+  const [form] = useForm({
+    initialValues: {
+      greeting: 'daddy',
+      greeting2: 'mommy',
+      TestCase1: {
+        数量: 30
+      }
+    }
+  });
 
   const handleClick = useCallback(() => {
     console.log(form?.value);
@@ -31,16 +46,16 @@ const App: React.FC = () => {
 
   return (
     <Container
-      ref={formRef}
-      initialValues={{
-        greeting: 'daddy',
-        greeting2: 'mommy',
-        TestCase1: {
-          数量: 30
-        }
-      }}
+      form={form}
       auto={() => {
-        field('greetingSync').value = value<string>('greeting');
+        // field('greetingSync').value = value<string>('greeting');
+        console.log(1);
+        // field('greetingSync').setValidatorKeys(['required']);
+        // field('greetingSync')
+        //   .validate()
+        //   .then((result) => {
+        //     console.log('result', result);
+        //   });
       }}
       watch={[
         [
@@ -49,13 +64,6 @@ const App: React.FC = () => {
             yield delay(1000);
             field('greetingAsync').value = greeting;
           })
-        ],
-        [
-          () => value<string>('greeting'),
-          async (greeting: string) => {
-            await delay(1000);
-            field('greetingAsync').value = greeting;
-          }
         ],
         [
           () => value<string>('greeting2'),
@@ -69,33 +77,31 @@ const App: React.FC = () => {
     >
       <Scope
         name="TestCase1"
-        watch={[
-          [
-            () => value('总价'),
-            (totalValue) => {
-              if (value('单价')) {
-                field('数量').setValue(totalValue / value<number>('单价'));
-              }
-            }
-          ],
-          [
-            () => value('单价'),
-            (priceValue) => {
+        auto={[
+          () => {
+            value('总价');
+            untracked(() => {
               if (value('数量')) {
-                field('总价').setValue(priceValue * value<number>('数量'));
-              } else if (value('总价')) {
-                field('数量').setValue(value<number>('总价') / priceValue);
+                field('单价').value = value('总价') / value('数量');
               }
-            }
-          ],
-          [
-            () => value('数量'),
-            (count) => {
+            });
+          },
+          () => {
+            value('单价');
+            untracked(() => {
+              if (value('数量')) {
+                field('总价').value = value('单价') * value('数量');
+              }
+            });
+          },
+          () => {
+            value('数量');
+            untracked(() => {
               if (value('单价')) {
-                field('总价').setValue(count * value<number>('单价'));
+                field('总价').value = value('单价') * value('数量');
               }
-            }
-          ]
+            });
+          }
         ]}
       >
         <Item name="总价">

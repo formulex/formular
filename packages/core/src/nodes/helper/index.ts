@@ -3,7 +3,7 @@ import {
   IAnyStateTreeNode
 } from 'mobx-state-tree/dist/internal';
 import { walk, getType, tryResolve } from 'mobx-state-tree';
-import { Field, FieldInstance, createField } from '../field';
+import { Field, FieldInstance, createField, isFieldInstance } from '../field';
 import { FieldGroup, FieldGroupInstance, createFieldGroup } from '../group';
 import { FieldArray, FieldArrayInstance, createFieldArray } from '../array';
 import { ValidatorFn, AsyncValidatorFn } from '../../validation/types';
@@ -75,12 +75,13 @@ export function fieldResolver(
 export interface GetOrCreateNodeConfig {
   base: FieldGroupInstance;
   initialValue?: any;
+  rules?: (string | any[])[];
   type?: 'object' | 'array' | 'string' | 'number' | 'boolean';
 }
 
 export function getOrCreateNodeFromBase(
   name: string,
-  { base, initialValue, type }: GetOrCreateNodeConfig
+  { base, initialValue, type, rules = [] }: GetOrCreateNodeConfig
 ): FieldInstance | FieldGroupInstance | FieldArrayInstance {
   // 1. find the node
   let node = fieldResolver(base, name);
@@ -123,7 +124,12 @@ export function getOrCreateNodeFromBase(
     });
   }
 
-  // 3. offer node
+  // 3. add rules
+  if (isFieldInstance(node)) {
+    node.setValidatorKeys(rules);
+  }
+
+  // 4. offer node
   return node;
 }
 

@@ -11,6 +11,7 @@ import { useScopeContext } from '../contexts/scope';
 export interface CreateFieldOptions {
   name: string;
   initialValue?: any;
+  rules?: (string | any[])[];
 }
 
 export interface FieldMeta {
@@ -22,7 +23,8 @@ export interface FieldMeta {
 
 export function useField({
   name,
-  initialValue
+  initialValue,
+  rules = []
 }: CreateFieldOptions): [FieldMeta] {
   const scope = useScopeContext();
   const firstRenderedFieldOrGroupOrArray:
