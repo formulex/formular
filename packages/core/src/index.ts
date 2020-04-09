@@ -1,2 +1,2 @@
 export * from './nodes';
-export { Validators } from './validation';
+export { Validators, Rule, AsyncRule } from './validation';

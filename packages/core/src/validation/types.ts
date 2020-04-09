@@ -1,4 +1,4 @@
-import {
+import type {
   FieldInstance,
   FieldGroupInstance,
   FieldArrayInstance
@@ -43,3 +43,6 @@ export type AsyncValidateStrategy =
   | 'parallelBail'
   | 'series'
   | 'seriesBail';
+
+export type Rule = string | any[] | ValidatorFn;
+export type AsyncRule = string | any[] | AsyncValidatorFn;

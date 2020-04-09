@@ -1,12 +1,21 @@
-import {
+import type {
   ITypeDispatcher,
   IAnyStateTreeNode
 } from 'mobx-state-tree/dist/internal';
-import { walk, getType, tryResolve } from 'mobx-state-tree';
+import { walk, getType, tryResolve, getEnv } from 'mobx-state-tree';
 import { Field, FieldInstance, createField, isFieldInstance } from '../field';
 import { FieldGroup, FieldGroupInstance, createFieldGroup } from '../group';
 import { FieldArray, FieldArrayInstance, createFieldArray } from '../array';
-import { ValidatorFn, AsyncValidatorFn } from '../../validation/types';
+import {
+  ValidatorFn,
+  AsyncValidatorFn,
+  Rule,
+  AsyncRule
+} from '../../validation/types';
+import { transaction } from 'mobx';
+import { Validators } from '../..';
+import { FormEnvironment } from '../form';
+import { uid } from '../../utils/uid';
 
 export const dispatcher: ITypeDispatcher = (snapshot) => {
   if (
@@ -75,13 +84,20 @@ export function fieldResolver(
 export interface GetOrCreateNodeConfig {
   base: FieldGroupInstance;
   initialValue?: any;
-  rules?: (string | any[])[];
+  rules?: Rule[];
+  asyncRules?: AsyncRule[];
   type?: 'object' | 'array' | 'string' | 'number' | 'boolean';
 }
 
 export function getOrCreateNodeFromBase(
   name: string,
-  { base, initialValue, type, rules = [] }: GetOrCreateNodeConfig
+  {
+    base,
+    initialValue,
+    type,
+    rules = [],
+    asyncRules = []
+  }: GetOrCreateNodeConfig
 ): FieldInstance | FieldGroupInstance | FieldArrayInstance {
   // 1. find the node
   let node = fieldResolver(base, name);
@@ -125,12 +141,33 @@ export function getOrCreateNodeFromBase(
   }
 
   // 3. add rules
-  if (isFieldInstance(node)) {
-    node.setValidatorKeys(rules);
-  }
+  transaction(() => {
+    if (isFieldInstance(node)) {
+      const { validators } = getEnv<FormEnvironment>(base);
+      node.setValidatorKeys(normalizeRules(rules, validators));
+      node.setAsyncValidatorKeys(normalizeRules(asyncRules, validators));
+    }
+  });
 
   // 4. offer node
   return node;
+}
+
+export function normalizeRules(
+  rules: Rule[] | AsyncRule[],
+  validators: Validators
+): (string | any)[] {
+  const results: (string | any[])[] = [];
+  for (const rule of rules) {
+    if (typeof rule === 'string' || Array.isArray(rule)) {
+      results.push(rule);
+    } else if (typeof rule === 'function') {
+      const ruleKey = `Rule:${uid()}`;
+      validators.registerValidator(ruleKey, rule);
+      results.push(ruleKey);
+    }
+  }
+  return results;
 }
 
 export function isFunctionPresent<F extends ValidatorFn | AsyncValidatorFn>(

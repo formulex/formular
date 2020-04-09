@@ -8,21 +8,11 @@ import {
   oflow,
   useForm
 } from '../../src';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import { Observer } from 'mobx-react';
 import { untracked } from 'mobx';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-function useRefCurrent<S>(ref: React.RefObject<S>): S | null {
-  const [current, setCurrent] = useState<null | S>(null);
-
-  useEffect(() => {
-    setCurrent(ref.current);
-  }, []);
-
-  return current;
-}
 
 const App: React.FC = () => {
   const [form] = useForm({
@@ -30,7 +20,7 @@ const App: React.FC = () => {
       greeting: 'daddy',
       greeting2: 'mommy',
       TestCase1: {
-        数量: 30
+        数量: 20
       }
     }
   });
@@ -44,18 +34,24 @@ const App: React.FC = () => {
     console.log('after', form?.value);
   }, [form]);
 
+  const handleValidateFields = useCallback(async () => {
+    const results = await form.validateFields();
+    console.log('Validate results:', results);
+  }, []);
+
   return (
     <Container
       form={form}
       auto={() => {
         // field('greetingSync').value = value<string>('greeting');
-        console.log(1);
+        // console.log(1);
         // field('greetingSync').setValidatorKeys(['required']);
         // field('greetingSync')
         //   .validate()
         //   .then((result) => {
         //     console.log('result', result);
         //   });
+        field('TestCase1.总价').value = 100;
       }}
       watch={[
         [
@@ -79,7 +75,8 @@ const App: React.FC = () => {
         name="TestCase1"
         auto={[
           () => {
-            value('总价');
+            console.log('总价', value('总价'));
+
             untracked(() => {
               if (value('数量')) {
                 field('单价').value = value('总价') / value('数量');
@@ -89,22 +86,43 @@ const App: React.FC = () => {
           () => {
             value('单价');
             untracked(() => {
-              if (value('数量')) {
-                field('总价').value = value('单价') * value('数量');
-              }
-            });
-          },
-          () => {
-            value('数量');
-            untracked(() => {
-              if (value('单价')) {
+              if (value('数量') && value('单价')) {
                 field('总价').value = value('单价') * value('数量');
               }
             });
           }
+          // () => {
+          //   value('数量');
+          //   untracked(() => {
+          //     console.log('price', value('单价'));
+          //     if (value('单价')) {
+          //       field('总价').value = value('单价') * value('数量');
+          //     }
+          //   });
+          // }
         ]}
       >
-        <Item name="总价">
+        <Item
+          name="总价"
+          rules={[
+            'required',
+            useCallback((field) => {
+              if (Number.parseInt(field.value) === 100) {
+                return { no100: true };
+              }
+              return null;
+            }, [])
+          ]}
+          asyncRules={[
+            async (field) => {
+              if (Number.parseInt(field.value as any) === 1000) {
+                await delay(3000);
+                return { no1000: true };
+              }
+              return null;
+            }
+          ]}
+        >
           {({ field, name }) => (
             <div>
               <h3>{name}</h3>
@@ -113,7 +131,8 @@ const App: React.FC = () => {
                   type="text"
                   value={(field.value as any) || ''}
                   onChange={(e) => {
-                    field.setValue(Number.parseFloat(e.target.value));
+                    console.log('target', e.target.value);
+                    field.setValue(e.target.value);
                   }}
                 />
               </div>
@@ -129,7 +148,7 @@ const App: React.FC = () => {
                   type="text"
                   value={(field.value as any) || ''}
                   onChange={(e) => {
-                    field.setValue(Number.parseFloat(e.target.value));
+                    field.setValue(e.target.value);
                   }}
                 />
               </div>
@@ -147,7 +166,7 @@ const App: React.FC = () => {
                   type="text"
                   value={(field.value as any) || ''}
                   onChange={(e) => {
-                    field.setValue(Number.parseFloat(e.target.value));
+                    field.setValue(e.target.value);
                   }}
                 />
               </div>
@@ -266,6 +285,7 @@ const App: React.FC = () => {
       <div>
         <button onClick={handleClick}>Submit</button>
         <button onClick={handleReset}>Reset</button>
+        <button onClick={handleValidateFields}>ValidateFields</button>
       </div>
     </Container>
   );

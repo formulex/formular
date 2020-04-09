@@ -16,7 +16,18 @@ export const FieldGroup = types
     ),
     isEffectDisabled: types.boolean
   })
-  .views(self => ({
+  .views((self) => ({
+    get results(): { [key: string]: any } | null {
+      const result: { [key: string]: any } = {};
+      let atLeasthasOne = false;
+      for (const [key, node] of self.children.entries()) {
+        if (node.results) {
+          result[key] = node.results;
+          atLeasthasOne = true;
+        }
+      }
+      return atLeasthasOne ? result : null;
+    },
     get value() {
       const result: { [key: string]: any } = {};
       for (const [key, node] of self.children.entries()) {
@@ -32,12 +43,12 @@ export const FieldGroup = types
       return result;
     }
   }))
-  .actions(self => ({
+  .actions((self) => ({
     setEffectDisabled(val: boolean) {
       self.isEffectDisabled = val;
     }
   }))
-  .actions(self => {
+  .actions((self) => {
     function _checkAllValuesPresent(val: object) {
       for (const name of self.children.keys()) {
         if (!Object.prototype.hasOwnProperty.call(val, name)) {
@@ -62,27 +73,27 @@ export const FieldGroup = types
     return {
       setValue(val: { [key: string]: any }) {
         _checkAllValuesPresent(val);
-        Object.keys(val).forEach(name => {
+        Object.keys(val).forEach((name) => {
           _throwIfFieldMissing(name);
           self.children.get(name).setValue(val[name]);
         });
       },
       setInitialValue(val: { [key: string]: any }) {
         _checkAllValuesPresent(val);
-        Object.keys(val).forEach(name => {
+        Object.keys(val).forEach((name) => {
           _throwIfFieldMissing(name);
           self.children.get(name).setInitialValue(val[name]);
         });
       },
       patchValue(val: { [key: string]: any }) {
-        Object.keys(val).forEach(name => {
+        Object.keys(val).forEach((name) => {
           if (self.children.get(name)) {
             self.children.get(name).patchValue(val[name]);
           }
         });
       },
       patchInitialValue(val: { [key: string]: any }) {
-        Object.keys(val).forEach(name => {
+        Object.keys(val).forEach((name) => {
           if (self.children.get(name)) {
             self.children.get(name).patchInitialValue(val[name]);
           }
@@ -93,14 +104,14 @@ export const FieldGroup = types
       }
     };
   })
-  .actions(self => {
+  .actions((self) => {
     return {
       afterCreate() {
         self.setInitialValue(self.value);
       },
       reset() {
         self.setEffectDisabled(true);
-        return new Promise<void>(resolve => {
+        return new Promise<void>((resolve) => {
           setTimeout(() => {
             transaction(() => {
               self.setValue(self.initialValue);
@@ -114,6 +125,11 @@ export const FieldGroup = types
         for (const node of self.children.values()) {
           node.clear();
         }
+      },
+      async validate(): Promise<void> {
+        await Promise.all(
+          [...self.children.values()].map((node) => node.validate())
+        );
       }
     };
   });
@@ -124,7 +140,7 @@ export function createFieldGroup(value: {
   [key: string]: any;
 }): FieldGroupInstance {
   const children = {};
-  Object.keys(value).forEach(name => {
+  Object.keys(value).forEach((name) => {
     const target = value[name];
     const type = dispatcher({ children: target });
     if (type === FieldGroup) {

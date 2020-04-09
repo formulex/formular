@@ -1,14 +1,19 @@
 import React from 'react';
 import { Form as AntDesignForm } from 'antd';
 import { Item as InnerItem, SymbolKey, FieldMeta } from '@formular/react';
-import { ItemProps as InnerItemProps } from '@formular/react/lib/components/Item';
-import { FormItemProps as AntDesignFormItemProps } from 'antd/lib/form/FormItem';
+import type { ItemProps as InnerItemProps } from '@formular/react/lib/components/Item';
+import type { FormItemProps as AntDesignFormItemProps } from 'antd/lib/form/FormItem';
 
 export interface FormItemProps<C extends React.JSXElementConstructor<any>>
   extends Omit<InnerItemProps, 'children'>,
     Omit<
       AntDesignFormItemProps,
-      'name' | 'valuePropName' | 'getValueFromEvent' | 'children'
+      | 'name'
+      | 'valuePropName'
+      | 'getValueFromEvent'
+      | 'children'
+      | 'rules'
+      | 'asyncRules'
     > {
   componentProps?: PropTypeOfComponent<C>;
   component?: C;
@@ -29,11 +34,18 @@ export class FormItem<C extends any> extends React.Component<FormItemProps<C>> {
       initialValue,
       componentProps = {},
       component,
+      rules,
+      asyncRules,
       ...antDesignFormItemProps
     } = this.props;
 
     return (
-      <InnerItem name={name} initialValue={initialValue}>
+      <InnerItem
+        name={name}
+        initialValue={initialValue}
+        rules={rules}
+        asyncRules={asyncRules}
+      >
         {({ field, name: fieldName }) => {
           let rendered = null;
           if (component && (component as any)[SymbolKey]) {

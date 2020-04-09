@@ -12,6 +12,18 @@ export function isEmptyInputValue(value: any): boolean {
   return value == null || value.length === 0;
 }
 
+export function isResult(maybeResult: ValidationErrors): boolean {
+  return typeof maybeResult === 'object' && maybeResult.$$typeof === 'results';
+}
+
+export function isEmptyResult(maybeResult: ValidationErrors): boolean {
+  return (
+    isResult(maybeResult) &&
+    maybeResult.errors === null &&
+    maybeResult.warnings === null
+  );
+}
+
 export function mergeWithoutType(
   arrayOfErrors: (Omit<ValidationErrors, '$$typeof'> | null)[]
 ): Omit<ValidationErrors, '$$typeof'> | null {
@@ -29,7 +41,7 @@ export function mergeWithoutType(
 
 export function mergeResults(
   arrayOfErrors: (ValidationErrors | null)[]
-): ValidationErrors {
+): ValidationErrors | null {
   const errors: Omit<ValidationErrors, '$$typeof'>[] = [];
   const warnings: Omit<ValidationErrors, '$$typeof'>[] = [];
   for (const result of arrayOfErrors) {
@@ -50,11 +62,12 @@ export function mergeResults(
       }
     }
   }
-  return {
+  const r: ValidationErrors = {
     $$typeof: 'results',
     errors: mergeWithoutType(errors),
     warnings: mergeWithoutType(warnings)
   };
+  return isEmptyResult(r) ? null : r;
 }
 
 export function compose(

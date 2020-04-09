@@ -1,4 +1,4 @@
-export interface LocaleConfig {
+export interface MessageCollection {
   default: string;
   required: string;
   min: string;

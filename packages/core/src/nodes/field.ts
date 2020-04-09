@@ -1,4 +1,4 @@
-import { types, Instance, getEnv, getType } from 'mobx-state-tree';
+import { types, Instance, getEnv, getType, getRoot } from 'mobx-state-tree';
 import {
   ValidateStrategy,
   AsyncValidateStrategy,
@@ -6,8 +6,15 @@ import {
   ValidatorFn,
   AsyncValidatorFn
 } from '../validation/types';
-import { mergeResults, compose, composeAsync } from '../validation';
+import {
+  mergeResults,
+  compose,
+  composeAsync,
+  anError,
+  aWarning
+} from '../validation';
 import { FormEnvironment } from '.';
+import { FormInstance } from './form';
 
 export const Field = types
   .model('Field', {
@@ -23,13 +30,16 @@ export const Field = types
     asyncValidatorKeys: types.array(
       types.union(types.string, types.array(types.frozen()))
     ),
-    validateStrategy: types.enumeration<ValidateStrategy>('validateStrategy', [
-      'all',
-      'bail'
-    ]),
-    asyncValidateStrategy: types.enumeration<AsyncValidateStrategy>(
-      'asyncValidateStrategy',
-      ['parallel', 'parallelBail', 'series', 'seriesBail']
+    _validateStrategy: types.maybe(
+      types.enumeration<ValidateStrategy>('validateStrategy', ['all', 'bail'])
+    ),
+    _asyncValidateStrategy: types.maybe(
+      types.enumeration<AsyncValidateStrategy>('asyncValidateStrategy', [
+        'parallel',
+        'parallelBail',
+        'series',
+        'seriesBail'
+      ])
     ),
     rulesResults: types.maybeNull(types.frozen()),
     reactionsResults: types.maybeNull(types.frozen())
@@ -38,11 +48,19 @@ export const Field = types
     setValue(val?: string | number | boolean | null) {
       self._value = val === '' ? undefined : val;
     },
+    setRulesResults(result: any | null) {
+      self.rulesResults = result;
+    },
     addError(error: ValidationErrors | null) {
-      self.reactionsResults = mergeResults([self.reactionsResults, error]);
+      const inputError = error ? anError(error) : null;
+      self.reactionsResults = mergeResults([self.reactionsResults, inputError]);
     },
     addWarning(warning: ValidationErrors | null) {
-      self.reactionsResults = mergeResults([self.reactionsResults, warning]);
+      const inputWarning = warning ? aWarning(warning) : null;
+      self.reactionsResults = mergeResults([
+        self.reactionsResults,
+        inputWarning
+      ]);
     }
   }))
   .views((self) => ({
@@ -70,18 +88,21 @@ export const Field = types
         )
         .filter((fn) => typeof fn === 'function') as AsyncValidatorFn[];
     },
-    get errors(): ValidationErrors | null {
+    get validateStrategy(): ValidateStrategy {
+      return (
+        self._validateStrategy || getRoot<FormInstance>(self).validateStrategy
+      );
+    },
+    get asyncValidateStrategy(): AsyncValidateStrategy {
+      return (
+        self._asyncValidateStrategy ||
+        getRoot<FormInstance>(self).asyncValidateStrategy
+      );
+    },
+    get results(): ValidationErrors | null {
       return mergeResults([self.rulesResults, self.reactionsResults]);
     },
-    set errors(error: ValidationErrors | null) {
-      self.addError(error);
-    },
-    get warnings(): ValidationErrors | null {
-      return mergeResults([self.rulesResults, self.reactionsResults]);
-    },
-    set warnings(error: ValidationErrors | null) {
-      self.addWarning(error);
-    },
+
     get value() {
       return self._value;
     },
@@ -97,17 +118,29 @@ export const Field = types
       return composeAsync(self.asyncValidators, {
         strategy: self.asyncValidateStrategy
       });
+    },
+    get errors() {
+      return self.results;
+    },
+    get warnings() {
+      return self.results;
+    },
+    set errors(error: ValidationErrors | null) {
+      self.addError(error);
+    },
+    set warnings(error: ValidationErrors | null) {
+      self.addWarning(error);
     }
   }))
   .actions((self) => ({
     setInitialValue(val?: string | number | boolean | null) {
       self.initialValue = val === '' ? undefined : val;
     },
-    setValidateStrategy(strategy: ValidateStrategy) {
-      self.validateStrategy = strategy;
+    setFieldValidateStrategy(strategy: ValidateStrategy) {
+      self._validateStrategy = strategy;
     },
-    setAsyncValidateStrategy(strategy: AsyncValidateStrategy) {
-      self.asyncValidateStrategy = strategy;
+    setFieldAsyncValidateStrategy(strategy: AsyncValidateStrategy) {
+      self._asyncValidateStrategy = strategy;
     },
     setValidatorKeys(keys: Array<string | any[]>) {
       self.validatorKeys.replace(keys);
@@ -147,16 +180,18 @@ export const Field = types
     clear() {
       self.setValue(null);
     },
-    async validate(): Promise<ValidationErrors | null> {
+    async validate(): Promise<void> {
       const errors = self.runValidator();
       if (errors) {
-        return errors;
+        self.setRulesResults(errors);
+        return;
       }
       const asyncErrors = await self.runAsyncValidator();
       if (asyncErrors) {
-        return asyncErrors;
+        self.setRulesResults(asyncErrors);
+        return;
       }
-      return null;
+      self.setRulesResults(null);
     }
   }));
 
@@ -165,8 +200,6 @@ export type FieldInstance = Instance<typeof Field>;
 export function createField(value?: string | number | boolean): FieldInstance {
   return Field.create({
     _value: value,
-    validateStrategy: 'all',
-    asyncValidateStrategy: 'parallel',
     validatorKeys: [],
     asyncValidatorKeys: []
   });

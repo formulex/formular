@@ -1,17 +1,19 @@
-import { useEffect } from 'react';
-import { useAsObservableSource } from 'mobx-react';
+import { useMemo } from 'react';
 import {
   FieldGroupInstance,
   FieldArrayInstance,
   FieldInstance,
-  getOrCreateNodeFromBase
+  getOrCreateNodeFromBase,
+  AsyncRule,
+  Rule
 } from '@formular/core';
 import { useScopeContext } from '../contexts/scope';
 
 export interface CreateFieldOptions {
   name: string;
   initialValue?: any;
-  rules?: (string | any[])[];
+  rules?: Rule[];
+  asyncRules?: AsyncRule[];
 }
 
 export interface FieldMeta {
@@ -24,33 +26,32 @@ export interface FieldMeta {
 export function useField({
   name,
   initialValue,
-  rules = []
+  rules,
+  asyncRules
 }: CreateFieldOptions): [FieldMeta] {
   const scope = useScopeContext();
-  const firstRenderedFieldOrGroupOrArray:
-    | FieldInstance
-    | FieldGroupInstance
-    | FieldArrayInstance = getOrCreateNodeFromBase(name, {
-    initialValue,
-    base: scope
-  });
-  const meta = useAsObservableSource({
-    name,
-    field: firstRenderedFieldOrGroupOrArray as FieldInstance,
-    group: firstRenderedFieldOrGroupOrArray as FieldGroupInstance,
-    array: firstRenderedFieldOrGroupOrArray as FieldArrayInstance
-  });
-  useEffect(() => {
-    const fieldOrGroupOrArray:
+
+  const resultMeta = useMemo(() => {
+    const firstRenderedFieldOrGroupOrArray:
       | FieldInstance
       | FieldGroupInstance
       | FieldArrayInstance = getOrCreateNodeFromBase(name, {
       initialValue,
-      base: scope
+      base: scope,
+      rules,
+      asyncRules
     });
-    meta.field = fieldOrGroupOrArray as FieldInstance;
-    meta.group = fieldOrGroupOrArray as FieldGroupInstance;
-    meta.array = fieldOrGroupOrArray as FieldArrayInstance;
-  }, [initialValue, scope]);
-  return [meta];
+    const meta = {
+      name,
+      field: firstRenderedFieldOrGroupOrArray as FieldInstance,
+      group: firstRenderedFieldOrGroupOrArray as FieldGroupInstance,
+      array: firstRenderedFieldOrGroupOrArray as FieldArrayInstance
+    };
+
+    return meta;
+  }, [name, initialValue, scope, rules, asyncRules]);
+
+  // [name, initialValue, scope, rules, asyncRules]
+
+  return [resultMeta];
 }

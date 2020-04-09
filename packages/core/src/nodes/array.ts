@@ -14,7 +14,16 @@ export const FieldArray = types
       )
     )
   })
-  .views(self => ({
+  .views((self) => ({
+    get results() {
+      const result: any[] = [];
+      for (const r of self.children.values()) {
+        if (r) {
+          result.push(r);
+        }
+      }
+      return result.length ? result : null;
+    },
     get value() {
       return [...self.children.values()].map(({ value }) => value);
     },
@@ -24,7 +33,7 @@ export const FieldArray = types
       );
     }
   }))
-  .actions(self => {
+  .actions((self) => {
     function _checkAllValuesPresent(val: any) {
       self.children.forEach((field, index) => {
         if (!Object.prototype.hasOwnProperty.call(val, index)) {
@@ -81,7 +90,7 @@ export const FieldArray = types
       }
     };
   })
-  .actions(self => {
+  .actions((self) => {
     return {
       afterCreate() {
         self.setInitialValue(self.value);
@@ -91,6 +100,11 @@ export const FieldArray = types
       },
       clear() {
         self.children.clear();
+      },
+      async validate(): Promise<void> {
+        await Promise.all(
+          [...self.children.values()].map((node) => node.validate())
+        );
       }
     };
   });
