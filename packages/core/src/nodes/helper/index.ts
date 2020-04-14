@@ -6,12 +6,7 @@ import { walk, getType, tryResolve, getEnv } from 'mobx-state-tree';
 import { Field, FieldInstance, createField, isFieldInstance } from '../field';
 import { FieldGroup, FieldGroupInstance, createFieldGroup } from '../group';
 import { FieldArray, FieldArrayInstance, createFieldArray } from '../array';
-import {
-  ValidatorFn,
-  AsyncValidatorFn,
-  Rule,
-  AsyncRule
-} from '../../validation/types';
+import { Rule, AsyncRule } from '../../validation/types';
 import { transaction } from 'mobx';
 import { Validators } from '../..';
 import { FormEnvironment } from '../form';
@@ -144,8 +139,20 @@ export function getOrCreateNodeFromBase(
   transaction(() => {
     if (isFieldInstance(node)) {
       const { validators } = getEnv<FormEnvironment>(base);
-      node.setValidatorKeys(normalizeRules(rules, validators));
-      node.setAsyncValidatorKeys(normalizeRules(asyncRules, validators));
+      const { keys: ruleKeys, messages: ruleMessages } = applyRules(
+        rules,
+        validators
+      );
+      const {
+        keys: asyncruleKeys,
+        messages: asyncruleMessages
+      } = applyAsyncRules(asyncRules, validators);
+      node.setValidatorKeys(ruleKeys);
+      node.setAsyncValidatorKeys(asyncruleKeys);
+      node.setValidateMessages({
+        ...ruleMessages,
+        ...asyncruleMessages
+      });
     }
   });
 
@@ -153,25 +160,46 @@ export function getOrCreateNodeFromBase(
   return node;
 }
 
-export function normalizeRules(
-  rules: Rule[] | AsyncRule[],
-  validators: Validators
-): (string | any)[] {
-  const results: (string | any[])[] = [];
+export function applyRules(rules: Rule[], validators: Validators) {
+  const keys: (string | any[])[] = [];
+  const messages: { [key: string]: string } = {};
   for (const rule of rules) {
-    if (typeof rule === 'string' || Array.isArray(rule)) {
-      results.push(rule);
-    } else if (typeof rule === 'function') {
-      const ruleKey = `Rule:${uid()}`;
-      validators.registerValidator(ruleKey, rule);
-      results.push(ruleKey);
+    if (rule.required) {
+      keys.push('required');
+      Object.assign(messages, { required: rule.message });
+    }
+    if (typeof rule.max === 'number') {
+      keys.push(['max', rule.max]);
+      Object.assign(messages, { max: rule.message });
+    }
+    if (typeof rule.min === 'number') {
+      keys.push(['min', rule.min]);
+      Object.assign(messages, { min: rule.message });
+    }
+    if (typeof rule.format === 'string') {
+      keys.push(rule.format);
+      Object.assign(messages, { [rule.format]: rule.message });
+    }
+    if (typeof rule.validator === 'function') {
+      const name = `CustomValidator:${uid()}`;
+      validators.registerValidator(name, rule.validator);
+      keys.push(name);
+      Object.assign(messages, { [name]: rule.message });
     }
   }
-  return results;
+  return { keys, messages };
 }
 
-export function isFunctionPresent<F extends ValidatorFn | AsyncValidatorFn>(
-  fn: F | null
-): fn is F {
-  return typeof fn === 'function';
+export function applyAsyncRules(rules: AsyncRule[], validators: Validators) {
+  const keys: (string | any[])[] = [];
+  const messages: { [key: string]: string } = {};
+  for (const rule of rules) {
+    if (typeof rule.validator === 'function') {
+      const name = `CustomAsyncValidator:${uid()}`;
+      validators.registerValidator(name, rule.validator);
+      keys.push(name);
+      Object.assign(messages, { [name]: rule.message });
+    }
+  }
+  return { keys, messages };
 }

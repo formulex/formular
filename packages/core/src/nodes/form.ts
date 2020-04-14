@@ -3,7 +3,7 @@ import { FieldGroup, createFieldGroup, FieldGroupInstance } from './group';
 import { FieldInstance } from './field';
 import { FieldArrayInstance } from './array';
 import { getOrCreateNodeFromBase } from './helper';
-import { Validators } from '../validation';
+import { Validators, enUS } from '../validation';
 import {
   ValidatorOrValidatorFactory,
   ValidateStrategy,
@@ -29,9 +29,12 @@ export const Form = types
       types.literal('change'),
       types.frozen<['change', number]>()
     ),
-    validateMessages: types.map(types.string)
+    _validateMessages: types.map(types.string)
   })
   .views((self) => ({
+    get validateMessages() {
+      return self._validateMessages.toJSON();
+    },
     get value() {
       return self.root.value;
     },
@@ -102,7 +105,7 @@ export function createForm<Values = any>({
   validateStrategy = 'all',
   asyncValidateStrategy = 'parallel',
   validateTiming = 'change',
-  validateMessages = {}
+  validateMessages: _validateMessages = enUS
 }: CreateFormOptions<Values>): FormInstance {
   const root = createFieldGroup(initialValues);
 
@@ -125,7 +128,7 @@ export function createForm<Values = any>({
       validateStrategy,
       asyncValidateStrategy,
       validateTiming,
-      validateMessages
+      _validateMessages
     },
     { validators } as FormEnvironment
   );

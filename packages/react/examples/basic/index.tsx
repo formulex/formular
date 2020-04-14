@@ -105,21 +105,27 @@ const App: React.FC = () => {
         <Item
           name="总价"
           rules={[
-            'required',
-            useCallback((field) => {
-              if (Number.parseInt(field.value) === 100) {
-                return { no100: true };
-              }
-              return null;
-            }, [])
+            { required: true, message: '${name} 必须要填呀' },
+            {
+              validator: (field) => {
+                if (Number.parseInt(field.value as any) === 100) {
+                  return { limit: { equal: 100 } };
+                }
+                return null;
+              },
+              message: '${name} 的数值不能等于 ${equal}'
+            }
           ]}
           asyncRules={[
-            async (field) => {
-              if (Number.parseInt(field.value as any) === 1000) {
-                await delay(3000);
-                return { no1000: true };
-              }
-              return null;
+            {
+              asyncValidator: async (field) => {
+                if (Number.parseInt(field.value as any) === 1000) {
+                  await delay(3000);
+                  return { limit2: { equal: 1000 } };
+                }
+                return null;
+              },
+              message: '${name} 的数值2不能等于 ${equal}'
             }
           ]}
         >

@@ -44,5 +44,16 @@ export type AsyncValidateStrategy =
   | 'series'
   | 'seriesBail';
 
-export type Rule = string | any[] | ValidatorFn;
-export type AsyncRule = string | any[] | AsyncValidatorFn;
+export interface Rule {
+  required?: boolean;
+  max?: number;
+  min?: number;
+  format?: 'email';
+  validator?: ValidatorFn;
+  message?: string;
+}
+
+export interface AsyncRule {
+  validator?: AsyncValidatorFn;
+  message?: string;
+}

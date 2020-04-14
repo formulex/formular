@@ -11,7 +11,8 @@ import {
   compose,
   composeAsync,
   anError,
-  aWarning
+  aWarning,
+  getResolver
 } from '../validation';
 import { FormEnvironment } from '.';
 import { FormInstance } from './form';
@@ -41,12 +42,17 @@ export const Field = types
         'seriesBail'
       ])
     ),
+    _selfValidateMessages: types.map(types.string),
     rulesResults: types.maybeNull(types.frozen()),
-    reactionsResults: types.maybeNull(types.frozen())
+    reactionsResults: types.maybeNull(types.frozen()),
+    _isPending: types.boolean
   })
   .actions((self) => ({
     setValue(val?: string | number | boolean | null) {
       self._value = val === '' ? undefined : val;
+    },
+    setValidateMessages(messages: { [key: string]: string }) {
+      self._selfValidateMessages.replace(messages);
     },
     setRulesResults(result: any | null) {
       self.rulesResults = result;
@@ -108,6 +114,12 @@ export const Field = types
     },
     set value(val: string | number | boolean | undefined | null) {
       self.setValue(val);
+    },
+    get validateMessages(): { [key: string]: string } {
+      return {
+        ...getRoot<FormInstance>(self).validateMessages,
+        ...self._selfValidateMessages.toJSON()
+      };
     }
   }))
   .views((self) => ({
@@ -130,6 +142,37 @@ export const Field = types
     },
     set warnings(error: ValidationErrors | null) {
       self.addWarning(error);
+    },
+    get messages() {
+      if (!self.results) {
+        return null;
+      }
+      if (self.results.$$typeof === 'results') {
+        const errors: string[] = [];
+        const warnings: string[] = [];
+        Object.keys(self.results.errors).forEach((key) => {
+          const resolver = getResolver(
+            self.validateMessages[key] || self.validateMessages.default
+          );
+          const error = self.results?.errors[key];
+          const messageStr = resolver(error);
+          errors.push(messageStr);
+        });
+        Object.keys(self.results.warnings).forEach((key) => {
+          const resolver = getResolver(
+            self.validateMessages[key] || self.validateMessages.default
+          );
+          const error = self.results?.warnings[key];
+          const messageStr = resolver(error);
+          warnings.push(messageStr);
+        });
+        return {
+          errors: [...new Set(errors)],
+          warnings: [...new Set(warnings)]
+        };
+      }
+      console.warn('result should with $$typeof: "result"');
+      return null;
     }
   }))
   .actions((self) => ({
@@ -158,9 +201,13 @@ export const Field = types
       return self.validator ? self.validator(self as any) : null;
     },
     async runAsyncValidator(): Promise<ValidationErrors | null> {
+      self._isPending = true;
       if (self.asyncValidator) {
-        return self.asyncValidator(self as any);
+        const result = await self.asyncValidator(self as any);
+        self._isPending = false;
+        return result;
       }
+      self._isPending = false;
       return null;
     }
   }))
@@ -174,7 +221,7 @@ export const Field = types
     afterCreate() {
       self.setInitialValue(self.value);
     },
-    async reset() {
+    reset() {
       self.setValue(self.initialValue);
     },
     clear() {
@@ -200,6 +247,7 @@ export type FieldInstance = Instance<typeof Field>;
 export function createField(value?: string | number | boolean): FieldInstance {
   return Field.create({
     _value: value,
+    _isPending: false,
     validatorKeys: [],
     asyncValidatorKeys: []
   });
