@@ -65,10 +65,11 @@ export const Form = types
         initialValue: undefined
       }
     ): FieldInstance | FieldGroupInstance | FieldArrayInstance {
-      return getOrCreateNodeFromBase(name, {
+      const { node } = getOrCreateNodeFromBase(name, {
         ...config,
         base: self.root
       });
+      return node;
     },
     async validateFields() {
       await self.root.validate();

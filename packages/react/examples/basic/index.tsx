@@ -1,27 +1,141 @@
 import { render } from 'react-dom';
-import {
-  Container,
-  Item,
-  Scope,
-  value,
-  field,
-  oflow,
-  useForm
-} from '../../src';
-import React, { useCallback } from 'react';
+import { Container, Item, Scope, value, field, useForm } from '../../src';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Observer } from 'mobx-react';
 import { untracked } from 'mobx';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+const DynamicScope: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setTimeout(function timeout() {
+      setLoading(false);
+    }, 3000);
+  }, [setLoading]);
+
+  if (loading) {
+    return <div>loading...{React.version}</div>;
+  }
+  return (
+    <Scope
+      name="TestCase1"
+      auto={[
+        () => {
+          console.log('总价', value('总价'));
+
+          untracked(() => {
+            if (value('数量')) {
+              field('单价').value = value('总价') / value('数量');
+            }
+          });
+        },
+        () => {
+          value('单价');
+          untracked(() => {
+            if (value('数量') && value('单价')) {
+              field('总价').value = value('单价') * value('数量');
+            }
+          });
+        }
+      ]}
+    >
+      <Item
+        name="总价"
+        rules={[
+          { required: true, message: '必须要填呀' },
+          {
+            validator: (field) => {
+              if (Number.parseInt(field.value as any) === 100) {
+                return { equal: 100 };
+              }
+              return null;
+            },
+            message: '数值不能等于 ${equal}'
+          }
+        ]}
+        asyncRules={[
+          {
+            validator: async (field) => {
+              if (Number.parseInt(field.value as any) === 1000) {
+                await delay(3000);
+                return { equal: 1000 };
+              }
+              return null;
+            },
+            message: '数值2不能等于 ${equal}'
+          }
+        ]}
+      >
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                type="text"
+                value={(field.value as any) || ''}
+                onChange={(e) => {
+                  console.log('target', e.target.value);
+                  field.setValue(e.target.value);
+                }}
+              />
+              <br />
+              {JSON.stringify(field.messages)}
+            </div>
+          </div>
+        )}
+      </Item>
+      <Item name="单价">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                type="text"
+                value={(field.value as any) || ''}
+                onChange={(e) => {
+                  field.setValue(e.target.value);
+                }}
+              />
+              <br />
+              {JSON.stringify(field.messages)}
+            </div>
+          </div>
+        )}
+      </Item>
+
+      <Item name="数量">
+        {({ field, name }) => (
+          <div>
+            <h3>{name}</h3>
+            <div>
+              <input
+                style={{ width: '500px' }}
+                type="text"
+                value={(field.value as any) || ''}
+                onChange={(e) => {
+                  field.setValue(e.target.value);
+                }}
+              />
+              <br />
+              {JSON.stringify(field.messages)}
+            </div>
+          </div>
+        )}
+      </Item>
+    </Scope>
+  );
+};
+
 const App: React.FC = () => {
   const [form] = useForm({
     initialValues: {
       greeting: 'daddy',
-      greeting2: 'mommy',
-      TestCase1: {
-        数量: 20
-      }
+      greeting2: 'mommy'
+      // TestCase1: {
+      //   数量: 20
+      // }
     }
   });
 
@@ -39,147 +153,18 @@ const App: React.FC = () => {
     console.log('Validate results:', results);
   }, []);
 
+  useEffect(() => {
+    (window as any).form = form;
+  }, []);
+
   return (
     <Container
       form={form}
       auto={() => {
-        // field('greetingSync').value = value<string>('greeting');
-        // console.log(1);
-        // field('greetingSync').setValidatorKeys(['required']);
-        // field('greetingSync')
-        //   .validate()
-        //   .then((result) => {
-        //     console.log('result', result);
-        //   });
-        field('TestCase1.总价').value = 100;
+        field('greetingSync').value = value('greeting');
       }}
-      watch={[
-        [
-          () => value<string>('greeting'),
-          oflow(function* (greeting: string) {
-            yield delay(1000);
-            field('greetingAsync').value = greeting;
-          })
-        ],
-        [
-          () => value<string>('greeting2'),
-          oflow(function* (greeting: string) {
-            field('greetingSync2').value = greeting;
-            yield delay(1000);
-            field('greetingAsync2').value = greeting;
-          })
-        ]
-      ]}
     >
-      <Scope
-        name="TestCase1"
-        auto={[
-          () => {
-            console.log('总价', value('总价'));
-
-            untracked(() => {
-              if (value('数量')) {
-                field('单价').value = value('总价') / value('数量');
-              }
-            });
-          },
-          () => {
-            value('单价');
-            untracked(() => {
-              if (value('数量') && value('单价')) {
-                field('总价').value = value('单价') * value('数量');
-              }
-            });
-          }
-          // () => {
-          //   value('数量');
-          //   untracked(() => {
-          //     console.log('price', value('单价'));
-          //     if (value('单价')) {
-          //       field('总价').value = value('单价') * value('数量');
-          //     }
-          //   });
-          // }
-        ]}
-      >
-        <Item
-          name="总价"
-          rules={[
-            { required: true, message: '${name} 必须要填呀' },
-            {
-              validator: (field) => {
-                if (Number.parseInt(field.value as any) === 100) {
-                  return { limit: { equal: 100 } };
-                }
-                return null;
-              },
-              message: '${name} 的数值不能等于 ${equal}'
-            }
-          ]}
-          asyncRules={[
-            {
-              asyncValidator: async (field) => {
-                if (Number.parseInt(field.value as any) === 1000) {
-                  await delay(3000);
-                  return { limit2: { equal: 1000 } };
-                }
-                return null;
-              },
-              message: '${name} 的数值2不能等于 ${equal}'
-            }
-          ]}
-        >
-          {({ field, name }) => (
-            <div>
-              <h3>{name}</h3>
-              <div>
-                <input
-                  type="text"
-                  value={(field.value as any) || ''}
-                  onChange={(e) => {
-                    console.log('target', e.target.value);
-                    field.setValue(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </Item>
-        <Item name="单价">
-          {({ field, name }) => (
-            <div>
-              <h3>{name}</h3>
-              <div>
-                <input
-                  type="text"
-                  value={(field.value as any) || ''}
-                  onChange={(e) => {
-                    field.setValue(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </Item>
-
-        <Item name="数量">
-          {({ field, name }) => (
-            <div>
-              <h3>{name}</h3>
-              <div>
-                <input
-                  style={{ width: '500px' }}
-                  type="text"
-                  value={(field.value as any) || ''}
-                  onChange={(e) => {
-                    field.setValue(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </Item>
-      </Scope>
+      <DynamicScope />
       <Item name="greeting">
         {({ field, name }) => (
           <div>
@@ -193,6 +178,8 @@ const App: React.FC = () => {
                   field.setValue(e.target.value);
                 }}
               />
+              <br />
+              {JSON.stringify(field.messages)}
             </div>
           </div>
         )}
@@ -210,6 +197,8 @@ const App: React.FC = () => {
                   field.setValue(e.target.value);
                 }}
               />
+              <br />
+              {JSON.stringify(field.messages)}
             </div>
           </div>
         )}
@@ -227,6 +216,8 @@ const App: React.FC = () => {
                   field.setValue(e.target.value);
                 }}
               />
+              <br />
+              {JSON.stringify(field.messages)}
             </div>
           </div>
         )}
@@ -244,6 +235,8 @@ const App: React.FC = () => {
                   field.setValue(e.target.value);
                 }}
               />
+              <br />
+              {JSON.stringify(field.messages)}
             </div>
           </div>
         )}
@@ -261,6 +254,8 @@ const App: React.FC = () => {
                   field.setValue(e.target.value);
                 }}
               />
+              <br />
+              {JSON.stringify(field.messages)}
             </div>
           </div>
         )}
@@ -278,6 +273,8 @@ const App: React.FC = () => {
                   field.setValue(e.target.value);
                 }}
               />
+              <br />
+              {JSON.stringify(field.messages)}
             </div>
           </div>
         )}

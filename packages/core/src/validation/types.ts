@@ -1,13 +1,9 @@
-import type {
-  FieldInstance,
-  FieldGroupInstance,
-  FieldArrayInstance
-} from '../nodes';
+import type { FieldInstance } from '../nodes';
 
-export type ValidationFieldType =
-  | FieldInstance
-  | FieldGroupInstance
-  | FieldArrayInstance;
+export type ValidationFieldType = FieldInstance;
+// only support Field
+// | FieldGroupInstance
+// | FieldArrayInstance;
 
 export interface ValidationErrors {
   $$typeof?: 'error' | 'warning' | 'results';

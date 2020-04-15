@@ -25,3 +25,5 @@ export const Item: React.FC<ItemProps> = ({
 
   return useObserver<any>(() => render(fieldInstace));
 };
+
+Item.displayName = 'Item';

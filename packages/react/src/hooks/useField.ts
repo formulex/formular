@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import {
   FieldGroupInstance,
   FieldArrayInstance,
@@ -30,17 +30,24 @@ export function useField({
   asyncRules
 }: CreateFieldOptions): [FieldMeta] {
   const scope = useScopeContext();
-
-  const resultMeta = useMemo(() => {
-    const firstRenderedFieldOrGroupOrArray:
-      | FieldInstance
-      | FieldGroupInstance
-      | FieldArrayInstance = getOrCreateNodeFromBase(name, {
-      initialValue,
-      base: scope,
-      rules,
-      asyncRules
-    });
+  console.log('field', name);
+  useEffect(() => {
+    console.log('fieldEffect', name);
+  }, [name]);
+  const { meta, replaceBase } = useMemo(() => {
+    const {
+      node: firstRenderedFieldOrGroupOrArray,
+      replaceBase
+    } = getOrCreateNodeFromBase(
+      name,
+      {
+        initialValue,
+        base: scope,
+        rules,
+        asyncRules
+      },
+      true
+    );
     const meta = {
       name,
       field: firstRenderedFieldOrGroupOrArray as FieldInstance,
@@ -48,10 +55,17 @@ export function useField({
       array: firstRenderedFieldOrGroupOrArray as FieldArrayInstance
     };
 
-    return meta;
+    return { meta, replaceBase };
   }, [name, initialValue, scope, rules, asyncRules]);
+
+  // useEffect(() => {
+  //   if (replaceBase) {
+  //     // destroy(replaceBase);
+  //     scope.replace(replaceBase as any);
+  //   }
+  // }, [replaceBase, scope]);
 
   // [name, initialValue, scope, rules, asyncRules]
 
-  return [resultMeta];
+  return [meta];
 }

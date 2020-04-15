@@ -1,12 +1,17 @@
-import type {
+import {
   ITypeDispatcher,
   IAnyStateTreeNode
 } from 'mobx-state-tree/dist/internal';
-import { walk, getType, tryResolve, getEnv } from 'mobx-state-tree';
+import { walk, getType, tryResolve, getEnv, clone } from 'mobx-state-tree';
 import { Field, FieldInstance, createField, isFieldInstance } from '../field';
 import { FieldGroup, FieldGroupInstance, createFieldGroup } from '../group';
 import { FieldArray, FieldArrayInstance, createFieldArray } from '../array';
-import { Rule, AsyncRule } from '../../validation/types';
+import {
+  Rule,
+  AsyncRule,
+  ValidatorFn,
+  AsyncValidatorFn
+} from '../../validation/types';
 import { transaction } from 'mobx';
 import { Validators } from '../..';
 import { FormEnvironment } from '../form';
@@ -87,15 +92,20 @@ export interface GetOrCreateNodeConfig {
 export function getOrCreateNodeFromBase(
   name: string,
   {
-    base,
+    base: parentBase,
     initialValue,
     type,
     rules = [],
     asyncRules = []
-  }: GetOrCreateNodeConfig
-): FieldInstance | FieldGroupInstance | FieldArrayInstance {
+  }: GetOrCreateNodeConfig,
+  immutable: boolean = false
+): {
+  node: FieldInstance | FieldGroupInstance | FieldArrayInstance;
+  replaceBase: FieldGroupInstance | FieldArrayInstance;
+} {
   // 1. find the node
-  let node = fieldResolver(base, name);
+  let node = fieldResolver(parentBase, name);
+  const base = immutable ? clone(parentBase) : parentBase;
 
   // 2. create node recursively
   if (node === null) {
@@ -157,7 +167,7 @@ export function getOrCreateNodeFromBase(
   });
 
   // 4. offer node
-  return node;
+  return { node, replaceBase: base };
 }
 
 export function applyRules(rules: Rule[], validators: Validators) {
@@ -182,7 +192,10 @@ export function applyRules(rules: Rule[], validators: Validators) {
     }
     if (typeof rule.validator === 'function') {
       const name = `CustomValidator:${uid()}`;
-      validators.registerValidator(name, rule.validator);
+      validators.registerValidator(
+        name,
+        withNamedResult({ name, validator: rule.validator })
+      );
       keys.push(name);
       Object.assign(messages, { [name]: rule.message });
     }
@@ -196,10 +209,57 @@ export function applyAsyncRules(rules: AsyncRule[], validators: Validators) {
   for (const rule of rules) {
     if (typeof rule.validator === 'function') {
       const name = `CustomAsyncValidator:${uid()}`;
-      validators.registerValidator(name, rule.validator);
+      validators.registerValidator(
+        name,
+        withNamedResultAsync({ name, validator: rule.validator })
+      );
       keys.push(name);
       Object.assign(messages, { [name]: rule.message });
     }
   }
   return { keys, messages };
+}
+
+export function withNamedResult({
+  name,
+  validator
+}: {
+  name: string;
+  validator: ValidatorFn;
+}) {
+  return ((...args) => {
+    const result = validator(...args);
+    if (
+      typeof result === 'object' &&
+      result !== null &&
+      !Object.prototype.hasOwnProperty.call(result, name)
+    ) {
+      return {
+        [name]: result
+      };
+    }
+    return result;
+  }) as ValidatorFn;
+}
+
+export function withNamedResultAsync({
+  name,
+  validator
+}: {
+  name: string;
+  validator: AsyncValidatorFn;
+}) {
+  return (async (...args) => {
+    const result = await validator(...args);
+    if (
+      typeof result === 'object' &&
+      result !== null &&
+      !Object.prototype.hasOwnProperty.call(result, name)
+    ) {
+      return {
+        [name]: result
+      };
+    }
+    return result;
+  }) as AsyncValidatorFn;
 }

@@ -65,8 +65,9 @@ export const FieldArray = types
       setInitialValue(val: any[]) {
         _checkAllValuesPresent(val);
         val.forEach((newValue: any, index: number) => {
-          _throwIfFieldMissing(index);
-          self.children[index].setInitialValue(newValue);
+          if (self.children[index]) {
+            self.children[index].setInitialValue(newValue);
+          }
         });
       },
       patchValue(val: any[]) {
@@ -87,14 +88,14 @@ export const FieldArray = types
         let index: number =
           typeof name === 'string' ? Number.parseInt(name) : name;
         self.children[index] = val;
+      },
+      replace(scope: typeof self) {
+        self.children.replace(scope.children);
       }
     };
   })
   .actions((self) => {
     return {
-      afterCreate() {
-        self.setInitialValue(self.value);
-      },
       async reset() {
         self.setValue(self.initialValue);
       },

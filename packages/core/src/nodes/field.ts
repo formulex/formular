@@ -51,6 +51,9 @@ export const Field = types
     setValue(val?: string | number | boolean | null) {
       self._value = val === '' ? undefined : val;
     },
+    setIsPending(pending: boolean) {
+      self._isPending = pending;
+    },
     setValidateMessages(messages: { [key: string]: string }) {
       self._selfValidateMessages.replace(messages);
     },
@@ -150,22 +153,27 @@ export const Field = types
       if (self.results.$$typeof === 'results') {
         const errors: string[] = [];
         const warnings: string[] = [];
-        Object.keys(self.results.errors).forEach((key) => {
-          const resolver = getResolver(
-            self.validateMessages[key] || self.validateMessages.default
-          );
-          const error = self.results?.errors[key];
-          const messageStr = resolver(error);
-          errors.push(messageStr);
-        });
-        Object.keys(self.results.warnings).forEach((key) => {
-          const resolver = getResolver(
-            self.validateMessages[key] || self.validateMessages.default
-          );
-          const error = self.results?.warnings[key];
-          const messageStr = resolver(error);
-          warnings.push(messageStr);
-        });
+        if (self.results.errors) {
+          Object.keys(self.results.errors).forEach((key) => {
+            const resolver = getResolver(
+              self.validateMessages[key] || self.validateMessages.default
+            );
+            const error = self.results?.errors[key];
+            const messageStr = resolver(error);
+            errors.push(messageStr);
+          });
+        }
+        if (self.results.warnings) {
+          Object.keys(self.results.warnings).forEach((key) => {
+            const resolver = getResolver(
+              self.validateMessages[key] || self.validateMessages.default
+            );
+            const error = self.results?.warnings[key];
+            const messageStr = resolver(error);
+            warnings.push(messageStr);
+          });
+        }
+
         return {
           errors: [...new Set(errors)],
           warnings: [...new Set(warnings)]
@@ -201,13 +209,13 @@ export const Field = types
       return self.validator ? self.validator(self as any) : null;
     },
     async runAsyncValidator(): Promise<ValidationErrors | null> {
-      self._isPending = true;
+      self.setIsPending(true);
       if (self.asyncValidator) {
         const result = await self.asyncValidator(self as any);
-        self._isPending = false;
+        self.setIsPending(false);
         return result;
       }
-      self._isPending = false;
+      self.setIsPending(false);
       return null;
     }
   }))
@@ -217,9 +225,6 @@ export const Field = types
     },
     patchInitialValue(val?: string | number | boolean | null) {
       self.setInitialValue(val);
-    },
-    afterCreate() {
-      self.setInitialValue(self.value);
     },
     reset() {
       self.setValue(self.initialValue);

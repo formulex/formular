@@ -12,9 +12,7 @@ import {
 export interface ScopeProps {
   name?: string;
   auto?: AutorunEffect | AutorunEffect[];
-  watch?:
-    | [ReactionTrace, ReactionEffect]
-    | [ReactionTrace, ReactionEffect][];
+  watch?: [ReactionTrace, ReactionEffect] | [ReactionTrace, ReactionEffect][];
 }
 
 export const Scope: React.FC<ScopeProps> = ({
@@ -28,3 +26,4 @@ export const Scope: React.FC<ScopeProps> = ({
   useReactions(watch, { scope, fireImmediately: false });
   return <ScopeConext.Provider value={scope}>{children}</ScopeConext.Provider>;
 };
+Scope.displayName = 'Scope';

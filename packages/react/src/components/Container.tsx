@@ -10,9 +10,7 @@ export interface ContainerProps extends FormOptions<any> {
   form?: FormInstance;
   ref?: React.RefObject<FormInstance>;
   auto?: AutorunEffect | AutorunEffect[];
-  watch?:
-    | [ReactionTrace, ReactionEffect]
-    | [ReactionTrace, ReactionEffect][];
+  watch?: [ReactionTrace, ReactionEffect] | [ReactionTrace, ReactionEffect][];
   children?:
     | React.ReactNode
     | ((FormInstance: FormInstance) => React.ReactNode);
@@ -35,3 +33,4 @@ export const Container: React.FC<ContainerProps> = React.forwardRef(
     );
   }
 );
+Container.displayName = 'Container';

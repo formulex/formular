@@ -46,6 +46,10 @@ export const FieldGroup = types
   .actions((self) => ({
     setEffectDisabled(val: boolean) {
       self.isEffectDisabled = val;
+    },
+    replace(scope: typeof self) {
+      self.children.replace(scope.children);
+      self.isEffectDisabled = scope.isEffectDisabled;
     }
   }))
   .actions((self) => {
@@ -81,8 +85,9 @@ export const FieldGroup = types
       setInitialValue(val: { [key: string]: any }) {
         _checkAllValuesPresent(val);
         Object.keys(val).forEach((name) => {
-          _throwIfFieldMissing(name);
-          self.children.get(name).setInitialValue(val[name]);
+          if (self.children.get(name)) {
+            self.children.get(name).setInitialValue(val[name]);
+          }
         });
       },
       patchValue(val: { [key: string]: any }) {
@@ -106,9 +111,6 @@ export const FieldGroup = types
   })
   .actions((self) => {
     return {
-      afterCreate() {
-        self.setInitialValue(self.value);
-      },
       reset() {
         self.setEffectDisabled(true);
         return new Promise<void>((resolve) => {
