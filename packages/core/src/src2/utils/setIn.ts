@@ -1,3 +1,5 @@
+// See https://github.com/final-form/final-form/blob/master/src/structure/setIn.js
+
 import toPath from './toPath';
 
 type State = { [key: string]: any } | Array<any> | void;

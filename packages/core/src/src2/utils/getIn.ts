@@ -1,3 +1,5 @@
+// See https://github.com/final-form/final-form/blob/master/src/structure/getIn.js
+
 import toPath from './toPath';
 
 const getIn = (state: Object, complexKey: string): any => {
