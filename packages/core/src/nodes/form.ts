@@ -29,7 +29,8 @@ export const Form = types
       types.literal('change'),
       types.frozen<['change', number]>()
     ),
-    _validateMessages: types.map(types.string)
+    _validateMessages: types.map(types.string),
+    _initialValues: types.frozen()
   })
   .views((self) => ({
     get validateMessages() {
@@ -87,7 +88,6 @@ export type FormInstance = Instance<typeof Form>;
 
 export interface CreateFormOptions<Values> {
   initialValues?: Partial<Values>;
-  values?: Partial<Values>;
   localValidatorPresets?: { [name: string]: ValidatorOrValidatorFactory };
   validateStrategy?: ValidateStrategy;
   asyncValidateStrategy?: AsyncValidateStrategy;
@@ -100,15 +100,14 @@ export interface FormEnvironment {
 }
 
 export function createForm<Values = any>({
-  initialValues = {},
-  values = {},
+  initialValues: _initialValues = {},
   localValidatorPresets = {},
   validateStrategy = 'all',
   asyncValidateStrategy = 'parallel',
   validateTiming = 'change',
   validateMessages: _validateMessages = enUS
 }: CreateFormOptions<Values>): FormInstance {
-  const root = createFieldGroup(initialValues);
+  const root = createFieldGroup({});
 
   const validators = new Validators();
   Object.keys(localValidatorPresets).forEach((name) => {
@@ -120,8 +119,7 @@ export function createForm<Values = any>({
   // see https://github.com/mobxjs/mobx-state-tree/issues/1433
   !root.value;
   !root.initialValue;
-  root.patchValue(values);
-  return Form.create(
+  const form = Form.create(
     {
       root,
       isSubmitting: false,
@@ -129,8 +127,10 @@ export function createForm<Values = any>({
       validateStrategy,
       asyncValidateStrategy,
       validateTiming,
-      _validateMessages
+      _validateMessages,
+      _initialValues
     },
     { validators } as FormEnvironment
   );
+  return form;
 }

@@ -15,8 +15,8 @@
     "start": "parcel examples/basic/index.html --open",
     "lint": "eslint --ext .ts,.tsx src",
     "build": "npm run build:es && npm run build:lib",
-    "build:es": "rimraf es && babel src --out-dir es --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir es",
-    "build:lib": "rimraf lib && cross-env BUILD_COMMONJS_MODULE=true babel src --out-dir lib --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir lib",
+    "build:es": "rimraf es && cross-env ESMODULE=1 babel src --out-dir es --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir es",
+    "build:lib": "rimraf lib && babel src --out-dir lib --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir lib",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

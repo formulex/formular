@@ -8,12 +8,18 @@ module.exports = {
           browsers: ['last 2 versions', 'Firefox ESR', '> 1%', 'ie >= 11'],
           node: '10'
         },
-        modules: process.env.BUILD_COMMONJS_MODULE ? 'commonjs' : false
+        modules: process.env.ESMODULE ? false : 'commonjs'
       }
     ]
   ],
   plugins: [
     '@babel/plugin-proposal-class-properties',
     '@babel/plugin-transform-runtime'
+  ],
+  overrides: [
+    {
+      test: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx'],
+      presets: ['power-assert']
+    }
   ]
 };
