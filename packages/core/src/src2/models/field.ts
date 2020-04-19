@@ -1,5 +1,6 @@
-import { types, Instance, getRoot } from 'mobx-state-tree';
-import { getIn } from '../utils';
+import { types, Instance, getType, getParentOfType } from 'mobx-state-tree';
+import { getIn, escapeRegexTokens } from '../utils';
+import { Form } from './form';
 
 export const Field = types
   .model('Field', {
@@ -7,42 +8,99 @@ export const Field = types
     _value: types.frozen(),
     _fallbackInitialValue: types.frozen(),
     _everBlured: types.boolean,
-    _everFocused: types.boolean
+    _everFocused: types.boolean,
+    type: types.maybe(types.literal('array'))
   })
   .views((self) => ({
     get _fallbackInitialValues(): any {
-      return getRoot<any>(self)._fallbackInitialValues;
+      return getParentOfType(self, Form)._fallbackInitialValues;
     }
   }))
   .actions((self) => ({
     setValue(val: any) {
       self._value = val;
     },
-    setFallbackInitialValues(initialVal: any) {
-      self._fallbackInitialValue = initialVal;
+    setFallbackInitialValue(val: any) {
+      self._fallbackInitialValue = val;
+    },
+    setType(type?: 'array') {
+      self.type = type;
+    },
+    toArray() {
+      self._value = [self._value];
+    },
+    push(val?: any) {
+      if (!Array.isArray(self._value)) {
+        throw new Error(
+          `Cannot use "push" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
+        );
+      }
+      self._value = [...self._value, val];
+    },
+    pop() {
+      if (!Array.isArray(self._value)) {
+        throw new Error(
+          `Cannot use "pop" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
+        );
+      }
+      if (!self._value.length) {
+        return [];
+      }
+      const removedIndex = self._value.length - 1;
+
+      const clone = [...self._value];
+      const result = clone.pop();
+
+      self._value = clone;
+      if (removedIndex) {
+        const pattern = new RegExp(
+          `^${escapeRegexTokens(self.name)}\\[${removedIndex}].*`
+        );
+        const form = getParentOfType(self, Form);
+        for (const key of form.fields.keys()) {
+          if (pattern.test(key)) {
+            form.removeField(key);
+          }
+        }
+      }
+
+      return result;
     }
   }))
-  .views((self) => ({
-    get value(): any {
-      return self._value;
-    },
-    set value(val: any) {
-      self.setValue(val);
-    },
-    get initialValue(): any {
-      return (
-        self._fallbackInitialValue ??
-        getIn(self._fallbackInitialValues, self.name) ??
-        undefined
-      );
-    },
-    get touched(): boolean {
-      return self._everBlured && self._everFocused;
-    },
-    get visited(): boolean {
-      return self._everFocused;
+  .views((self) => {
+    function getVal(val: any, arrayUndefinedValue?: any) {
+      if (self.type === 'array') {
+        return val === undefined
+          ? arrayUndefinedValue
+          : Array.isArray(val)
+          ? [...val]
+          : [val];
+      } else {
+        return val === '' ? undefined : val;
+      }
     }
-  }))
+    return {
+      get value(): any {
+        return getVal(self._value, []);
+      },
+      set value(val: any) {
+        self.setValue(val);
+      },
+      get initialValue(): any {
+        return (
+          getVal(self._fallbackInitialValue) ??
+          getVal(getIn(self._fallbackInitialValues, self.name)) ??
+          (self.type === 'array' ? [] : undefined)
+        );
+      },
+      get touched(): boolean {
+        return self._everBlured && self._everFocused;
+      },
+      get visited(): boolean {
+        return self._everFocused;
+      }
+    };
+  })
   .actions((self) => ({
     blur() {
       if (!self._everBlured) {
@@ -63,19 +121,26 @@ export const Field = types
 export interface FieldConfig {
   name: string;
   initialValue?: any;
+  type?: 'array';
 }
 
 export type FieldInstance = Instance<typeof Field>;
 
+export function isFieldInstance(o: any): o is FieldInstance {
+  return getType(o) === Field;
+}
+
 export function createField({
   name,
-  initialValue
+  initialValue: _fallbackInitialValue,
+  type
 }: FieldConfig): FieldInstance {
   const field = Field.create({
     name,
     _everBlured: false,
     _everFocused: false,
-    _fallbackInitialValue: initialValue
+    _fallbackInitialValue,
+    type
   });
 
   return field;

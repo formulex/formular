@@ -26,11 +26,11 @@ export function useForm<Values = any>(
     return previousForm || createForm(options);
   }, []);
 
-  useEffect(() => {
-    if (!previousForm) {
-      form.root.patchValue(options.values || {});
-    }
-  }, [options.values, form, previousForm]);
+  // useEffect(() => {
+  //   if (!previousForm) {
+  //     form.root.patchValue(options.values || {});
+  //   }
+  // }, [options.values, form, previousForm]);
 
   useEffect(() => {
     if (!previousForm) {
