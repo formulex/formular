@@ -5,7 +5,7 @@ import {
   IReactionOptions,
   reaction
 } from 'mobx';
-import { ResolverContextManager } from '..';
+import { ResolverContextManager } from './resolvers';
 
 export interface DepsTracer<R, T = WatchEffectArgs> {
   (tools: T): R;

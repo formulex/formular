@@ -1,7 +1,6 @@
-import { FormInstance } from '@formular/core/lib/src2/models/form';
-import { FieldInstance } from '@formular/core/lib/src2/models/field';
+import { FormInstance, FieldInstance } from '../models';
 import { IReactionDisposer } from 'mobx';
-import { escapeRegexTokens, setIn } from '@formular/core/lib/src2';
+import { escapeRegexTokens, setIn } from '../utils';
 
 export interface ResolverContext {
   disposers: IReactionDisposer[];
@@ -65,7 +64,7 @@ export function getResolvers(form: FormInstance): Resolvers {
   };
 }
 
-export function withContext<R>(
+export function runWithResolvers<R>(
   form: FormInstance,
   f: (resolvers: Resolvers) => R
 ): R {

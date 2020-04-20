@@ -1,10 +1,14 @@
 import { render } from 'react-dom';
-import { Form, Item, withContext, watchEffect } from '../../src/src2';
+import { Form, Item } from '../../src/src2';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Observer, useLocalStore } from 'mobx-react';
 import { FormInstance } from '@formular/core/lib/src2/models/form';
-import m from 'mobx-devtools-mst';
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+import {
+  watchEffect,
+  runWithResolvers
+} from '@formular/core/lib/src2/sideEffect';
+
+// const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const DynamicScope: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -100,7 +104,6 @@ const App: React.FC = () => {
   }));
   useEffect(() => {
     if (formRef.current) {
-      m(formRef.current);
       forceUpdate({});
       // formRef.current.field('greeting')?.setType(void 0);
     }
@@ -128,7 +131,7 @@ const App: React.FC = () => {
             <DynamicScope />
             <button
               onClick={() => {
-                withContext(formRef.current!, ({ field, value }) => {
+                runWithResolvers(formRef.current!, ({ field, value }) => {
                   console.log(
                     1,
                     value('greeting'),
@@ -146,7 +149,7 @@ const App: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                withContext(formRef.current!, ({ field }) => {
+                runWithResolvers(formRef.current!, ({ field }) => {
                   field('greeting')?.pop();
                 });
               }}

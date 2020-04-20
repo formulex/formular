@@ -10,6 +10,7 @@ import { Field, FieldConfig, FieldInstance, createField } from './field';
 import { IReactionDisposer, autorun } from 'mobx';
 import { setIn } from '../utils';
 import { getDispatch } from '../middleware';
+import { Setup, ResolverContextManager, getResolvers } from '../sideEffect';
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
 
@@ -48,6 +49,9 @@ export const Form = types
       self._fallbackInitialValues = initialVal;
     }
   }))
+  .volatile(() => ({
+    disposers: [] as IReactionDisposer[]
+  }))
   .actions((self) => ({
     registerField(
       name: string,
@@ -84,6 +88,19 @@ export const Form = types
         field.setValue(field.initialValue);
         field.resetFlags();
       });
+    },
+    subscribe(setup: Setup): () => void {
+      if (typeof setup === 'function') {
+        ResolverContextManager.push({ disposers: self.disposers });
+        setup(getResolvers(self as FormInstance));
+        ResolverContextManager.pop();
+      }
+      return () => {
+        console.log('begin setup dispose');
+        for (const disposer of self.disposers) {
+          disposer();
+        }
+      };
     }
   }))
   .actions((self) => ({

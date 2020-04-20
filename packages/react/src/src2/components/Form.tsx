@@ -1,8 +1,9 @@
 import React, { useImperativeHandle } from 'react';
 import { FormInstance } from '@formular/core/lib/src2/models/form';
-import { useForm, Setup, useSetup } from '../hooks';
+import { useForm, useSetup } from '../hooks';
 import { renderComponent, RenderableProps } from '../utils';
 import { FieldContext } from '../contexts';
+import { Setup } from '@formular/core/lib/src2/sideEffect';
 
 type BaseFormProps = Omit<
   React.FormHTMLAttributes<HTMLFormElement>,
