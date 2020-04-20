@@ -59,12 +59,13 @@ const setInRecursor = (
           return undefined;
         }
       }
-      const { [key]: _removed, ...final } = current;
+      const { [key]: _removed, ...final } =
+        typeof current === 'string' ? {} : current;
       return final;
     }
     // set result in key
     return {
-      ...current,
+      ...(typeof current === 'string' ? {} : current),
       [key]: result
     };
   }
@@ -104,7 +105,7 @@ const setInRecursor = (
   );
 
   // current exists, so make a copy of all its values, and add/update the new one
-  const array = [...current];
+  const array = [...(typeof current === 'string' ? [] : current)];
   if (destroyArrays && result === undefined) {
     array.splice(numericKey, 1);
     if (array.length === 0) {

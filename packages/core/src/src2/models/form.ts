@@ -1,7 +1,15 @@
-import { types, Instance, getType } from 'mobx-state-tree';
+import {
+  types,
+  Instance,
+  getType,
+  addMiddleware,
+  IDisposer,
+  getPath
+} from 'mobx-state-tree';
 import { Field, FieldConfig, FieldInstance, createField } from './field';
 import { IReactionDisposer, autorun } from 'mobx';
 import { setIn } from '../utils';
+import { getDispatch } from '../middleware';
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
 
@@ -25,7 +33,7 @@ export const Form = types
       }
       return result;
     },
-    field(name: string): FieldInstance | undefined {
+    resolve(name: string): FieldInstance | undefined {
       return self.fields.get(name);
     }
   }))
@@ -82,7 +90,30 @@ export const Form = types
     reset(initialValues: any = self.initialValues) {
       self.initialize(initialValues || {});
     }
-  }));
+  }))
+  .actions((self) => {
+    let disposer: IDisposer | undefined;
+    return {
+      afterCreate() {
+        disposer = addMiddleware(self, (call, next) => {
+          if (
+            call.name === 'setValue' &&
+            typeof call.context.validate === 'function'
+          ) {
+            getDispatch(
+              `${call.name}${getPath(call.context)}`,
+              100,
+              'validate'
+            )(call);
+          }
+          next(call);
+        });
+      },
+      beforeDestroy() {
+        disposer?.();
+      }
+    };
+  });
 
 export type FormInstance = Instance<typeof Form>;
 

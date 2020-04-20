@@ -25,46 +25,6 @@ export const Field = types
     },
     setType(type?: 'array') {
       self.type = type;
-    },
-    toArray() {
-      self._value = [self._value];
-    },
-    push(val?: any) {
-      if (!Array.isArray(self._value)) {
-        throw new Error(
-          `Cannot use "push" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
-        );
-      }
-      self._value = [...self._value, val];
-    },
-    pop() {
-      if (!Array.isArray(self._value)) {
-        throw new Error(
-          `Cannot use "pop" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
-        );
-      }
-      if (!self._value.length) {
-        return [];
-      }
-      const removedIndex = self._value.length - 1;
-
-      const clone = [...self._value];
-      const result = clone.pop();
-
-      self._value = clone;
-      if (removedIndex) {
-        const pattern = new RegExp(
-          `^${escapeRegexTokens(self.name)}\\[${removedIndex}].*`
-        );
-        const form = getParentOfType(self, Form);
-        for (const key of form.fields.keys()) {
-          if (pattern.test(key)) {
-            form.removeField(key);
-          }
-        }
-      }
-
-      return result;
     }
   }))
   .views((self) => {
@@ -115,6 +75,46 @@ export const Field = types
     resetFlags() {
       self._everBlured = false;
       self._everFocused = false;
+    },
+    toArray() {
+      self._value = [self.value];
+    },
+    push(val?: any) {
+      if (!Array.isArray(self.value)) {
+        throw new Error(
+          `Cannot use "push" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
+        );
+      }
+      self._value = [...self.value, val];
+    },
+    pop() {
+      if (!Array.isArray(self.value)) {
+        throw new Error(
+          `Cannot use "pop" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
+        );
+      }
+      if (!self.value.length) {
+        return [];
+      }
+      const removedIndex = self.value.length - 1;
+
+      const clone = [...self.value];
+      const result = clone.pop();
+
+      self._value = clone;
+      if (removedIndex) {
+        const pattern = new RegExp(
+          `^${escapeRegexTokens(self.name)}\\[${removedIndex}].*`
+        );
+        const form = getParentOfType(self, Form);
+        for (const key of form.fields.keys()) {
+          if (pattern.test(key)) {
+            form.removeField(key);
+          }
+        }
+      }
+
+      return result;
     }
   }));
 

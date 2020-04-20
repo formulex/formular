@@ -1,8 +1,10 @@
 import { render } from 'react-dom';
-import { Form, Item } from '../../src/src2';
+import { Form, Item, withContext, watchEffect } from '../../src/src2';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Observer, useLocalStore } from 'mobx-react';
 import { FormInstance } from '@formular/core/lib/src2/models/form';
+import m from 'mobx-devtools-mst';
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const DynamicScope: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ const App: React.FC = () => {
   const formRef = useRef<FormInstance>();
   const store = useLocalStore(() => ({
     type: void 0 as 'array' | undefined,
-    initialValue: 'jlfd' as any,
+    initialValue: void 0 as any,
     toggleType: () => {
       store.type = store.type === 'array' ? void 0 : 'array';
     },
@@ -98,6 +100,7 @@ const App: React.FC = () => {
   }));
   useEffect(() => {
     if (formRef.current) {
+      m(formRef.current);
       forceUpdate({});
       // formRef.current.field('greeting')?.setType(void 0);
     }
@@ -108,24 +111,44 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <Form ref={formRef as any}>
+    <Form
+      ref={formRef as any}
+      setup={({ field, value }) => {
+        watchEffect((r) => {
+          r.trace();
+          console.log(field('hello.greetingAsync'));
+          // await delay(500);
+          field('hello.greetingAsync')!.value = value('greeting');
+        });
+      }}
+    >
       {() => (
         <>
           <div>
             <DynamicScope />
             <button
               onClick={() => {
-                if (!Array.isArray(formRef.current?.field('greeting')?.value)) {
-                  formRef.current?.field('greeting')?.toArray();
-                }
-                formRef.current?.field('greeting')?.push(undefined as any);
+                withContext(formRef.current!, ({ field, value }) => {
+                  console.log(
+                    1,
+                    value('greeting'),
+                    Array.isArray(value('greeting'))
+                  );
+                  if (!Array.isArray(value('greeting'))) {
+                    field('greeting')?.toArray();
+                    console.log(2, value('greeting'));
+                  }
+                  field('greeting')?.push(undefined);
+                });
               }}
             >
               Add &quot;one&quot;
             </button>
             <button
               onClick={() => {
-                formRef.current?.field('greeting')?.pop();
+                withContext(formRef.current!, ({ field }) => {
+                  field('greeting')?.pop();
+                });
               }}
             >
               Pop &quot;one&quot;
@@ -136,8 +159,8 @@ const App: React.FC = () => {
                 <textarea
                   name="asdf"
                   id="fdf"
-                  cols="30"
-                  rows="10"
+                  cols={30}
+                  rows={10}
                   value={JSON.stringify(store.initialValue)}
                   onChange={(e) => store.setInit(JSON.parse(e.target.value))}
                 ></textarea>
@@ -214,7 +237,31 @@ const App: React.FC = () => {
               </Item>
             )}
           </Observer>
-          <Item name="hello.greetingSync" initialValue="daddy">
+          <Item
+            name="hello.greetingSync"
+            initialValue={[{ firstName: '3', lastName: '4' }]}
+          >
+            {({ field }) => (
+              <div>
+                <h3>{field.name}</h3>
+                <div>
+                  <input
+                    style={{ width: '500px' }}
+                    type="text"
+                    value={(field.value as any) || ''}
+                    onChange={(e) => {
+                      field.setValue(e.target.value);
+                    }}
+                  />
+                  <br />
+                </div>
+              </div>
+            )}
+          </Item>
+          <Item
+            name="hello.greetingAsync"
+            initialValue={[{ firstName: '3', lastName: '4' }]}
+          >
             {({ field }) => (
               <div>
                 <h3>{field.name}</h3>

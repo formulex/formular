@@ -7,5 +7,6 @@
     "isolatedModules": false,
     "esModuleInterop": true,
     "declaration": true
-  }
+  },
+  "include": ["./typings.d.ts"]
 }

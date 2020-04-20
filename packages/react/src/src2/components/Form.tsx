@@ -1,6 +1,6 @@
 import React, { useImperativeHandle } from 'react';
 import { FormInstance } from '@formular/core/lib/src2/models/form';
-import { useForm } from '../hooks';
+import { useForm, Setup, useSetup } from '../hooks';
 import { renderComponent, RenderableProps } from '../utils';
 import { FieldContext } from '../contexts';
 
@@ -13,12 +13,14 @@ export interface FormProps
   extends BaseFormProps,
     RenderableProps<{ form: FormInstance }> {
   form?: FormInstance;
+  setup?: Setup;
 }
 
 export const Form = React.forwardRef<FormInstance, FormProps>(
-  ({ form, children, render, component, ...restProps }, ref) => {
+  ({ form, children, render, component, setup, ...restProps }, ref) => {
     const [formInstance] = useForm(form);
     useImperativeHandle(ref, () => formInstance);
+    useSetup(formInstance, setup);
     return (
       <form
         {...restProps}
