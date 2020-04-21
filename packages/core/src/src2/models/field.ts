@@ -1,6 +1,11 @@
 import { types, Instance, getType, getParentOfType } from 'mobx-state-tree';
 import { getIn, escapeRegexTokens } from '../utils';
 import { Form } from './form';
+import { observable } from 'mobx';
+
+export interface GeneralValidator {
+  (value: any): Promise<any>;
+}
 
 export const Field = types
   .model('Field', {
@@ -9,8 +14,15 @@ export const Field = types
     _fallbackInitialValue: types.frozen(),
     _everBlured: types.boolean,
     _everFocused: types.boolean,
-    type: types.maybe(types.literal('array'))
+    type: types.maybe(types.literal('array')),
+    extend: types.map(types.frozen())
   })
+  .volatile((self) => ({
+    validator: observable.box<undefined | GeneralValidator>(undefined, {
+      deep: false,
+      name: `validatorOf${self.name}`
+    })
+  }))
   .views((self) => ({
     get _fallbackInitialValues(): any {
       return getParentOfType(self, Form)._fallbackInitialValues;
@@ -25,6 +37,15 @@ export const Field = types
     },
     setType(type?: 'array') {
       self.type = type;
+    },
+    setValidator(validator: GeneralValidator) {
+      self.validator.set(validator);
+    },
+    setExtend(name: string, val: any) {
+      self.extend.set(name, val);
+    },
+    removeExtend(name: string) {
+      self.extend.delete(name);
     }
   }))
   .views((self) => {

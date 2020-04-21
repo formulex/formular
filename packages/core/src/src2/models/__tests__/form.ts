@@ -1,6 +1,5 @@
 import assert from 'assert';
 import { createForm, isFormInstance } from '../form';
-import { autorun } from 'mobx';
 
 describe('models/form', () => {
   describe('createForm', () => {
@@ -33,33 +32,6 @@ describe('models/form', () => {
         name: 'daddy',
         other: 'dad'
       });
-    });
-
-    it('should be silent', () => {
-      const onFinish = jest.fn();
-      const subscriber = jest.fn();
-      const fieldEffect1 = jest.fn();
-      const fieldEffect2 = jest.fn();
-      const form = createForm({ onFinish, initialValues: { hello: 'world' } });
-      assert.deepEqual(form.values, {});
-
-      autorun(() => {
-        subscriber(form.values);
-      });
-      expect(subscriber).toBeCalledTimes(1);
-
-      expect(fieldEffect1).not.toBeCalled();
-      form.registerField('name', fieldEffect1, {});
-      expect(subscriber).toBeCalledTimes(2);
-      expect(fieldEffect1).toBeCalledTimes(1);
-      assert.deepEqual(form.values, { name: undefined });
-
-      expect(fieldEffect2).not.toBeCalled();
-      form.registerField('hello', fieldEffect2);
-      expect(subscriber).toBeCalledTimes(3);
-      expect(fieldEffect2).toBeCalledTimes(1);
-
-      assert.deepEqual(form.values, { hello: 'world', name: undefined });
     });
   });
 });

@@ -5,7 +5,6 @@ import {
   FieldInstance,
   isFieldInstance
 } from '@formular/core/lib/src2/models/field';
-import { transaction } from 'mobx';
 
 export function useField(
   name: string,

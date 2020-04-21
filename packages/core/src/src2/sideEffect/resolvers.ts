@@ -1,27 +1,5 @@
 import { FormInstance, FieldInstance } from '../models';
-import { IReactionDisposer } from 'mobx';
 import { escapeRegexTokens, setIn } from '../utils';
-
-export interface ResolverContext {
-  disposers: IReactionDisposer[];
-}
-
-export class ResolverContextManager {
-  static stack: ResolverContext[] = [];
-
-  static get top(): ResolverContext | undefined {
-    const last = this.stack[this.stack.length - 1];
-    return last;
-  }
-
-  static push(...args: ResolverContext[]) {
-    return this.stack.push(...args);
-  }
-
-  static pop() {
-    return this.stack.pop();
-  }
-}
 
 export interface Resolvers {
   field: (name: string) => FieldInstance | undefined;

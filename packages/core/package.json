@@ -24,8 +24,10 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.8.7",
+    "ajv": "^6.12.2",
     "lodash.template": "^4.5.0",
-    "p-any": "^3.0.0"
+    "p-any": "^3.0.0",
+    "yup": "^0.28.4"
   },
   "homepage": "https://github.com/formularx/formular#readme",
   "repository": {

@@ -7,9 +7,11 @@ import {
   watchEffect,
   runWithResolvers
 } from '@formular/core/lib/src2/sideEffect';
+import { actionLogger } from 'mst-middlewares';
+import { addMiddleware } from 'mobx-state-tree';
 
 // const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
+let ref: any = null;
 const DynamicScope: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [show, setShow] = useState(true);
@@ -104,6 +106,7 @@ const App: React.FC = () => {
   }));
   useEffect(() => {
     if (formRef.current) {
+      // addMiddleware(formRef.current, actionLogger);
       forceUpdate({});
       // formRef.current.field('greeting')?.setType(void 0);
     }
@@ -116,12 +119,24 @@ const App: React.FC = () => {
   return (
     <Form
       ref={formRef as any}
-      setup={({ field, value }) => {
+      setup={({ field, value }, form) => {
+        console.log('setup');
+        console.log('ref = ', ref);
+        console.log('current = ', formRef.current);
+        console.log('is = ', ref === formRef.current);
+        ref = formRef.current;
         watchEffect((r) => {
           r.trace();
           console.log(field('hello.greetingAsync'));
           // await delay(500);
           field('hello.greetingAsync')!.value = value('greeting');
+        });
+
+        return addMiddleware(form, (call, next) => {
+          if (call.name === 'setValue') {
+            console.log('setValue');
+          }
+          next(call);
         });
       }}
     >

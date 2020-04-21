@@ -1,8 +1,2 @@
-export {
-  Resolvers,
-  getResolvers,
-  runWithResolvers,
-  ResolverContextManager
-} from './resolvers';
-export { watch, watchEffect } from './watch';
+export { Resolvers, getResolvers, runWithResolvers } from './resolvers';
 export type { Setup } from './types';

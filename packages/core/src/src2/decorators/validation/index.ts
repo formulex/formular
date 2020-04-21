@@ -7,6 +7,7 @@ import {
   addMiddleware,
   getPath
 } from 'mobx-state-tree';
+import { isFieldInstance } from '../../models/field';
 
 const getDispatch = memoize(
   (cacheKey: string, ms: number, actionName: string) =>
@@ -24,17 +25,33 @@ export function createValidationDecorator({
 }: CreateValidationDecoratorProps = {}): FormDecorator {
   return (form) => {
     const diposer = addMiddleware(form, (call, next) => {
-      if (
-        call.name === 'setValue' &&
-        typeof call.context[validateFunctionName] === 'function'
-      ) {
-        getDispatch(
-          `${call.name}${getPath(call.context)}`,
-          100,
-          validateFunctionName
-        )(call);
+      console.log(isFieldInstance(call.context), call);
+      switch (call.name) {
+        case 'didRegisterField':
+          {
+            const [fieldName] = call.args;
+            form.resolve(fieldName)?.setExtend('validation', {});
+          }
+          break;
+        case 'didUnregisterField':
+          {
+            const [fieldName] = call.args;
+            form.resolve(fieldName)?.removeExtend('validation');
+          }
+          break;
       }
       next(call);
+      // if (
+      //   call.name === 'setValue' &&
+      //   typeof call.context[validateFunctionName] === 'function'
+      // ) {
+      //   getDispatch(
+      //     `${call.name}${getPath(call.context)}`,
+      //     100,
+      //     validateFunctionName
+      //   )(call);
+      // }
+      // next(call);
     });
     return () => {
       diposer();

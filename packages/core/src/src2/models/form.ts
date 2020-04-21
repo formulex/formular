@@ -2,15 +2,28 @@ import { types, Instance, getType } from 'mobx-state-tree';
 import { Field, FieldConfig, FieldInstance, createField } from './field';
 import { IReactionDisposer, autorun } from 'mobx';
 import { setIn } from '../utils';
-import { Setup, ResolverContextManager, getResolvers } from '../sideEffect';
+import { Setup, getResolvers } from '../sideEffect';
+import { FormDecorator } from '../decorators/types';
+import { createValidationDecorator } from '../decorators';
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
 
+const FormLifecycleHooks = types
+  .model('FormLifecycleHooks', {})
+  .actions(() => ({
+    didRegisterField(_name: string, _field: FieldInstance) {},
+    didUnregisterField(_name: string) {}
+  }));
+
 export const Form = types
-  .model('Form', {
-    _fallbackInitialValues: types.frozen(),
-    fields: types.map(types.late(() => Field))
-  })
+  .compose(
+    FormLifecycleHooks,
+    types.model({
+      _fallbackInitialValues: types.frozen(),
+      fields: types.map(types.late(() => Field))
+    })
+  )
+  .named('Form')
   .views((self) => ({
     get values(): { [key: string]: any } {
       let result: { [key: string]: any } = {};
@@ -41,9 +54,6 @@ export const Form = types
       self._fallbackInitialValues = initialVal;
     }
   }))
-  .volatile(() => ({
-    disposers: [] as IReactionDisposer[]
-  }))
   .actions((self) => ({
     registerField(
       name: string,
@@ -65,10 +75,11 @@ export const Form = types
       if (typeof effect === 'function') {
         disposer = autorun(() => effect(field), { name: `register:${name}` });
       }
-
+      self.didRegisterField(name, field);
       return () => {
         disposer?.();
         self.removeField(name);
+        self.didUnregisterField(name);
       };
     },
     async validate() {},
@@ -82,15 +93,34 @@ export const Form = types
       });
     },
     subscribe(setup: Setup): () => void {
+      const disposers: (() => void)[] = [];
       if (typeof setup === 'function') {
-        ResolverContextManager.push({ disposers: self.disposers });
-        setup(getResolvers(self as FormInstance));
-        ResolverContextManager.pop();
+        const gen = setup(
+          getResolvers(self as FormInstance),
+          self as FormInstance
+        );
+
+        for (const disposerOrNull of gen) {
+          if (typeof disposerOrNull === 'function') {
+            disposers.push(disposerOrNull);
+          }
+        }
       }
       return () => {
-        console.log('begin setup dispose');
-        for (const disposer of self.disposers) {
+        for (const disposer of disposers) {
           disposer();
+        }
+      };
+    },
+    use(...decorators: FormDecorator[]): () => void {
+      const undecorators: ReturnType<FormDecorator>[] = [];
+      for (const decorator of decorators) {
+        const undecorate = decorator(self as FormInstance);
+        undecorators.push(undecorate);
+      }
+      return () => {
+        for (const undecorate of undecorators) {
+          undecorate?.();
         }
       };
     }
@@ -118,6 +148,8 @@ export function createForm<V = any>({
   const form = Form.create({
     _fallbackInitialValues: initialValues ? { ...initialValues } : {}
   });
+
+  form.use(createValidationDecorator());
 
   return form;
 }

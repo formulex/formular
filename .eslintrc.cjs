@@ -28,7 +28,8 @@ module.exports = {
       {
         vars: 'all',
         args: 'after-used',
-        ignoreRestSiblings: true
+        ignoreRestSiblings: true,
+        argsIgnorePattern: '^_'
       }
     ],
     'react/display-name': 0,
