@@ -2,7 +2,7 @@ import { types, Instance, getType } from 'mobx-state-tree';
 import { Field, FieldConfig, FieldInstance, createField } from './field';
 import { IReactionDisposer, autorun } from 'mobx';
 import { setIn } from '../utils';
-import { Setup, getResolvers } from '../sideEffect';
+import { SubscribeSetup, getResolvers } from '../sideEffect';
 import { FormDecorator } from '../decorators/types';
 import { createValidationDecorator } from '../decorators';
 
@@ -92,7 +92,7 @@ export const Form = types
         field.resetFlags();
       });
     },
-    subscribe(setup: Setup): () => void {
+    subscribe(setup: SubscribeSetup): () => void {
       const disposers: (() => void)[] = [];
       if (typeof setup === 'function') {
         const gen = setup(

@@ -1,10 +1,10 @@
 import { Resolvers } from './resolvers';
 import { FormInstance } from '../models';
 
-export interface Setup extends GeneratorFunction {
+export interface SubscribeSetup {
   (helps: Resolvers, form: FormInstance): Generator<
     undefined | (() => void),
-    undefined | (() => void),
+    void | (() => void),
     void
   >;
 }

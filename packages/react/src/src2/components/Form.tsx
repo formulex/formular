@@ -3,7 +3,7 @@ import { FormInstance } from '@formular/core/lib/src2/models/form';
 import { useForm, useSetup, useDecorators } from '../hooks';
 import { renderComponent, RenderableProps } from '../utils';
 import { FieldContext } from '../contexts';
-import { Setup } from '@formular/core/lib/src2/sideEffect';
+import { SubscribeSetup } from '@formular/core/lib/src2/sideEffect';
 import { FormDecorator } from '@formular/core/lib/src2/decorators/types';
 
 type BaseFormProps = Omit<
@@ -15,18 +15,18 @@ export interface FormProps
   extends BaseFormProps,
     RenderableProps<{ form: FormInstance }> {
   form?: FormInstance;
-  setup?: Setup;
+  subscribe?: SubscribeSetup;
   decorators?: FormDecorator[];
 }
 
 export const Form = React.forwardRef<FormInstance, FormProps>(
   (
-    { form, children, render, component, setup, decorators, ...restProps },
+    { form, children, render, component, subscribe, decorators, ...restProps },
     ref
   ) => {
     const [formInstance] = useForm(form);
     useImperativeHandle(ref, () => formInstance);
-    useSetup(formInstance, setup);
+    useSetup(formInstance, subscribe);
     useDecorators(formInstance, decorators);
     return (
       <form
@@ -51,3 +51,4 @@ export const Form = React.forwardRef<FormInstance, FormProps>(
 );
 
 Form.displayName = 'FormularForm';
+(Form as any).whyDidYouRender = true;
