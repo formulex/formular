@@ -5,53 +5,93 @@ import {
   IActionContext,
   applyAction,
   addMiddleware,
-  getPath
+  destroy
 } from 'mobx-state-tree';
 import { isFieldInstance } from '../../models/field';
+import { createFieldValidation } from './model';
 
 const getDispatch = memoize(
   (cacheKey: string, ms: number, actionName: string) =>
     debounce((call: IActionContext) => {
-      applyAction(call.context, { name: actionName, args: [] });
+      applyAction(call.context.extend.get('validation'), {
+        name: actionName,
+        args: []
+      });
     }, ms)
 );
 
 export interface CreateValidationDecoratorProps {
   validateFunctionName?: string;
+  trigger?: 'change' | 'blur';
+  debounce?: number;
 }
 
 export function createValidationDecorator({
-  validateFunctionName = 'validate'
+  validateFunctionName = 'validate',
+  trigger = 'change',
+  debounce = 100
 }: CreateValidationDecoratorProps = {}): FormDecorator {
   return (form) => {
     const diposer = addMiddleware(form, (call, next) => {
-      console.log(isFieldInstance(call.context), call);
       switch (call.name) {
         case 'didRegisterField':
           {
             const [fieldName] = call.args;
-            form.resolve(fieldName)?.setExtend('validation', {});
+            const validation = createFieldValidation({ name: fieldName });
+            const field = form.resolve(fieldName);
+            if (field) {
+              validation.setFieldRef(field);
+              field.setExtend('validation', validation);
+            }
           }
           break;
         case 'didUnregisterField':
           {
             const [fieldName] = call.args;
-            form.resolve(fieldName)?.removeExtend('validation');
+            const field = form.resolve(fieldName);
+            if (field) {
+              const validation = field.extend.get('validation');
+              if (validation) {
+                destroy(validation);
+              }
+              field.removeExtend('validation');
+            }
+          }
+          break;
+        case 'setValue':
+          if (
+            trigger === 'change' &&
+            isFieldInstance(call.context) &&
+            call.context.extend.get('validation') &&
+            typeof call.context.extend.get('validation')[
+              validateFunctionName
+            ] === 'function'
+          ) {
+            getDispatch(
+              `${call.context.name}:${call.name}`,
+              debounce,
+              validateFunctionName
+            )(call);
+          }
+          break;
+        case 'blur':
+          if (
+            trigger === 'blur' &&
+            isFieldInstance(call.context) &&
+            call.context.extend.get('validation') &&
+            typeof call.context.extend.get('validation')[
+              validateFunctionName
+            ] === 'function'
+          ) {
+            getDispatch(
+              `${call.context.name}:${call.name}`,
+              0,
+              validateFunctionName
+            )(call);
           }
           break;
       }
       next(call);
-      // if (
-      //   call.name === 'setValue' &&
-      //   typeof call.context[validateFunctionName] === 'function'
-      // ) {
-      //   getDispatch(
-      //     `${call.name}${getPath(call.context)}`,
-      //     100,
-      //     validateFunctionName
-      //   )(call);
-      // }
-      // next(call);
     });
     return () => {
       diposer();

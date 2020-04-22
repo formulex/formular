@@ -13,10 +13,13 @@ type BaseFormProps = Omit<
 
 export interface FormProps
   extends BaseFormProps,
-    RenderableProps<{ form: FormInstance }> {
+    Omit<RenderableProps<{ form: FormInstance }>, 'children'> {
   form?: FormInstance;
   subscribe?: SubscribeSetup;
   decorators?: FormDecorator[];
+  children?:
+    | RenderableProps<{ form: FormInstance }>['children']
+    | React.ReactNode;
 }
 
 export const Form = React.forwardRef<FormInstance, FormProps>(
@@ -39,11 +42,13 @@ export const Form = React.forwardRef<FormInstance, FormProps>(
         }}
       >
         <FieldContext.Provider value={formInstance}>
-          {renderComponent(
-            { children, component, render },
-            { form: formInstance },
-            'FormularForm'
-          )}
+          {typeof children === 'function'
+            ? renderComponent(
+                { children, component, render },
+                { form: formInstance },
+                'FormularForm'
+              )
+            : children}
         </FieldContext.Provider>
       </form>
     );

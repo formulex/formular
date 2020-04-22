@@ -3,10 +3,6 @@ import { getIn, escapeRegexTokens } from '../utils';
 import { Form } from './form';
 import { observable } from 'mobx';
 
-export interface GeneralValidator {
-  (value: any): Promise<any>;
-}
-
 export const Field = types
   .model('Field', {
     name: types.string,
@@ -15,13 +11,12 @@ export const Field = types
     _everBlured: types.boolean,
     _everFocused: types.boolean,
     type: types.maybe(types.literal('array')),
-    extend: types.map(types.frozen())
+    _show: types.boolean,
+    _disabled: types.boolean,
+    active: types.boolean
   })
-  .volatile((self) => ({
-    validator: observable.box<undefined | GeneralValidator>(undefined, {
-      deep: false,
-      name: `validatorOf${self.name}`
-    })
+  .volatile(() => ({
+    extend: observable.map({}, { deep: false, name: 'FieldExtend' })
   }))
   .views((self) => ({
     get _fallbackInitialValues(): any {
@@ -38,14 +33,17 @@ export const Field = types
     setType(type?: 'array') {
       self.type = type;
     },
-    setValidator(validator: GeneralValidator) {
-      self.validator.set(validator);
-    },
     setExtend(name: string, val: any) {
       self.extend.set(name, val);
     },
     removeExtend(name: string) {
       self.extend.delete(name);
+    },
+    setShow(shouldShow: boolean) {
+      self._show = shouldShow;
+    },
+    setDisabled(disabled: boolean) {
+      self._disabled = disabled;
     }
   }))
   .views((self) => {
@@ -67,6 +65,18 @@ export const Field = types
       set value(val: any) {
         self.setValue(val);
       },
+      get show(): boolean {
+        return self._show;
+      },
+      set show(val: boolean) {
+        self.setShow(val);
+      },
+      get disabled(): boolean {
+        return self._disabled;
+      },
+      set disabled(val: boolean) {
+        self.setDisabled(val);
+      },
       get initialValue(): any {
         return (
           getVal(self._fallbackInitialValue) ??
@@ -87,15 +97,22 @@ export const Field = types
       if (!self._everBlured) {
         self._everBlured = true;
       }
+      if (self.active) {
+        self.active = false;
+      }
     },
     focus() {
       if (!self._everFocused) {
         self._everFocused = true;
       }
+      if (!self.active) {
+        self.active = true;
+      }
     },
     resetFlags() {
       self._everBlured = false;
       self._everFocused = false;
+      self.active = false;
     },
     toArray() {
       self._value = [self.value];
@@ -136,6 +153,9 @@ export const Field = types
       }
 
       return result;
+    },
+    beforeDestroy() {
+      self.extend.clear();
     }
   }));
 
@@ -161,7 +181,10 @@ export function createField({
     _everBlured: false,
     _everFocused: false,
     _fallbackInitialValue,
-    type
+    type,
+    _show: true,
+    _disabled: false,
+    active: false
   });
 
   return field;
