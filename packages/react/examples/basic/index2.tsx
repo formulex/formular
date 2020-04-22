@@ -1,6 +1,6 @@
 import { render } from 'react-dom';
-import { Form, Item, useForm } from '../../src/src2';
-import React from 'react';
+import { Form, Item, useForm } from '../../src';
+import React, { useEffect } from 'react';
 import { Observer } from 'mobx-react';
 import { autorun } from 'mobx';
 import whyDidYouRender from '@welldone-software/why-did-you-render';
@@ -25,6 +25,10 @@ const validateMapper: { [key: string]: ValidateStatus } = {
 
 const MyApp: React.FC = () => {
   const [form] = useForm();
+
+  useEffect(() => {
+    (window as any).form = form;
+  }, [form]);
   return (
     <div style={{ padding: '1rem' }}>
       <h1>MyApp</h1>
@@ -33,6 +37,7 @@ const MyApp: React.FC = () => {
       <Card>
         <Form
           form={form}
+          initialValues={{ stars: 4 }}
           subscribe={function* ({ field, value }) {
             yield autorun(() => {
               let reason = field('reason');
@@ -46,14 +51,20 @@ const MyApp: React.FC = () => {
           }}
         >
           <DisplayRender />
-          <Item name="stars" initialValue={5}>
+          <Item name="stars">
             {({ field }) => (
               <AntdForm.Item
                 label="评分"
                 validateStatus={
-                  validateMapper[field.extend.get('validation').status]
+                  field.touched
+                    ? validateMapper[field.extend.get('validation').status]
+                    : undefined
                 }
-                help={field.extend.get('validation').messages.join(', ')}
+                help={
+                  field.touched
+                    ? field.extend.get('validation').messages.join(', ')
+                    : undefined
+                }
               >
                 <DisplayRender />
                 <AntdRate
@@ -71,9 +82,15 @@ const MyApp: React.FC = () => {
                 style={{ display: field.show ? 'initial' : 'none' }}
                 label="不给5星的理由"
                 validateStatus={
-                  validateMapper[field.extend.get('validation').status]
+                  field.touched
+                    ? validateMapper[field.extend.get('validation').status]
+                    : undefined
                 }
-                help={field.extend.get('validation').messages.join(', ')}
+                help={
+                  field.touched
+                    ? field.extend.get('validation').messages.join(', ')
+                    : undefined
+                }
               >
                 <DisplayRender />
                 <Input
@@ -89,9 +106,19 @@ const MyApp: React.FC = () => {
             {() => (
               <div style={{ position: 'relative' }}>
                 <pre>
-                  {console.log(form.values)}
+                  {console.log(form.toJSON())}
                   <DisplayRender />
                   {JSON.stringify(form.values, null, 2)}
+                </pre>
+              </div>
+            )}
+          </Observer>
+          <Observer>
+            {() => (
+              <div style={{ position: 'relative' }}>
+                <pre>
+                  <DisplayRender />
+                  {JSON.stringify(form.initialValues, null, 2)}
                 </pre>
               </div>
             )}

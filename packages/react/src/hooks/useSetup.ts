@@ -1,6 +1,5 @@
-import { FormInstance } from '@formular/core/lib/src2/models';
+import type { FormInstance, SubscribeSetup } from '@formular/core';
 import { useEffect } from 'react';
-import { SubscribeSetup } from '@formular/core/lib/src2/sideEffect';
 
 export function useSetup(form: FormInstance, setup?: SubscribeSetup) {
   useEffect(() => {

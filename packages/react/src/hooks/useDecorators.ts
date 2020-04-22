@@ -1,6 +1,5 @@
-import { FormInstance } from '@formular/core/lib/src2/models/form';
 import { useEffect } from 'react';
-import type { FormDecorator } from '@formular/core/lib/src2/decorators/types';
+import type { FormDecorator, FormInstance } from '@formular/core';
 
 export function useDecorators(
   form: FormInstance,

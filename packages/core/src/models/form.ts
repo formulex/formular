@@ -1,12 +1,10 @@
 import { types, Instance, getType } from 'mobx-state-tree';
-import { FieldConfig, FieldInstance, createField } from '.';
+import { FieldInstance, createField } from '.';
 import { IReactionDisposer, autorun } from 'mobx';
 import { setIn } from '../utils';
 import { SubscribeSetup, getResolvers } from '../sideEffect';
 import { createValidationDecorator, FormDecorator } from '../decorators';
-import { Field } from './field';
-
-export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
+import { Field, FieldRegisterConfig } from './field';
 
 const FormLifecycleHooks = types
   .model('FormLifecycleHooks', {})
@@ -69,7 +67,9 @@ export const Form = types
         self.addField(name, field);
       }
       let field = self.fields.get(name)!;
-      field.setValue(field.initialValue);
+      setTimeout(() => {
+        field.setValue(field.initialValue);
+      });
 
       let disposer: null | IReactionDisposer = null;
       if (typeof effect === 'function') {
@@ -82,7 +82,6 @@ export const Form = types
         self.didUnregisterField(name);
       };
     },
-    async validate() {},
     initialize(data: object | ((values: object) => object)) {
       const values = typeof data === 'function' ? data(self.values) : data;
       self.setFallbackInitialValues(values);

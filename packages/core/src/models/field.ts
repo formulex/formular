@@ -18,11 +18,6 @@ export const Field = types
   .volatile(() => ({
     extend: observable.map({}, { deep: false, name: 'FieldExtend' })
   }))
-  .views((self) => ({
-    get _fallbackInitialValues(): any {
-      return getParentOfType(self, Form)._fallbackInitialValues;
-    }
-  }))
   .actions((self) => ({
     setValue(val: any) {
       self._value = val;
@@ -80,7 +75,9 @@ export const Field = types
       get initialValue(): any {
         return (
           getVal(self._fallbackInitialValue) ??
-          getVal(getIn(self._fallbackInitialValues, self.name)) ??
+          getVal(
+            getIn(getParentOfType(self, Form)._fallbackInitialValues, self.name)
+          ) ??
           (self.type === 'array' ? [] : undefined)
         );
       },
@@ -164,6 +161,8 @@ export interface FieldConfig {
   initialValue?: any;
   type?: 'array';
 }
+
+export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
 
 export type FieldInstance = Instance<typeof Field>;
 

@@ -1,71 +1,43 @@
-import { useMemo, useEffect } from 'react';
-import {
-  FieldGroupInstance,
-  FieldArrayInstance,
-  FieldInstance,
-  getOrCreateNodeFromBase,
-  AsyncRule,
-  Rule
-} from '@formular/core';
-import { useScopeContext } from '../contexts/scope';
+import { useFieldContext } from '../contexts';
+import { useEffect, useRef, useState } from 'react';
+import { FieldRegisterConfig } from '@formular/core';
+import { FieldInstance, isFieldInstance } from '@formular/core';
 
-export interface CreateFieldOptions {
-  name: string;
-  initialValue?: any;
-  rules?: Rule[];
-  asyncRules?: AsyncRule[];
-}
+export function useField(
+  name: string,
+  { initialValue, type }: FieldRegisterConfig
+): [FieldInstance | undefined] {
+  const form = useFieldContext();
+  const fieldRef = useRef<FieldInstance>();
+  const [, forceUpdate] = useState();
 
-export interface FieldMeta {
-  name: string;
-  field: FieldInstance;
-  group: FieldGroupInstance;
-  array: FieldArrayInstance;
-}
-
-export function useField({
-  name,
-  initialValue,
-  rules,
-  asyncRules
-}: CreateFieldOptions): [FieldMeta] {
-  const scope = useScopeContext();
-  console.log('field', name);
   useEffect(() => {
-    console.log('fieldEffect', name);
-  }, [name]);
-  const { meta, replaceBase } = useMemo(() => {
-    const {
-      node: firstRenderedFieldOrGroupOrArray,
-      replaceBase
-    } = getOrCreateNodeFromBase(
-      name,
-      {
-        initialValue,
-        base: scope,
-        rules,
-        asyncRules
-      },
-      true
-    );
-    const meta = {
-      name,
-      field: firstRenderedFieldOrGroupOrArray as FieldInstance,
-      group: firstRenderedFieldOrGroupOrArray as FieldGroupInstance,
-      array: firstRenderedFieldOrGroupOrArray as FieldArrayInstance
+    const unregister = form.registerField(name, undefined, {
+      initialValue,
+      type
+    });
+    fieldRef.current = form.fields.get(name)!;
+    forceUpdate({});
+    return () => {
+      unregister();
+      fieldRef.current = undefined;
     };
+  }, [form, name]);
 
-    return { meta, replaceBase };
-  }, [name, initialValue, scope, rules, asyncRules]);
+  useEffect(() => {
+    if (
+      isFieldInstance(fieldRef.current) &&
+      initialValue !== fieldRef.current.initialValue
+    ) {
+      fieldRef.current.setFallbackInitialValue(initialValue);
+    }
+  }, [initialValue]);
 
-  // useEffect(() => {
-  //   if (replaceBase) {
-  //     // destroy(replaceBase);
-  //     scope.replace(replaceBase as any);
-  //   }
-  // }, [replaceBase, scope]);
+  useEffect(() => {
+    if (isFieldInstance(fieldRef.current) && type !== fieldRef.current.type) {
+      fieldRef.current?.setType(type);
+    }
+  }, [type]);
 
-  // [name, initialValue, scope, rules, asyncRules]
-
-  return [meta];
+  return [fieldRef.current];
 }
