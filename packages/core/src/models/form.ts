@@ -1,10 +1,10 @@
 import { types, Instance, getType } from 'mobx-state-tree';
-import { Field, FieldConfig, FieldInstance, createField } from './field';
+import { FieldConfig, FieldInstance, createField } from '.';
 import { IReactionDisposer, autorun } from 'mobx';
 import { setIn } from '../utils';
 import { SubscribeSetup, getResolvers } from '../sideEffect';
-import { FormDecorator } from '../decorators/types';
-import { createValidationDecorator } from '../decorators';
+import { createValidationDecorator, FormDecorator } from '../decorators';
+import { Field } from './field';
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
 
