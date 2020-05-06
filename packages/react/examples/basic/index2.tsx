@@ -9,7 +9,12 @@ import 'antd/dist/antd.css';
 import { DisplayRender } from './DisplayRender';
 import type { RateProps } from 'antd/lib/rate';
 import type { ValidateStatus } from 'antd/lib/form/FormItem';
-import { addMiddleware, getSnapshot } from 'mobx-state-tree';
+import { addMiddleware } from 'mobx-state-tree';
+import { configure } from '@formular/core';
+
+configure({
+  ajvLocalize: require('ajv-i18n/localize/zh')
+});
 
 const AntdRate = (Rate as any) as React.FC<RateProps & { [key: string]: any }>;
 
@@ -112,7 +117,6 @@ const MyApp: React.FC = () => {
             });
 
             yield addMiddleware(form, (call, next) => {
-              console.log('call', call);
               switch (call.name) {
                 case 'didRegisterField':
                   console.log('register field', call.args[0]);
@@ -138,11 +142,14 @@ const MyApp: React.FC = () => {
             name="stars"
             rule={{
               minimum: 5,
-              // validator: (val: number) => {
-              //   console.log('validator', val);
-              //   return val !== 2;
-              // },
-              errorMessage: '不能为2星星'
+              validator: (val: number) => {
+                return val !== 2;
+              },
+              warningKeys: ['minimum', 'validator'],
+              errorMessage: {
+                validator: '不可以是2星',
+                minimum: '至少是5星'
+              }
             }}
             // asyncRule={{
             //   asyncValidator: async (val: number) => {

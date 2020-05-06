@@ -4,6 +4,7 @@ import debounce from 'lodash.debounce';
 import { addMiddleware, applyAction, IActionContext } from 'mobx-state-tree';
 import { isFieldInstance } from '../../models';
 export type { Rule, AsyncRule, FieldValidationConfig } from './types';
+import Ajv from 'ajv';
 
 const getDispatch = memoize((cacheKey: string, ms: number) =>
   debounce((call: IActionContext) => {
@@ -21,7 +22,7 @@ export interface CreateValidationFeatureOptions {
 
 export function createValidationFeature({
   trigger = 'change',
-  debounce = 100
+  debounce = 16 * 6
 }: CreateValidationFeatureOptions = {}): FormFeature {
   return (form) =>
     addMiddleware(form, (call, next) => {
@@ -47,4 +48,8 @@ export function createValidationFeature({
       }
       next(call);
     });
+}
+
+export function createAjv() {
+  return new Ajv({ allErrors: true, jsonPointers: true });
 }

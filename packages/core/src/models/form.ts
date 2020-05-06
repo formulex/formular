@@ -6,8 +6,9 @@ import { getResolvers, SubscribeSetup } from '../sideEffect';
 import type { FormFeature } from '../features';
 import { Field, FieldRegisterConfig } from './field';
 import type { CreateValidationFeatureOptions } from '../features/validation';
-import { createValidationFeature } from '../features/validation';
-import Ajv from 'ajv';
+import { createAjv, createValidationFeature } from '../features/validation';
+import ajvErrors from 'ajv-errors';
+import { Ajv } from 'ajv';
 
 const FormLifecycleHooks = types
   .model('FormLifecycleHooks', {})
@@ -141,7 +142,7 @@ export interface FormConfig<V> extends CreateValidationFeatureOptions {
 }
 
 export interface FormEnvironment {
-  ajv: Ajv.Ajv;
+  ajv: Ajv;
 }
 
 export function isFormInstance(o: any): o is FormInstance {
@@ -153,11 +154,13 @@ export function createForm<V = any>({
   trigger,
   debounce
 }: FormConfig<V>): FormInstance {
+  const ajv = createAjv();
+  ajvErrors(ajv);
   const form = Form.create(
     {
       _fallbackInitialValues: initialValues ? { ...initialValues } : {}
     },
-    { ajv: new Ajv() }
+    { ajv }
   );
 
   form.use(
