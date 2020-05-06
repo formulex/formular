@@ -9,3 +9,8 @@ export interface Rule {
 export interface AsyncRule extends Omit<Rule, 'validator'> {
   asyncValidator?: (value: any) => Promise<boolean>;
 }
+
+export interface FieldValidationConfig {
+  rule?: Rule;
+  asyncRule?: AsyncRule;
+}

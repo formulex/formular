@@ -1,10 +1,7 @@
 import { useEffect } from 'react';
-import type { FormDecorator, FormInstance } from '@formular/core';
+import type { FormFeature, FormInstance } from '@formular/core';
 
-export function useDecorators(
-  form: FormInstance,
-  decorators?: FormDecorator[]
-) {
+export function useDecorators(form: FormInstance, decorators?: FormFeature[]) {
   useEffect(() => {
     let unsubscribe: () => void | undefined;
     if (Array.isArray(decorators) && decorators.length) {

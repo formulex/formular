@@ -3,6 +3,7 @@ import memoize from 'lodash.memoize';
 import debounce from 'lodash.debounce';
 import { addMiddleware, applyAction, IActionContext } from 'mobx-state-tree';
 import { isFieldInstance } from '../../models';
+export type { Rule, AsyncRule, FieldValidationConfig } from './types';
 
 const getDispatch = memoize((cacheKey: string, ms: number) =>
   debounce((call: IActionContext) => {

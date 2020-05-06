@@ -1,5 +1,5 @@
 import { createContext, Context } from 'react';
-import { FormInstance } from '@formular/core/lib/src2/models/form';
+import type { FormInstance } from '@formular/core';
 import React from 'react';
 
 export const FieldContext: Context<FormInstance | null> = createContext<FormInstance | null>(

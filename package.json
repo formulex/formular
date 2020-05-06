@@ -28,23 +28,21 @@
     "@babel/plugin-transform-runtime": "^7.9.0",
     "@babel/preset-env": "^7.9.0",
     "@babel/preset-typescript": "^7.9.0",
-    "@types/ajv": "^1.0.0",
     "@types/jest": "^25.2.1",
     "@types/react": "^16.9.32",
     "@types/react-dom": "^16.9.6",
-    "@types/yup": "^0.26.37",
     "@typescript-eslint/eslint-plugin": "^2.26.0",
     "@typescript-eslint/parser": "^2.26.0",
     "@welldone-software/why-did-you-render": "^4.1.0-alpha.1",
+    "antd": "^4.2.0",
     "babel-jest": "^25.3.0",
     "babel-preset-power-assert": "^3.0.0",
-    "core-js": "^3.6.5",
     "cross-env": "^7.0.2",
-    "dumi": "^1.0.20",
     "eslint": "^6.8.0",
     "eslint-plugin-react": "^7.19.0",
     "jest": "^25.3.0",
     "lerna": "^3.20.2",
+    "mini-store": "3.0.2",
     "mobx": "^5.15.4",
     "mobx-devtools-mst": "^0.9.21",
     "mobx-state-tree": "^3.15.0",
@@ -55,9 +53,6 @@
     "react-dom": "^16.13.1",
     "rimraf": "^3.0.2",
     "typescript": "^3.8.3"
-  },
-  "resolutions": {
-    "eslint": "^6.8.0"
   },
   "license": "MIT"
 }

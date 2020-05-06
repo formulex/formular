@@ -2,7 +2,11 @@ import React from 'react';
 import { RenderableProps, renderComponent } from '../utils';
 import { Observer } from 'mobx-react';
 import { useField } from '../hooks';
-import { FieldInstance, FieldRegisterConfig } from '@formular/core';
+import type {
+  FieldInstance,
+  FieldRegisterConfig,
+  FieldValidationConfig
+} from '@formular/core';
 
 export interface FieldsAPI {
   name: string;
@@ -20,7 +24,8 @@ export interface FieldRenderableProps {
 
 export interface ItemProps
   extends RenderableProps<FieldRenderableProps>,
-    FieldRegisterConfig {
+    FieldRegisterConfig,
+    FieldValidationConfig {
   name: string;
   type?: 'array';
 }
@@ -31,70 +36,75 @@ export const Item: React.FC<ItemProps> = ({
   render,
   name,
   type,
-  initialValue
+  initialValue,
+  rule,
+  asyncRule
 }) => {
-  const [field] = useField(name, { type, initialValue });
+  const [field] = useField(name, { type, initialValue, rule, asyncRule });
   return (
     <Observer key={`_field_${name}`}>
-      {() =>
-        (field &&
-          (type === 'array'
-            ? (renderComponent<FieldRenderableProps>(
-                { children, render, component },
-                {
-                  field,
-                  fields: {
-                    name,
-                    value: field.value,
-                    length: field.value?.length,
-                    map: (
-                      iterator: (name: string, index: number) => any
-                    ): any[] => {
-                      const len = field.value?.length || 0;
-                      const results: any[] = [];
-                      for (let i = 0; i < len; i++) {
-                        results.push(iterator(`${name}[${i}]`, i));
+      {() => {
+        return (
+          (field &&
+            (type === 'array'
+              ? (renderComponent<FieldRenderableProps>(
+                  { children, render, component },
+                  {
+                    field,
+                    fields: {
+                      name,
+                      value: field.value,
+                      length: field.value?.length,
+                      map: (
+                        iterator: (name: string, index: number) => any
+                      ): any[] => {
+                        const len = field.value?.length || 0;
+                        const results: any[] = [];
+                        for (let i = 0; i < len; i++) {
+                          results.push(iterator(`${name}[${i}]`, i));
+                        }
+                        return results;
+                      },
+                      forEach: (
+                        iterator: (name: string, index: number) => void
+                      ): void => {
+                        const len = field.value?.length || 0;
+                        for (let i = 0; i < len; i++) {
+                          iterator(`${name}[${i}]`, i);
+                        }
                       }
-                      return results;
                     },
-                    forEach: (
-                      iterator: (name: string, index: number) => void
-                    ): void => {
-                      const len = field.value?.length || 0;
-                      for (let i = 0; i < len; i++) {
-                        iterator(`${name}[${i}]`, i);
+                    type
+                  },
+                  'FormularArray'
+                ) as any)
+              : (renderComponent(
+                  { children, render, component },
+                  {
+                    field,
+                    fields: {
+                      name,
+                      value: field.value,
+                      length: 0,
+                      map: () => {
+                        throw new Error(
+                          `Cannot call "map" in NOT array-like field "${name}" with type="${type}"`
+                        );
+                      },
+                      forEach: () => {
+                        throw new Error(
+                          'Cannot call "forEach" in NOT array-like field:' +
+                            name
+                        );
                       }
-                    }
-                  },
-                  type
-                },
-                'FormularArray'
-              ) as any)
-            : (renderComponent(
-                { children, render, component },
-                {
-                  field,
-                  fields: {
-                    name,
-                    value: field.value,
-                    length: 0,
-                    map: () => {
-                      throw new Error(
-                        `Cannot call "map" in NOT array-like field "${name}" with type="${type}"`
-                      );
                     },
-                    forEach: () => {
-                      throw new Error(
-                        'Cannot call "forEach" in NOT array-like field:' + name
-                      );
-                    }
+                    type
                   },
-                  type
-                },
-                'FormularItem'
-              ) as any))) ||
-        null
-      }
+                  'FormularItem'
+                ) as any))) ||
+          null
+        );
+      }}
     </Observer>
   );
 };

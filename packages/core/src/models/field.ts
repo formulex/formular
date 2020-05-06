@@ -1,7 +1,6 @@
 import { getParentOfType, getType, Instance, types } from 'mobx-state-tree';
 import { escapeRegexTokens, getIn } from '../utils';
 import { Form } from './form';
-import { observable } from 'mobx';
 import {
   createFieldValidation,
   Validation

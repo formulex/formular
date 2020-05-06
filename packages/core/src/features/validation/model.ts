@@ -211,8 +211,8 @@ export const Validation = types
           }
         }
         self.valid = isValid;
+        self.messages.replace(messages);
         if (!isValid) {
-          self.messages.replace(messages);
           return;
         }
       }
@@ -229,11 +229,10 @@ export const Validation = types
             }
           }
         }
+
         self.pending = false;
         self.valid = isValid;
-        if (!isValid) {
-          self.messages.replace(messages);
-        }
+        self.messages.replace(messages);
       }
     })
   }));

@@ -2,9 +2,9 @@ import React, { useImperativeHandle } from 'react';
 import { useForm, useSetup, useDecorators, useFormConfig } from '../hooks';
 import { renderComponent, RenderableProps } from '../utils';
 import { FieldContext } from '../contexts';
-import {
+import type {
   FormInstance,
-  FormDecorator,
+  FormFeature,
   SubscribeSetup,
   FormConfig
 } from '@formular/core';
@@ -20,7 +20,7 @@ export interface FormProps<V>
     FormConfig<V> {
   form?: FormInstance;
   subscribe?: SubscribeSetup;
-  decorators?: FormDecorator[];
+  decorators?: FormFeature[];
   children?:
     | RenderableProps<{ form: FormInstance }>['children']
     | React.ReactNode;

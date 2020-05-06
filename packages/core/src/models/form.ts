@@ -3,9 +3,10 @@ import { createField, FieldInstance } from '.';
 import { autorun, IReactionDisposer } from 'mobx';
 import { setIn } from '../utils';
 import { getResolvers, SubscribeSetup } from '../sideEffect';
-import { createValidationFeature, FormFeature } from '../features';
+import type { FormFeature } from '../features';
 import { Field, FieldRegisterConfig } from './field';
 import type { CreateValidationFeatureOptions } from '../features/validation';
+import { createValidationFeature } from '../features/validation';
 import Ajv from 'ajv';
 
 const FormLifecycleHooks = types

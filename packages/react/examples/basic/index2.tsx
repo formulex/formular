@@ -4,11 +4,12 @@ import React, { useEffect } from 'react';
 import { Observer } from 'mobx-react';
 import { autorun } from 'mobx';
 import whyDidYouRender from '@welldone-software/why-did-you-render';
-import { Rate, Form as AntdForm, Input, Card } from 'antd';
+import { Button, Card, Form as AntdForm, Input, Rate } from 'antd';
 import 'antd/dist/antd.css';
 import { DisplayRender } from './DisplayRender';
 import type { RateProps } from 'antd/lib/rate';
 import type { ValidateStatus } from 'antd/lib/form/FormItem';
+import { addMiddleware, getSnapshot } from 'mobx-state-tree';
 
 const AntdRate = (Rate as any) as React.FC<RateProps & { [key: string]: any }>;
 
@@ -20,11 +21,69 @@ whyDidYouRender(React, {
 const validateMapper: { [key: string]: ValidateStatus } = {
   PENDING: 'validating',
   VALID: 'success',
-  INVALID: 'error'
+  INVALID: 'error',
+  WARNING: 'warning'
+};
+
+const DynamicItems: React.FC<{ show: boolean }> = ({ show }) => {
+  return !show ? (
+    <div>None...</div>
+  ) : (
+    <>
+      <Item name="stars2">
+        {({ field }) => (
+          <AntdForm.Item
+            label="评分2"
+            validateStatus={
+              field.touched
+                ? validateMapper[field.validation.status]
+                : undefined
+            }
+            help={
+              field.touched ? field.validation.messages.join(', ') : undefined
+            }
+          >
+            <DisplayRender />
+            <AntdRate
+              onChange={(val) => field.setValue(val)}
+              value={field.value}
+              onFocus={() => field.focus()}
+              onBlur={() => field.blur()}
+            />
+          </AntdForm.Item>
+        )}
+      </Item>
+      <Item name="reason2">
+        {({ field }) => (
+          <AntdForm.Item
+            style={{ display: field.show ? 'initial' : 'none' }}
+            label="不给5星的理由2"
+            validateStatus={
+              field.touched
+                ? validateMapper[field.validation.status]
+                : undefined
+            }
+            help={
+              field.touched ? field.validation.messages.join(', ') : undefined
+            }
+          >
+            <DisplayRender />
+            <Input
+              onChange={(e) => field.setValue(e.target.value)}
+              value={field.value}
+              onFocus={() => field.focus()}
+              onBlur={() => field.blur()}
+            />
+          </AntdForm.Item>
+        )}
+      </Item>
+    </>
+  );
 };
 
 const MyApp: React.FC = () => {
   const [form] = useForm();
+  const [show, setShow] = React.useState(false);
 
   useEffect(() => {
     (window as any).form = form;
@@ -32,13 +91,16 @@ const MyApp: React.FC = () => {
   return (
     <div style={{ padding: '1rem' }}>
       <h1>MyApp</h1>
+      <Button onClick={() => setShow((_) => !_)}>
+        {show ? '点击隐藏' : '点击显示'}
+      </Button>
       <p>圆圈 ⭕️里的数字 = 该组件渲染次数</p>
       <DisplayRender />
       <Card>
         <Form
           form={form}
           initialValues={{ stars: 4 }}
-          subscribe={function* ({ field, value }) {
+          subscribe={function* ({ field, value }, form) {
             yield autorun(() => {
               let reason = field('reason');
               if (reason) {
@@ -48,23 +110,56 @@ const MyApp: React.FC = () => {
                 }
               }
             });
+
+            yield addMiddleware(form, (call, next) => {
+              console.log('call', call);
+              switch (call.name) {
+                case 'didRegisterField':
+                  console.log('register field', call.args[0]);
+                  break;
+                case 'didUnregisterField':
+                  console.log('unregister field', call.args[0]);
+                  break;
+              }
+              next(call);
+            });
+
+            yield autorun(() => {
+              // console.log(getSnapshot(form.fields));
+              console.log(
+                'stars',
+                form.fields.get('stars')?.validation.validator?.(4)
+              );
+            });
           }}
         >
           <DisplayRender />
-          <Item name="stars">
+          <Item
+            name="stars"
+            rule={{
+              minimum: 5,
+              // validator: (val: number) => {
+              //   console.log('validator', val);
+              //   return val !== 2;
+              // },
+              errorMessage: '不能为2星星'
+            }}
+            // asyncRule={{
+            //   asyncValidator: async (val: number) => {
+            //     console.log('async validator run', val);
+            //     return val !== 1;
+            //   },
+            //   errorMessage: '不能为1星'
+            // }}
+          >
             {({ field }) => (
               <AntdForm.Item
                 label="评分"
                 validateStatus={
-                  field.touched
-                    ? validateMapper[field.extend.get('validation').status]
-                    : undefined
+                  (field.touched && validateMapper[field.validation.status]) ||
+                  undefined
                 }
-                help={
-                  field.touched
-                    ? field.extend.get('validation').messages.join(', ')
-                    : undefined
-                }
+                help={field.touched && field.validation.messages.join(', ')}
               >
                 <DisplayRender />
                 <AntdRate
@@ -83,12 +178,12 @@ const MyApp: React.FC = () => {
                 label="不给5星的理由"
                 validateStatus={
                   field.touched
-                    ? validateMapper[field.extend.get('validation').status]
+                    ? validateMapper[field.validation.status]
                     : undefined
                 }
                 help={
                   field.touched
-                    ? field.extend.get('validation').messages.join(', ')
+                    ? field.validation.messages.join(', ')
                     : undefined
                 }
               >
@@ -106,7 +201,6 @@ const MyApp: React.FC = () => {
             {() => (
               <div style={{ position: 'relative' }}>
                 <pre>
-                  {console.log(form.toJSON())}
                   <DisplayRender />
                   {JSON.stringify(form.values, null, 2)}
                 </pre>
@@ -123,6 +217,7 @@ const MyApp: React.FC = () => {
               </div>
             )}
           </Observer>
+          <DynamicItems show={show} />
         </Form>
       </Card>
     </div>
