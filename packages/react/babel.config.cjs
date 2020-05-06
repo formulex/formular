@@ -1,4 +1,4 @@
 module.exports = {
-  extends: '../../babel.config.cjs',
+  extends: '../../babel.config.base.cjs',
   presets: ['@babel/react']
 };

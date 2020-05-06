@@ -1,7 +1,11 @@
-import { types, Instance, getType, getParentOfType } from 'mobx-state-tree';
-import { getIn, escapeRegexTokens } from '../utils';
+import { getParentOfType, getType, Instance, types } from 'mobx-state-tree';
+import { escapeRegexTokens, getIn } from '../utils';
 import { Form } from './form';
 import { observable } from 'mobx';
+import {
+  createFieldValidation,
+  Validation
+} from '../features/validation/model';
 
 export const Field = types
   .model('Field', {
@@ -13,11 +17,12 @@ export const Field = types
     type: types.maybe(types.literal('array')),
     _show: types.boolean,
     _disabled: types.boolean,
-    active: types.boolean
+    active: types.boolean,
+
+    // features
+    validation: Validation,
+    ignored: types.boolean
   })
-  .volatile(() => ({
-    extend: observable.map({}, { deep: false, name: 'FieldExtend' })
-  }))
   .actions((self) => ({
     setValue(val: any) {
       self._value = val;
@@ -27,12 +32,6 @@ export const Field = types
     },
     setType(type?: 'array') {
       self.type = type;
-    },
-    setExtend(name: string, val: any) {
-      self.extend.set(name, val);
-    },
-    removeExtend(name: string) {
-      self.extend.delete(name);
     },
     setShow(shouldShow: boolean) {
       self._show = shouldShow;
@@ -150,9 +149,6 @@ export const Field = types
       }
 
       return result;
-    },
-    beforeDestroy() {
-      self.extend.clear();
     }
   }));
 
@@ -175,7 +171,7 @@ export function createField({
   initialValue: _fallbackInitialValue,
   type
 }: FieldConfig): FieldInstance {
-  const field = Field.create({
+  return Field.create({
     name,
     _everBlured: false,
     _everFocused: false,
@@ -183,8 +179,8 @@ export function createField({
     type,
     _show: true,
     _disabled: false,
-    active: false
+    active: false,
+    ignored: false,
+    validation: createFieldValidation()
   });
-
-  return field;
 }

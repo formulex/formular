@@ -1,4 +1,4 @@
 export * from './utils';
-export * from './decorators';
+export * from './features';
 export * from './models';
 export * from './sideEffect';

@@ -1,10 +1,12 @@
-import { types, Instance, getType } from 'mobx-state-tree';
-import { FieldInstance, createField } from '.';
-import { IReactionDisposer, autorun } from 'mobx';
+import { getType, Instance, types } from 'mobx-state-tree';
+import { createField, FieldInstance } from '.';
+import { autorun, IReactionDisposer } from 'mobx';
 import { setIn } from '../utils';
-import { SubscribeSetup, getResolvers } from '../sideEffect';
-import { createValidationDecorator, FormDecorator } from '../decorators';
+import { getResolvers, SubscribeSetup } from '../sideEffect';
+import { createValidationFeature, FormFeature } from '../features';
 import { Field, FieldRegisterConfig } from './field';
+import type { CreateValidationFeatureOptions } from '../features/validation';
+import Ajv from 'ajv';
 
 const FormLifecycleHooks = types
   .model('FormLifecycleHooks', {})
@@ -111,8 +113,8 @@ export const Form = types
         }
       };
     },
-    use(...decorators: FormDecorator[]): () => void {
-      const undecorators: ReturnType<FormDecorator>[] = [];
+    use(...decorators: FormFeature[]): () => void {
+      const undecorators: ReturnType<FormFeature>[] = [];
       for (const decorator of decorators) {
         const undecorate = decorator(self as FormInstance);
         undecorators.push(undecorate);
@@ -132,9 +134,13 @@ export const Form = types
 
 export type FormInstance = Instance<typeof Form>;
 
-export interface FormConfig<V> {
+export interface FormConfig<V> extends CreateValidationFeatureOptions {
   onFinish?: (values: V) => any;
   initialValues?: V;
+}
+
+export interface FormEnvironment {
+  ajv: Ajv.Ajv;
 }
 
 export function isFormInstance(o: any): o is FormInstance {
@@ -142,13 +148,23 @@ export function isFormInstance(o: any): o is FormInstance {
 }
 
 export function createForm<V = any>({
-  initialValues
+  initialValues,
+  trigger,
+  debounce
 }: FormConfig<V>): FormInstance {
-  const form = Form.create({
-    _fallbackInitialValues: initialValues ? { ...initialValues } : {}
-  });
+  const form = Form.create(
+    {
+      _fallbackInitialValues: initialValues ? { ...initialValues } : {}
+    },
+    { ajv: new Ajv() }
+  );
 
-  form.use(createValidationDecorator());
+  form.use(
+    createValidationFeature({
+      trigger,
+      debounce
+    })
+  );
 
   return form;
 }

@@ -6,7 +6,9 @@
     "strict": true,
     "isolatedModules": false,
     "esModuleInterop": true,
-    "declaration": true
+    "declaration": true,
+    "jsx": "preserve",
+    "skipLibCheck": true
   },
-  "include": ["./typings.d.ts"]
+  "include": ["./typings.d.ts", "docs"]
 }
