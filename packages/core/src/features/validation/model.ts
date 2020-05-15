@@ -8,13 +8,14 @@ import {
 import type { AsyncRule, Rule } from './types';
 import { FormEnvironment } from '../../models/form';
 import { Field } from '../../models/field';
-import { ErrorObject } from 'ajv';
+import { ValidationError, ErrorObject } from 'ajv';
 import { globalConfig } from '../../globalConfigure';
 import ajvErrors from 'ajv-errors';
 
 export const Validation = types
   .model('Validation', {
-    messages: types.array(types.string),
+    asyncMessages: types.array(types.string),
+    syncMessages: types.array(types.string),
     pending: types.boolean,
     valid: types.maybe(types.boolean),
     schemaKey: types.maybe(types.string),
@@ -59,6 +60,9 @@ export const Validation = types
       };
     }
     return {
+      get messages() {
+        return [...self.syncMessages, ...self.asyncMessages];
+      },
       get warningsPasser() {
         if (self.warningKeys === 'all' || Array.isArray(self.warningKeys)) {
           return getWarningKeysPasser(self.warningKeys);
@@ -118,13 +122,22 @@ export const Validation = types
         const raw = ajv.getSchema(self.asyncSchemaKey);
         if (raw) {
           return async (data: any) => {
-            const isValid = await (raw(data) as Promise<boolean>);
+            let pass = false;
+            let errors: any = [];
+            try {
+              await (raw(data) as Promise<boolean>);
+              pass = true;
+            } catch (err) {
+              if (!(err instanceof ValidationError)) throw err;
+              errors = err.errors;
+            }
+
             return {
               isValid:
                 typeof self.asyncWarningsPasser === 'function'
-                  ? self.asyncWarningsPasser(raw.errors)
-                  : isValid,
-              errors: raw.errors
+                  ? self.asyncWarningsPasser(errors)
+                  : pass,
+              errors
             };
           };
         }
@@ -210,6 +223,7 @@ export const Validation = types
         }
       }
       customSchemaKey = `${self.field.name}_async_schema`;
+      Object.assign(schema, { $async: true });
       ajv.addSchema(schema, customSchemaKey);
       self.asyncSchemaKey = customSchemaKey;
       self.asyncWarningKeys = Array.isArray(warningKeys)
@@ -247,7 +261,7 @@ export const Validation = types
           }
         }
         self.valid = isValid;
-        self.messages.replace(messages);
+        self.syncMessages.replace(messages);
         if (!isValid) {
           return;
         }
@@ -269,7 +283,7 @@ export const Validation = types
 
         self.pending = false;
         self.valid = isValid;
-        self.messages.replace(messages);
+        self.asyncMessages.replace(messages);
       }
     })
   }));
@@ -278,7 +292,6 @@ export type FiedlValidationInstance = Instance<typeof Validation>;
 
 export function createFieldValidation(): FiedlValidationInstance {
   return Validation.create({
-    messages: [],
     pending: false,
     valid: undefined
   });

@@ -103,9 +103,12 @@ const MyApp: React.FC = () => {
       <DisplayRender />
       <Card>
         <Form
+          onFinish={(values) => {
+            console.log('Finished', values);
+          }}
           form={form}
           initialValues={{ stars: 4 }}
-          subscribe={function* ({ field, value }, form) {
+          subscribe={function* ({ field, value }) {
             yield autorun(() => {
               let reason = field('reason');
               if (reason) {
@@ -115,49 +118,29 @@ const MyApp: React.FC = () => {
                 }
               }
             });
-
-            yield addMiddleware(form, (call, next) => {
-              switch (call.name) {
-                case 'didRegisterField':
-                  console.log('register field', call.args[0]);
-                  break;
-                case 'didUnregisterField':
-                  console.log('unregister field', call.args[0]);
-                  break;
-              }
-              next(call);
-            });
-
-            yield autorun(() => {
-              // console.log(getSnapshot(form.fields));
-              console.log(
-                'stars',
-                form.fields.get('stars')?.validation.validator?.(4)
-              );
-            });
           }}
         >
           <DisplayRender />
           <Item
             name="stars"
             rule={{
-              minimum: 5,
+              minimum: 4,
               validator: (val: number) => {
                 return val !== 2;
               },
-              warningKeys: ['minimum', 'validator'],
+              warningKeys: ['minimum'],
               errorMessage: {
                 validator: '不可以是2星',
-                minimum: '至少是5星'
+                minimum: '至少是4星'
               }
             }}
-            // asyncRule={{
-            //   asyncValidator: async (val: number) => {
-            //     console.log('async validator run', val);
-            //     return val !== 1;
-            //   },
-            //   errorMessage: '不能为1星'
-            // }}
+            asyncRule={{
+              asyncValidator: async (val: number) => {
+                await new Promise((r) => setTimeout(r, 3000));
+                return val !== 1;
+              },
+              errorMessage: '不能为1星'
+            }}
           >
             {({ field }) => (
               <AntdForm.Item
@@ -178,21 +161,23 @@ const MyApp: React.FC = () => {
               </AntdForm.Item>
             )}
           </Item>
-          <Item name="reason">
+          <Item
+            name="reason"
+            rule={{
+              type: 'string',
+              minLength: 1,
+              errorMessage: '请输入原因'
+            }}
+          >
             {({ field }) => (
               <AntdForm.Item
-                style={{ display: field.show ? 'initial' : 'none' }}
+                style={field.show ? undefined : { display: 'none' }}
                 label="不给5星的理由"
                 validateStatus={
-                  field.touched
-                    ? validateMapper[field.validation.status]
-                    : undefined
+                  (field.touched && validateMapper[field.validation.status]) ||
+                  undefined
                 }
-                help={
-                  field.touched
-                    ? field.validation.messages.join(', ')
-                    : undefined
-                }
+                help={field.touched && field.validation.messages.join(', ')}
               >
                 <DisplayRender />
                 <Input
@@ -204,6 +189,13 @@ const MyApp: React.FC = () => {
               </AntdForm.Item>
             )}
           </Item>
+          <Button
+            type="primary"
+            htmlType="submit"
+            style={{ marginBottom: '1rem' }}
+          >
+            提交
+          </Button>
           <Observer>
             {() => (
               <div style={{ position: 'relative' }}>
