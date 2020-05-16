@@ -1,15 +1,22 @@
 import { render } from 'react-dom';
 import { Form, Item, useForm } from '../../src';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Observer } from 'mobx-react';
 import { autorun } from 'mobx';
 import whyDidYouRender from '@welldone-software/why-did-you-render';
-import { Button, Card, Form as AntdForm, Input, Rate } from 'antd';
+import {
+  Button,
+  Card,
+  Form as AntdForm,
+  Input,
+  Rate,
+  Radio,
+  InputNumber
+} from 'antd';
 import 'antd/dist/antd.css';
 import { DisplayRender } from './DisplayRender';
 import type { RateProps } from 'antd/lib/rate';
 import type { ValidateStatus } from 'antd/lib/form/FormItem';
-import { addMiddleware } from 'mobx-state-tree';
 import { configure } from '@formular/core';
 
 configure({
@@ -89,6 +96,8 @@ const DynamicItems: React.FC<{ show: boolean }> = ({ show }) => {
 const MyApp: React.FC = () => {
   const [form] = useForm();
   const [show, setShow] = React.useState(false);
+  const [trigger, setTrigger] = useState<'change' | 'blur' | 'none'>('change');
+  const [debounceTime, setDebounceTime] = useState(16);
 
   useEffect(() => {
     (window as any).form = form;
@@ -99,6 +108,15 @@ const MyApp: React.FC = () => {
       <Button onClick={() => setShow((_) => !_)}>
         {show ? '点击隐藏' : '点击显示'}
       </Button>
+      <Radio.Group value={trigger} onChange={(e) => setTrigger(e.target.value)}>
+        <Radio.Button value="change">Change</Radio.Button>
+        <Radio.Button value="blur">Blur</Radio.Button>
+        <Radio.Button value="none">None</Radio.Button>
+      </Radio.Group>
+      <InputNumber
+        value={debounceTime}
+        onChange={(e) => setDebounceTime(e || 0)}
+      />
       <p>圆圈 ⭕️里的数字 = 该组件渲染次数</p>
       <DisplayRender />
       <Card>
@@ -106,6 +124,8 @@ const MyApp: React.FC = () => {
           onFinish={(values) => {
             console.log('Finished', values);
           }}
+          trigger={trigger}
+          debounce={debounceTime}
           form={form}
           initialValues={{ stars: 4 }}
           subscribe={function* ({ field, value }) {
@@ -165,8 +185,8 @@ const MyApp: React.FC = () => {
             name="reason"
             rule={{
               type: 'string',
-              minLength: 1,
-              errorMessage: '请输入原因'
+              minLength: 10,
+              errorMessage: '请输入原因，长度至少10位'
             }}
           >
             {({ field }) => (

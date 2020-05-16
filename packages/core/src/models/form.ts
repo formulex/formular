@@ -163,12 +163,14 @@ export function createForm<V = any>({
     { ajv }
   );
 
-  form.use(
-    createValidationFeature({
-      trigger,
-      debounce
-    })
-  );
+  if (typeof trigger === 'string') {
+    form.use(
+      createValidationFeature({
+        trigger,
+        debounce
+      })
+    );
+  }
 
   return form;
 }

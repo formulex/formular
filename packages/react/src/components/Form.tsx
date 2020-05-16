@@ -37,12 +37,14 @@ export const Form = React.forwardRef<FormInstance, FormProps<any>>(
       decorators,
       initialValues,
       onFinish,
+      trigger,
+      debounce,
       ...restProps
     },
     ref
   ) => {
     const [formInstance] = useForm(form);
-    useFormConfig(formInstance, { initialValues, onFinish });
+    useFormConfig(formInstance, { initialValues, trigger, debounce, onFinish });
     useImperativeHandle(ref, () => formInstance);
     useSetup(formInstance, subscribe);
     useDecorators(formInstance, decorators);

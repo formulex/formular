@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react';
-import type { FormInstance, FormConfig } from '@formular/core';
+import { FormInstance, FormConfig, isFieldInstance } from '@formular/core';
+import { createValidationFeature } from '@formular/core/lib/features/validation';
+import { addMiddleware } from 'mobx-state-tree';
 
 export function useFormConfig<V>(
   form: FormInstance,
-  { initialValues }: FormConfig<V>
+  { initialValues, trigger, debounce }: FormConfig<V>
 ) {
   const isFirstRender = useRef(true);
 
   useEffect(() => {
     if (isFirstRender.current) {
-      console.log('first', form);
       form.setFallbackInitialValues(initialValues);
       isFirstRender.current = false;
     }
@@ -20,4 +21,8 @@ export function useFormConfig<V>(
       form.setFallbackInitialValues(initialValues);
     }
   }, [form, initialValues]);
+
+  useEffect(() => {
+    return form.use(createValidationFeature({ trigger, debounce }));
+  }, [form, trigger, debounce]);
 }

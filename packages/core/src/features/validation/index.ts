@@ -2,7 +2,6 @@ import type { FormFeature } from '../types';
 import memoize from 'lodash.memoize';
 import debounce from 'lodash.debounce';
 import { addMiddleware, applyAction, IActionContext } from 'mobx-state-tree';
-import { isFieldInstance } from '../../models';
 export type { Rule, AsyncRule, FieldValidationConfig } from './types';
 import Ajv from 'ajv';
 
@@ -16,7 +15,7 @@ const getDispatch = memoize((cacheKey: string, ms: number) =>
 );
 
 export interface CreateValidationFeatureOptions {
-  trigger?: 'change' | 'blur';
+  trigger?: 'change' | 'blur' | 'none';
   debounce?: number;
 }
 
@@ -24,13 +23,12 @@ export function createValidationFeature({
   trigger = 'change',
   debounce = 16 * 6
 }: CreateValidationFeatureOptions = {}): FormFeature {
-  return (form) =>
-    addMiddleware(form, (call, next) => {
+  return (form) => {
+    const unregisterMiddleware = addMiddleware(form, (call, next) => {
       switch (call.name) {
         case 'setValue':
           if (
             trigger === 'change' &&
-            isFieldInstance(call.context) &&
             typeof call.context.validation.validate === 'function'
           ) {
             getDispatch(`${call.context.name}:${call.name}`, debounce)(call);
@@ -39,7 +37,6 @@ export function createValidationFeature({
         case 'blur':
           if (
             trigger === 'blur' &&
-            isFieldInstance(call.context) &&
             typeof call.context.validation.validate === 'function'
           ) {
             getDispatch(`${call.context.name}:${call.name}`, 0)(call);
@@ -48,6 +45,12 @@ export function createValidationFeature({
       }
       next(call);
     });
+
+    return () => {
+      unregisterMiddleware();
+      getDispatch.cache.clear?.();
+    };
+  };
 }
 
 export function createAjv() {
