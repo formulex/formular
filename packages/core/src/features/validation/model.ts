@@ -165,7 +165,6 @@ export const Validation = types
         customKeyword = `${self.field.name}_validator`;
         ajv.addKeyword(customKeyword, {
           validate: (_: any, data: any) => {
-            console.log('in validate', _, data);
             return validator(data);
           },
           errors: false
