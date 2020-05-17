@@ -81,7 +81,15 @@ export const Validation = types
     };
   })
   .views((self) => ({
+    get field(): any {
+      return getParentOfType(self, Field);
+    }
+  }))
+  .views((self) => ({
     get status(): 'IGNORED' | 'PENDING' | 'VALID' | 'INVALID' | 'WARNING' {
+      if (self.field.ignored) {
+        return 'IGNORED';
+      }
       if (self.pending || self.valid === undefined) {
         return 'PENDING';
       }
@@ -94,9 +102,7 @@ export const Validation = types
         return 'VALID';
       }
     },
-    get field(): any {
-      return getParentOfType(self, Field);
-    },
+
     get validator() {
       if (typeof self.schemaKey === 'string') {
         const { ajv } = getEnv<FormEnvironment>(self);
@@ -238,17 +244,25 @@ export const Validation = types
         }
       };
     },
-    validate: flow(function* validate() {
+    validate: flow(function* validate({
+      sync = true,
+      async = true,
+      noPending = false
+    }: {
+      sync?: boolean;
+      async?: boolean;
+      noPending?: boolean;
+    } = {}) {
       const validator = self.validator;
       const asyncValidator = self.asyncValidator;
       const field = self.field;
 
-      if (!field) {
+      if (!field || field.ignored) {
         return;
       }
 
       // Sync
-      if (typeof validator === 'function') {
+      if (typeof validator === 'function' && sync) {
         const messages: string[] = [];
         const { isValid, errors } = validator(field.value);
         globalConfig.ajvLocalize(errors);
@@ -261,15 +275,18 @@ export const Validation = types
         }
         self.valid = isValid;
         self.syncMessages.replace(messages);
+        self.asyncMessages.clear();
         if (!isValid) {
           return;
         }
       }
 
       // Async
-      if (typeof asyncValidator === 'function') {
+      if (typeof asyncValidator === 'function' && async) {
         const messages: string[] = [];
-        self.pending = true;
+        if (!noPending) {
+          self.pending = true;
+        }
         const { isValid, errors } = yield asyncValidator(field.value);
         globalConfig.ajvLocalize(errors);
         if (Array.isArray(errors)) {
@@ -279,8 +296,9 @@ export const Validation = types
             }
           }
         }
-
-        self.pending = false;
+        if (!noPending) {
+          self.pending = false;
+        }
         self.valid = isValid;
         self.asyncMessages.replace(messages);
       }

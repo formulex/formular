@@ -6,7 +6,8 @@ import type {
   FormInstance,
   FormFeature,
   SubscribeSetup,
-  FormConfig
+  FormConfig,
+  FormValidateCallOptions
 } from '@formular/core';
 
 type BaseFormProps = Omit<
@@ -17,7 +18,8 @@ type BaseFormProps = Omit<
 export interface FormProps<V>
   extends BaseFormProps,
     Omit<RenderableProps<{ form: FormInstance }>, 'children'>,
-    FormConfig<V> {
+    FormConfig<V>,
+    FormValidateCallOptions {
   form?: FormInstance;
   subscribe?: SubscribeSetup;
   decorators?: FormFeature[];
@@ -39,6 +41,7 @@ export const Form = React.forwardRef<FormInstance, FormProps<any>>(
       onFinish,
       trigger,
       debounce,
+      abortEarly,
       ...restProps
     },
     ref
@@ -52,11 +55,20 @@ export const Form = React.forwardRef<FormInstance, FormProps<any>>(
     return (
       <form
         {...restProps}
-        onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
+        onSubmit={async (event: React.FormEvent<HTMLFormElement>) => {
           event.preventDefault();
           event.stopPropagation();
-          // fixme: submit
-          formInstance;
+          console.log('start');
+          if (formInstance.validating) {
+            return;
+          }
+          const errors = await formInstance.validate({ abortEarly });
+          console.log('end', errors);
+          if (Array.isArray(errors)) {
+            // noop
+          } else {
+            onFinish?.(formInstance.values);
+          }
         }}
       >
         <FieldContext.Provider value={formInstance}>

@@ -30,11 +30,12 @@ whyDidYouRender(React, {
   trackHooks: true
 });
 
-const validateMapper: { [key: string]: ValidateStatus } = {
+const validateMapper: { [key: string]: string } = {
   PENDING: 'validating',
   VALID: 'success',
   INVALID: 'error',
-  WARNING: 'warning'
+  WARNING: 'warning',
+  IGNORED: 'default'
 };
 
 const DynamicItems: React.FC<{ show: boolean }> = ({ show }) => {
@@ -138,6 +139,8 @@ const MyApp: React.FC = () => {
                 }
               }
             });
+
+            field('stars')?.setIgnored(true);
           }}
         >
           <DisplayRender />
@@ -162,14 +165,18 @@ const MyApp: React.FC = () => {
               errorMessage: '不能为1星'
             }}
           >
-            {({ field }) => (
+            {({ field, form }) => (
               <AntdForm.Item
                 label="评分"
                 validateStatus={
-                  (field.touched && validateMapper[field.validation.status]) ||
+                  ((field.touched || form.everValitated) &&
+                    validateMapper[field.validation.status]) ||
                   undefined
                 }
-                help={field.touched && field.validation.messages.join(', ')}
+                help={
+                  (field.touched || form.everValitated) &&
+                  field.validation.messages.join(', ')
+                }
               >
                 <DisplayRender />
                 <AntdRate
@@ -189,15 +196,20 @@ const MyApp: React.FC = () => {
               errorMessage: '请输入原因，长度至少10位'
             }}
           >
-            {({ field }) => (
+            {({ field, form }) => (
               <AntdForm.Item
                 style={field.show ? undefined : { display: 'none' }}
                 label="不给5星的理由"
                 validateStatus={
-                  (field.touched && validateMapper[field.validation.status]) ||
+                  console.log(field.validation) ||
+                  ((field.touched || form.everValitated) &&
+                    validateMapper[field.validation.status]) ||
                   undefined
                 }
-                help={field.touched && field.validation.messages.join(', ')}
+                help={
+                  (field.touched || form.everValitated) &&
+                  field.validation.messages.join(', ')
+                }
               >
                 <DisplayRender />
                 <Input
@@ -209,12 +221,24 @@ const MyApp: React.FC = () => {
               </AntdForm.Item>
             )}
           </Item>
+          <Observer>
+            {() => (
+              <Button
+                type="primary"
+                htmlType="submit"
+                style={{ marginBottom: '1rem' }}
+                loading={form.validating}
+              >
+                提交
+              </Button>
+            )}
+          </Observer>
           <Button
-            type="primary"
-            htmlType="submit"
-            style={{ marginBottom: '1rem' }}
+            onClick={() => {
+              form.reset();
+            }}
           >
-            提交
+            重置
           </Button>
           <Observer>
             {() => (

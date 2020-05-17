@@ -5,7 +5,8 @@ import { useField } from '../hooks';
 import type {
   FieldInstance,
   FieldRegisterConfig,
-  FieldValidationConfig
+  FieldValidationConfig,
+  FormInstance
 } from '@formular/core';
 
 export interface FieldsAPI {
@@ -19,6 +20,7 @@ export interface FieldsAPI {
 export interface FieldRenderableProps {
   field: FieldInstance;
   fields: FieldsAPI;
+  form: FormInstance;
   type?: 'array';
 }
 
@@ -40,7 +42,7 @@ export const Item: React.FC<ItemProps> = ({
   rule,
   asyncRule
 }) => {
-  const [field] = useField(name, { type, initialValue, rule, asyncRule });
+  const [field, form] = useField(name, { type, initialValue, rule, asyncRule });
   return (
     <Observer key={`_field_${name}`}>
       {() => {
@@ -74,7 +76,8 @@ export const Item: React.FC<ItemProps> = ({
                         }
                       }
                     },
-                    type
+                    type,
+                    form
                   },
                   'FormularArray'
                 ) as any)
@@ -98,6 +101,7 @@ export const Item: React.FC<ItemProps> = ({
                         );
                       }
                     },
+                    form,
                     type
                   },
                   'FormularItem'

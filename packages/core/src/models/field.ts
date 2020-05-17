@@ -37,6 +37,9 @@ export const Field = types
     },
     setDisabled(disabled: boolean) {
       self._disabled = disabled;
+    },
+    setIgnored(ignored: boolean) {
+      self.ignored = ignored;
     }
   }))
   .views((self) => {

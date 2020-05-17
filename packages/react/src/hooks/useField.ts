@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import type {
   FieldInstance,
   FieldRegisterConfig,
-  FieldValidationConfig
+  FieldValidationConfig,
+  FormInstance
 } from '@formular/core';
 import { isFieldInstance } from '@formular/core';
 
@@ -17,7 +18,7 @@ export function useField(
     rule,
     asyncRule
   }: FieldRegisterConfig & FieldValidationConfig
-): [FieldInstance | undefined] {
+): [FieldInstance | undefined, FormInstance] {
   const form = useFieldContext();
   const fieldRef = useRef<FieldInstance>();
   const [, forceUpdate] = useState();
@@ -75,5 +76,5 @@ export function useField(
     }
   }, [type]);
 
-  return [fieldRef.current];
+  return [fieldRef.current, form];
 }
