@@ -1,5 +1,11 @@
 import React, { useImperativeHandle } from 'react';
-import { useForm, useSetup, useDecorators, useFormConfig } from '../hooks';
+import {
+  useForm,
+  useSetup,
+  useDecorators,
+  useFormConfig,
+  useRegistry
+} from '../hooks';
 import { renderComponent, RenderableProps } from '../utils';
 import { FieldContext } from '../contexts';
 import type {
@@ -9,26 +15,29 @@ import type {
   FormConfig,
   FormValidateCallOptions
 } from '@formular/core';
+import { RegistryEntry } from '../registry';
 
 type BaseFormProps = Omit<
   React.FormHTMLAttributes<HTMLFormElement>,
   'onSubmit' | 'children'
 >;
 
-export interface FormProps<V>
+export interface FormProps<V, XFP>
   extends BaseFormProps,
     Omit<RenderableProps<{ form: FormInstance }>, 'children'>,
     FormConfig<V>,
-    FormValidateCallOptions {
+    FormValidateCallOptions,
+    RegistryEntry<XFP> {
   form?: FormInstance;
   subscribe?: SubscribeSetup;
   decorators?: FormFeature[];
   children?:
     | RenderableProps<{ form: FormInstance }>['children']
     | React.ReactNode;
+  formComponentProps?: XFP;
 }
 
-export const Form = React.forwardRef<FormInstance, FormProps<any>>(
+export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
   (
     {
       form,
@@ -42,6 +51,10 @@ export const Form = React.forwardRef<FormInstance, FormProps<any>>(
       trigger,
       debounce,
       abortEarly,
+      fields,
+      formComponent,
+      formItemComponent,
+      formComponentProps,
       ...restProps
     },
     ref
@@ -51,36 +64,40 @@ export const Form = React.forwardRef<FormInstance, FormProps<any>>(
     useImperativeHandle(ref, () => formInstance);
     useSetup(formInstance, subscribe);
     useDecorators(formInstance, decorators);
+    const [registry] = useRegistry({
+      fields,
+      formComponent,
+      formItemComponent
+    });
 
-    return (
-      <form
-        {...restProps}
-        onSubmit={async (event: React.FormEvent<HTMLFormElement>) => {
+    return React.createElement(
+      registry.formComponent,
+      {
+        ...restProps,
+        ...formComponentProps,
+        onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
           event.preventDefault();
           event.stopPropagation();
-          console.log('start');
           if (formInstance.validating) {
             return;
           }
           const errors = await formInstance.validate({ abortEarly });
-          console.log('end', errors);
           if (Array.isArray(errors)) {
             // noop
           } else {
             onFinish?.(formInstance.values);
           }
-        }}
-      >
-        <FieldContext.Provider value={formInstance}>
-          {typeof children === 'function'
-            ? renderComponent(
-                { children, component, render },
-                { form: formInstance },
-                'FormularForm'
-              )
-            : children}
-        </FieldContext.Provider>
-      </form>
+        }
+      },
+      <FieldContext.Provider value={formInstance}>
+        {typeof children === 'function'
+          ? renderComponent(
+              { children, component, render },
+              { form: formInstance },
+              'FormularForm'
+            )
+          : children}
+      </FieldContext.Provider>
     );
   }
 );

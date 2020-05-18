@@ -16,7 +16,6 @@ import {
 import 'antd/dist/antd.css';
 import { DisplayRender } from './DisplayRender';
 import type { RateProps } from 'antd/lib/rate';
-import type { ValidateStatus } from 'antd/lib/form/FormItem';
 import { configure } from '@formular/core';
 
 configure({
@@ -30,7 +29,7 @@ whyDidYouRender(React, {
   trackHooks: true
 });
 
-const validateMapper: { [key: string]: string } = {
+const validateMapper: { [key: string]: any } = {
   PENDING: 'validating',
   VALID: 'success',
   INVALID: 'error',
@@ -125,6 +124,8 @@ const MyApp: React.FC = () => {
           onFinish={(values) => {
             console.log('Finished', values);
           }}
+          formComponent={AntdForm}
+          formComponentProps={{ layout: 'vertical' }}
           trigger={trigger}
           debounce={debounceTime}
           form={form}
