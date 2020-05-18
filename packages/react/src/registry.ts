@@ -1,7 +1,6 @@
 import React from 'react';
 
 export interface RegistryEntry<XFormProps = any> {
-  formItemComponent?: React.JSXElementConstructor<any>;
   formComponent?: string | React.JSXElementConstructor<XFormProps>;
   fields?: {
     [key: string]: React.ComponentType<any>;
@@ -9,16 +8,6 @@ export interface RegistryEntry<XFormProps = any> {
 }
 
 export class Registry implements RegistryEntry {
-  formItemComponent: React.JSXElementConstructor<any>;
-  registerLocalItemComponent(component: React.ComponentType<any>) {
-    if (component) {
-      this.formItemComponent = component;
-    }
-  }
-  unregisterLocalItemComponent() {
-    this.formItemComponent = Registry.global_formItemComponent;
-  }
-
   formComponent: string | React.JSXElementConstructor<any>;
   registerLocalFormComponent(component: React.ComponentType<any>) {
     if (component) {
@@ -76,17 +65,6 @@ export class Registry implements RegistryEntry {
     }
   }
 
-  private static global_formItemComponent: React.JSXElementConstructor<
-    any
-  > = (({ children }) => children) as React.FC<any>;
-  public static registerGlobalFormItemComponent<P>(
-    component: React.ComponentType<P>
-  ) {
-    if (component) {
-      this.global_formItemComponent = component;
-    }
-  }
-
   private static global_fields: {
     [key: string]: React.ComponentType<any>;
   };
@@ -117,7 +95,6 @@ export class Registry implements RegistryEntry {
 
   constructor() {
     this.formComponent = Registry.global_formComponent;
-    this.formItemComponent = Registry.global_formItemComponent;
     this.fields = Registry.global_fields;
   }
 }

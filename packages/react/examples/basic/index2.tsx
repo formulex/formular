@@ -132,16 +132,14 @@ const MyApp: React.FC = () => {
           initialValues={{ stars: 4 }}
           subscribe={function* ({ field, value }) {
             yield autorun(() => {
-              let reason = field('reason');
-              if (reason) {
-                reason.show = value('stars') !== 5;
-                if (!reason.show) {
-                  reason.value = '';
-                }
+              let reason = field('reason')!;
+              reason.show = value('stars') !== 5;
+              if (!reason.show) {
+                reason.value = '';
               }
             });
 
-            field('stars')?.setIgnored(true);
+            field('stars')!.setIgnored(true);
           }}
         >
           <DisplayRender />
@@ -202,7 +200,6 @@ const MyApp: React.FC = () => {
                 style={field.show ? undefined : { display: 'none' }}
                 label="不给5星的理由"
                 validateStatus={
-                  console.log(field.validation) ||
                   ((field.touched || form.everValitated) &&
                     validateMapper[field.validation.status]) ||
                   undefined

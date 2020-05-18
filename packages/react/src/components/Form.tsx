@@ -7,7 +7,7 @@ import {
   useRegistry
 } from '../hooks';
 import { renderComponent, RenderableProps } from '../utils';
-import { FieldContext } from '../contexts';
+import { FieldContext, RegistryContext } from '../contexts';
 import type {
   FormInstance,
   FormFeature,
@@ -53,7 +53,6 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
       abortEarly,
       fields,
       formComponent,
-      formItemComponent,
       formComponentProps,
       ...restProps
     },
@@ -66,8 +65,7 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
     useDecorators(formInstance, decorators);
     const [registry] = useRegistry({
       fields,
-      formComponent,
-      formItemComponent
+      formComponent
     });
 
     return React.createElement(
@@ -89,15 +87,17 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
           }
         }
       },
-      <FieldContext.Provider value={formInstance}>
-        {typeof children === 'function'
-          ? renderComponent(
-              { children, component, render },
-              { form: formInstance },
-              'FormularForm'
-            )
-          : children}
-      </FieldContext.Provider>
+      <RegistryContext.Provider value={registry}>
+        <FieldContext.Provider value={formInstance}>
+          {typeof children === 'function'
+            ? renderComponent(
+                { children, component, render },
+                { form: formInstance },
+                'FormularForm'
+              )
+            : children}
+        </FieldContext.Provider>
+      </RegistryContext.Provider>
     );
   }
 );

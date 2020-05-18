@@ -1,10 +1,9 @@
 import { Registry, RegistryEntry } from '../registry';
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 
 export function useRegistry({
   fields: fieldComponents,
-  formComponent,
-  formItemComponent
+  formComponent
 }: RegistryEntry): [Registry] {
   const registryRef = useRef<Registry>();
   if (!registryRef.current) {
@@ -16,9 +15,6 @@ export function useRegistry({
     }
     if (formComponent && typeof formComponent !== 'string') {
       registryRef.current?.registerLocalFormComponent(formComponent);
-    }
-    if (formItemComponent) {
-      registryRef.current?.registerLocalItemComponent(formItemComponent);
     }
   }
 
