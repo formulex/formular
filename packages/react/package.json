@@ -51,7 +51,8 @@
     "url": "https://github.com/formularx/formular/issues"
   },
   "publishConfig": {
-    "access": "publish"
+    "access": "public",
+    "registry": "http://registry.npmjs.org"
   },
-  "gitHead": "5b7bade6b9022df9858a9aad9d9b8540682f06d7"
+  "gitHead": "df7579353451512b69e363802470f9695584e0e0"
 }
