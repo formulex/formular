@@ -1,2 +1,2 @@
-export { Form } from './Form';
-export { Item } from './Item';
+export { Form, FormProps } from './Form';
+export { Item, ItemProps, FieldRenderableProps } from './Item';

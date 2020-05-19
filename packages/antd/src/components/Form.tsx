@@ -1,34 +1,48 @@
 import React from 'react';
 import { Form as AntDesignForm } from 'antd';
 import type { FormProps as AntDesignFormProps } from 'antd/lib/form/Form';
-import { Container as InnerContainer } from '@formular/react';
-import type { ContainerProps as InnerContainerProps } from '@formular/react/lib/components/Container';
-import type { FormInstance } from '@formular/core';
+import {
+  Form as InnerForm,
+  FormProps as InnerFormProps
+} from '@formular/react';
 
-export interface FormProps
-  extends Omit<AntDesignFormProps, 'form' | 'component' | 'validateMessages'>,
-    Omit<InnerContainerProps, 'children'> {}
+type InnerFormPropsType<V, XFP> = Omit<
+  InnerFormProps<V, XFP>,
+  'formComponent' | 'formComponentProps'
+>;
 
-export const Form: React.FC<FormProps> = React.forwardRef(
-  ({ children, form, auto, watch, ref: rawRaf, ...antdProps }, ref) => {
+type ExplicitInnerFormProps<V, XFP> = Pick<
+  InnerFormPropsType<V, XFP>,
+  'subscribe' | 'onFinish' | 'form'
+>;
+
+export interface FormProps<V, XFP>
+  extends ExplicitInnerFormProps<V, XFP>,
+    Omit<
+      AntDesignFormProps,
+      keyof ExplicitInnerFormProps<V, XFP> | 'onFinishFailed'
+    > {
+  $formMetaProps?: InnerFormPropsType<V, XFP>;
+}
+
+export const Form: React.FC<FormProps<
+  any,
+  AntDesignFormProps
+>> = React.forwardRef(
+  (
+    { $formMetaProps, subscribe, onFinish, form, children, ...restProps },
+    ref
+  ) => {
     return (
-      <InnerContainer ref={ref as any} form={form} auto={auto} watch={watch}>
-        {(formInstance: FormInstance) => (
-          <AntDesignForm
-            {...antdProps}
-            onReset={() => formInstance.reset()}
-            component={(props) => (
-              <form
-                {...props}
-                onSubmit={() => formInstance.submit()}
-                onReset={() => formInstance.reset()}
-              />
-            )}
-          >
-            {children}
-          </AntDesignForm>
-        )}
-      </InnerContainer>
+      <InnerForm
+        {...$formMetaProps}
+        {...{ subscribe, onFinish, form }}
+        formComponentProps={restProps}
+        formComponent={AntDesignForm}
+        ref={ref as any}
+      >
+        {children}
+      </InnerForm>
     );
   }
 );

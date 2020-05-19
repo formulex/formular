@@ -1,6 +1,6 @@
 import { getType, Instance, types, flow } from 'mobx-state-tree';
 import { createField, FieldInstance } from '.';
-import { autorun, IReactionDisposer } from 'mobx';
+import { autorun, IReactionDisposer, runInAction } from 'mobx';
 import { setIn } from '../utils';
 import { getResolvers, SubscribeSetup } from '../sideEffect';
 import type { FormFeature } from '../features';
@@ -76,7 +76,11 @@ export const Form = types
       }
       let field = self.fields.get(name)!;
       setTimeout(() => {
-        field.setValue(field.initialValue);
+        runInAction('innerSetValue', () => {
+          if (field.initialValue) {
+            field.setValue(field.initialValue);
+          }
+        });
       });
 
       let disposer: null | IReactionDisposer = null;
