@@ -1,6 +1,6 @@
 {
   "name": "@formular/react",
-  "version": "1.0.0",
+  "version": "0.0.1-alpha.1",
   "sideEffects": false,
   "type": "module",
   "main": "lib/index.js",
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.8.7",
-    "@formular/core": "^1.0.0",
+    "@formular/core": "^0.0.1",
     "@types/lodash.debounce": "^4.0.6",
     "@types/lodash.memoize": "^4.1.6",
     "lodash.debounce": "^4.0.8",
