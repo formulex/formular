@@ -1,6 +1,6 @@
 {
   "name": "@formular/antd",
-  "version": "0.0.2-alpha.0",
+  "version": "0.0.0-alpha.0",
   "sideEffects": false,
   "type": "module",
   "main": "lib/index.js",
@@ -48,5 +48,6 @@
   },
   "publishConfig": {
     "access": "publish"
-  }
+  },
+  "gitHead": "5b7bade6b9022df9858a9aad9d9b8540682f06d7"
 }
