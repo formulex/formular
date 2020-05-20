@@ -11,7 +11,7 @@ type InnerItemPropsType = Omit<InnerItemProps, 'render' | 'children'>;
 
 type ExplicitInnerItemProps = Pick<
   InnerItemPropsType,
-  'name' | 'initialValue' | 'rule' | 'asyncRule'
+  'name' | 'initialValue' | 'rule' | 'asyncRule' | 'editable'
 >;
 
 export interface FieldProps<P>
@@ -47,11 +47,11 @@ const mapper: MapFieldsMetaToItemPropsFrom = ({
   }
   return {
     validateStatus:
-      ((field.touched || form.everValitated) &&
+      ((field.modified || form.everValitated) &&
         validateMapper[field.validation.status]) ||
       undefined,
     help:
-      (field.touched || form.everValitated) &&
+      (field.modified || form.everValitated) &&
       field.validation.messages.join(', ')
   };
 };
@@ -66,13 +66,15 @@ export class Field<P> extends React.Component<FieldProps<P>> {
       initialValue,
       rule,
       asyncRule,
+      editable,
       addonAfter,
+      style,
       ...restProps
     } = this.props;
     return (
       <InnerItem
         {...$itemMetaProps}
-        {...{ name, initialValue, rule, asyncRule }}
+        {...{ name, initialValue, rule, asyncRule, editable }}
       >
         {(meta) => {
           const innerComponentProps = {
@@ -83,8 +85,16 @@ export class Field<P> extends React.Component<FieldProps<P>> {
             component as React.ComponentType<typeof innerComponentProps>,
             innerComponentProps
           );
+          const extraStyle = { display: 'none' };
+          if (meta.field.show) {
+            delete extraStyle.display;
+          }
           return (
-            <AntDesignForm.Item {...restProps} {...mapper(meta)}>
+            <AntDesignForm.Item
+              {...restProps}
+              style={{ ...style, ...extraStyle }}
+              {...mapper(meta)}
+            >
               {addonAfter ? (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   {innerChildren}

@@ -24,7 +24,8 @@ export const Form = types
       _fallbackInitialValues: types.frozen(),
       fields: types.map(types.late(() => Field)),
       validating: types.boolean,
-      everValitated: types.boolean
+      everValitated: types.boolean,
+      _editable: types.boolean
     })
   )
   .named('Form')
@@ -58,6 +59,17 @@ export const Form = types
     },
     setFallbackInitialValues(initialVal: any) {
       self._fallbackInitialValues = initialVal;
+    },
+    setEditable(editable: boolean) {
+      self._editable = editable;
+    }
+  }))
+  .views((self) => ({
+    get editable(): boolean {
+      return self._editable;
+    },
+    set editable(val: boolean) {
+      self.setEditable(val);
     }
   }))
   .actions((self) => ({
@@ -78,7 +90,7 @@ export const Form = types
       setTimeout(() => {
         runInAction('innerSetValue', () => {
           if (field.initialValue) {
-            field.setValue(field.initialValue);
+            field.__setValueSilently(field.initialValue);
           }
         });
       });
@@ -236,7 +248,8 @@ export function createForm<V = any>({
     {
       _fallbackInitialValues: initialValues ? { ...initialValues } : {},
       validating: false,
-      everValitated: false
+      everValitated: false,
+      _editable: true
     },
     { ajv }
   );

@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { FormInstance, FormConfig, isFieldInstance } from '@formular/core';
+import { FormInstance, FormConfig } from '@formular/core';
 import { createValidationFeature } from '@formular/core/lib/features/validation';
-import { addMiddleware } from 'mobx-state-tree';
+import { FormFeatures } from '../components/Form';
 
 export function useFormConfig<V>(
   form: FormInstance,
-  { initialValues, trigger, debounce }: FormConfig<V>
+  { initialValues, trigger, debounce, editable }: FormConfig<V> & FormFeatures
 ) {
   const isFirstRender = useRef(true);
 
@@ -21,6 +21,12 @@ export function useFormConfig<V>(
       form.setFallbackInitialValues(initialValues);
     }
   }, [form, initialValues]);
+
+  useEffect(() => {
+    if (typeof editable === 'boolean') {
+      form.editable = editable;
+    }
+  }, [form, editable]);
 
   useEffect(() => {
     return form.use(createValidationFeature({ trigger, debounce }));

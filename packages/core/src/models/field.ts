@@ -14,16 +14,25 @@ export const Field = types
     _everBlured: types.boolean,
     _everFocused: types.boolean,
     type: types.maybe(types.literal('array')),
-    _show: types.boolean,
-    _disabled: types.boolean,
+
     active: types.boolean,
+    modified: types.boolean,
 
     // features
     validation: Validation,
-    ignored: types.boolean
+    _show: types.boolean,
+    _disabled: types.boolean,
+    _ignored: types.boolean,
+    _editable: types.maybe(types.boolean)
   })
   .actions((self) => ({
     setValue(val: any) {
+      self._value = val;
+      if (self.modified === false) {
+        self.modified = true;
+      }
+    },
+    __setValueSilently(val: any) {
       self._value = val;
     },
     setFallbackInitialValue(val: any) {
@@ -39,7 +48,10 @@ export const Field = types
       self._disabled = disabled;
     },
     setIgnored(ignored: boolean) {
-      self.ignored = ignored;
+      self._ignored = ignored;
+    },
+    setEditable(editable: boolean) {
+      self._editable = editable;
     }
   }))
   .views((self) => {
@@ -72,6 +84,18 @@ export const Field = types
       },
       set disabled(val: boolean) {
         self.setDisabled(val);
+      },
+      get ignored(): boolean {
+        return self._ignored;
+      },
+      set ignored(val: boolean) {
+        self.setIgnored(val);
+      },
+      get editable(): boolean {
+        return self._editable ?? getParentOfType(self, Form).editable;
+      },
+      set editable(val: boolean) {
+        self.setEditable(val);
       },
       get initialValue(): any {
         return (
@@ -111,6 +135,7 @@ export const Field = types
       self._everBlured = false;
       self._everFocused = false;
       self.active = false;
+      self.modified = false;
     },
     toArray() {
       self._value = [self.value];
@@ -182,7 +207,9 @@ export function createField({
     _show: true,
     _disabled: false,
     active: false,
-    ignored: false,
+    _ignored: false,
+    modified: false,
+    _editable: undefined,
     validation: createFieldValidation()
   });
 }

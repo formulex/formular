@@ -22,12 +22,17 @@ type BaseFormProps = Omit<
   'onSubmit' | 'children'
 >;
 
+export interface FormFeatures {
+  editable?: boolean;
+}
+
 export interface FormProps<V, XFP>
   extends BaseFormProps,
     Omit<RenderableProps<{ form: FormInstance }>, 'children'>,
     FormConfig<V>,
     FormValidateCallOptions,
-    RegistryEntry<XFP> {
+    RegistryEntry<XFP>,
+    FormFeatures {
   form?: FormInstance;
   subscribe?: SubscribeSetup;
   decorators?: FormFeature[];
@@ -55,6 +60,7 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
       fields,
       formComponent,
       formComponentProps,
+      editable,
       ...restProps
     },
     ref
@@ -63,7 +69,8 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
     useFormConfig(formInstance, {
       initialValues,
       trigger,
-      debounce
+      debounce,
+      editable
       // onFinish,
       // onFinishFailed
     });

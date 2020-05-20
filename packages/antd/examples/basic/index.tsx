@@ -8,6 +8,7 @@ import './index.css';
 import { Form, Field, useForm, runWithResolvers } from '../../src';
 import { autorun } from 'mobx';
 import { addMiddleware } from 'mobx-state-tree';
+import { observer } from 'mobx-react';
 
 const App: React.FC = () => {
   const [form] = useForm();
@@ -24,12 +25,32 @@ const App: React.FC = () => {
       ),
     []
   );
+  useEffect(
+    () =>
+      runWithResolvers(form, ({ field, value }) =>
+        autorun(() => {
+          const val = value<string>('greeting');
+          field('greetingSync')!.show = Boolean(
+            val === undefined || val.length <= 5
+          );
+          field('greetingSync')!.setIgnored(
+            Boolean(val === undefined || val.length <= 1)
+          );
+          field('greetingSync')!.setDisabled(true);
+          // setTimeout(() => {
+          //   field('greetingSync')!.value = val;
+          // });
+        })
+      ),
+    []
+  );
   return (
     <div className="App">
       <h1>antd version: {version}</h1>
       <Form
         layout="vertical"
         form={form}
+        editable={false}
         onFinish={(values) => {
           console.log('finish', values);
         }}
@@ -54,31 +75,40 @@ const App: React.FC = () => {
           name="greeting"
           initialValue="daddy"
           addonAfter="world"
-          component={({ $meta: { field } }) => {
+          component={observer(({ $meta: { field }, ...rest }: any) => {
+            if (field.editable === false) {
+              return <span>{field.value}</span>;
+            }
             return (
               <Input
+                {...rest}
+                disabled={field.disabled}
                 onChange={(e) => field.setValue(e.target.value)}
                 value={field.value}
                 onFocus={() => field.focus()}
                 onBlur={() => field.blur()}
               />
             );
-          }}
+          })}
         />
         <Field
           label="同步问候"
           name="greetingSync"
-          component={({ $meta: { field }, ...rest }) => {
+          component={observer(({ $meta: { field }, ...rest }: any) => {
+            if (field.editable === false) {
+              return <span>{field.value}</span>;
+            }
             return (
               <Input
                 {...rest}
+                disabled={field.disabled}
                 onChange={(e) => field.setValue(e.target.value)}
                 value={field.value}
                 onFocus={() => field.focus()}
                 onBlur={() => field.blur()}
               />
             );
-          }}
+          })}
           rule={{
             type: 'string',
             minLength: 3,
@@ -103,6 +133,14 @@ const App: React.FC = () => {
         </Button>
         <Button htmlType="reset" style={{ marginLeft: '1rem' }}>
           重置
+        </Button>
+        <Button
+          style={{ marginLeft: '1rem' }}
+          onClick={() => {
+            form.editable = !form.editable;
+          }}
+        >
+          Toggle Editable
         </Button>
       </Form>
     </div>

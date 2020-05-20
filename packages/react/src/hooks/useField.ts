@@ -7,6 +7,7 @@ import type {
   FormInstance
 } from '@formular/core';
 import { isFieldInstance } from '@formular/core';
+import { FieldFeatures } from '../components/Item';
 
 const noop = () => {};
 
@@ -16,8 +17,9 @@ export function useField(
     initialValue,
     type,
     rule,
-    asyncRule
-  }: FieldRegisterConfig & FieldValidationConfig
+    asyncRule,
+    editable
+  }: FieldRegisterConfig & FieldValidationConfig & FieldFeatures
 ): [FieldInstance | undefined, FormInstance] {
   const form = useFieldContext();
   const fieldRef = useRef<FieldInstance>();
@@ -75,6 +77,12 @@ export function useField(
       fieldRef.current?.setType(type);
     }
   }, [type]);
+
+  useEffect(() => {
+    if (isFieldInstance(fieldRef.current) && typeof editable === 'boolean') {
+      fieldRef.current?.setEditable(editable);
+    }
+  }, [editable]);
 
   return [fieldRef.current, form];
 }

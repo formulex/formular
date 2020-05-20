@@ -13,7 +13,7 @@ type InnerFormPropsType<V, XFP> = Omit<
 
 type ExplicitInnerFormProps<V, XFP> = Pick<
   InnerFormPropsType<V, XFP>,
-  'subscribe' | 'onFinish' | 'onFinishFailed' | 'form'
+  'subscribe' | 'onFinish' | 'onFinishFailed' | 'form' | 'editable'
 >;
 
 export interface FormProps<V, XFP>
@@ -39,6 +39,7 @@ export const Form: React.FC<FormProps<
       subscribe,
       onFinish,
       onFinishFailed,
+      editable,
       form,
       children,
       ...restProps
@@ -48,7 +49,7 @@ export const Form: React.FC<FormProps<
     return (
       <InnerForm
         {...$formMetaProps}
-        {...{ subscribe, onFinish, onFinishFailed, form }}
+        {...{ subscribe, onFinish, onFinishFailed, form, editable }}
         formComponentProps={{
           ...restProps,
           component: AntDesignInnerFormComponent

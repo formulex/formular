@@ -24,10 +24,15 @@ export interface FieldRenderableProps {
   type?: 'array';
 }
 
+export interface FieldFeatures {
+  editable?: boolean;
+}
+
 export interface ItemProps
   extends RenderableProps<FieldRenderableProps>,
     FieldRegisterConfig,
-    FieldValidationConfig {
+    FieldValidationConfig,
+    FieldFeatures {
   name: string;
   type?: 'array';
 }
@@ -40,9 +45,16 @@ export const Item: React.FC<ItemProps> = ({
   type,
   initialValue,
   rule,
-  asyncRule
+  asyncRule,
+  editable
 }) => {
-  const [field, form] = useField(name, { type, initialValue, rule, asyncRule });
+  const [field, form] = useField(name, {
+    type,
+    initialValue,
+    rule,
+    asyncRule,
+    editable
+  });
   return (
     <Observer key={`_field_${name}`}>
       {() => {
