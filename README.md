@@ -13,7 +13,9 @@
 
 </div>
 
-![formular](./docs/format.png)
+<img align="left" width="584px" alt="logo" src="./assets/demogif.gif" />
+
+<img align="right" width="640px" alt="logo" src="./assets/demo2.png" />
 
 ## Features
 
