@@ -33,11 +33,13 @@ const App: React.FC = () => {
         onFinish={(values) => {
           console.log('finish', values);
         }}
-        subscribe={function* ({ field, value }, form) {
+        onFinishFailed={(errors) => {
+          console.log('errors', errors);
+        }}
+        subscribe={function* (_, form) {
           // yield autorun(() => {
           //   field('greetingSync')!.value = value('greeting');
           // });
-
           yield addMiddleware(form, (call, next) => {
             console.log(call.name, call.args, call.context?.name);
             if (call.name === 'blur') {
@@ -89,24 +91,17 @@ const App: React.FC = () => {
         <Button
           type="primary"
           htmlType="submit"
-          onClick={() => {
-            form.validate({ abortEarly: true }).then((errors) => {
-              if (!errors) {
-                console.log(form, form.values);
-              }
-            });
-          }}
+          // onClick={() => {
+          //   form.validate({ abortEarly: true }).then((errors) => {
+          //     if (!errors) {
+          //       console.log(form, form.values);
+          //     }
+          //   });
+          // }}
         >
           提交
         </Button>
-        <Button
-          htmlType="reset"
-          style={{ marginLeft: '1rem' }}
-          onClick={() => {
-            console.log('reset', form);
-            form.reset();
-          }}
-        >
+        <Button htmlType="reset" style={{ marginLeft: '1rem' }}>
           重置
         </Button>
       </Form>

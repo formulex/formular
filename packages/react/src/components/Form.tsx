@@ -48,6 +48,7 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
       decorators,
       initialValues,
       onFinish,
+      onFinishFailed,
       trigger,
       debounce,
       abortEarly,
@@ -59,7 +60,13 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
     ref
   ) => {
     const [formInstance] = useForm(form);
-    useFormConfig(formInstance, { initialValues, trigger, debounce, onFinish });
+    useFormConfig(formInstance, {
+      initialValues,
+      trigger,
+      debounce
+      // onFinish,
+      // onFinishFailed
+    });
     useImperativeHandle(ref, () => formInstance);
     useSetup(formInstance, subscribe);
     useDecorators(formInstance, decorators);
@@ -68,25 +75,41 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
       formComponent
     });
 
+    const onSubmit: ((
+      event: React.FormEvent<HTMLFormElement>
+    ) => Promise<void>) & { __source: 'formular' } = async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (formInstance.validating) {
+        return;
+      }
+      const errors = await formInstance.validate({ abortEarly });
+      if (Array.isArray(errors)) {
+        onFinishFailed?.(errors);
+      } else {
+        onFinish?.(formInstance.values);
+      }
+    };
+    onSubmit.__source = 'formular';
+
+    const passProps = {
+      ...restProps,
+      ...formComponentProps,
+      onSubmit,
+      onReset(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        event.stopPropagation();
+        formInstance.reset();
+      },
+      __onInnerSubmit: onSubmit
+    };
+    if (typeof registry.formComponent === 'string') {
+      delete passProps.__onInnerSubmit;
+    }
+
     return React.createElement(
       registry.formComponent,
-      {
-        ...restProps,
-        ...formComponentProps,
-        onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          event.stopPropagation();
-          if (formInstance.validating) {
-            return;
-          }
-          const errors = await formInstance.validate({ abortEarly });
-          if (Array.isArray(errors)) {
-            // noop
-          } else {
-            onFinish?.(formInstance.values);
-          }
-        }
-      },
+      passProps,
       <RegistryContext.Provider value={registry}>
         <FieldContext.Provider value={formInstance}>
           {typeof children === 'function'

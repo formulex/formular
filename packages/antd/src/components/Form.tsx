@@ -13,31 +13,46 @@ type InnerFormPropsType<V, XFP> = Omit<
 
 type ExplicitInnerFormProps<V, XFP> = Pick<
   InnerFormPropsType<V, XFP>,
-  'subscribe' | 'onFinish' | 'form'
+  'subscribe' | 'onFinish' | 'onFinishFailed' | 'form'
 >;
 
 export interface FormProps<V, XFP>
   extends ExplicitInnerFormProps<V, XFP>,
-    Omit<
-      AntDesignFormProps,
-      keyof ExplicitInnerFormProps<V, XFP> | 'onFinishFailed'
-    > {
+    Omit<AntDesignFormProps, keyof ExplicitInnerFormProps<V, XFP>> {
   $formMetaProps?: InnerFormPropsType<V, XFP>;
+  onSubmit?: (e: any) => any;
 }
+
+export const AntDesignInnerFormComponent: React.FC<any> = ({
+  onSubmit,
+  __onInnerSubmit,
+  ...rest
+}) => <form {...rest} onSubmit={__onInnerSubmit ?? onSubmit} />;
 
 export const Form: React.FC<FormProps<
   any,
   AntDesignFormProps
 >> = React.forwardRef(
   (
-    { $formMetaProps, subscribe, onFinish, form, children, ...restProps },
+    {
+      $formMetaProps,
+      subscribe,
+      onFinish,
+      onFinishFailed,
+      form,
+      children,
+      ...restProps
+    },
     ref
   ) => {
     return (
       <InnerForm
         {...$formMetaProps}
-        {...{ subscribe, onFinish, form }}
-        formComponentProps={restProps}
+        {...{ subscribe, onFinish, onFinishFailed, form }}
+        formComponentProps={{
+          ...restProps,
+          component: AntDesignInnerFormComponent
+        }}
         formComponent={AntDesignForm}
         ref={ref as any}
       >

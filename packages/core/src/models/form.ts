@@ -213,6 +213,7 @@ export interface FormValidateCallOptions {
 
 export interface FormConfig<V> extends CreateValidationFeatureOptions {
   onFinish?: (values: V) => any;
+  onFinishFailed?: (errors: Array<{ name: string; messages: string[] }>) => any;
   initialValues?: V;
 }
 

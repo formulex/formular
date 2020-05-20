@@ -125,7 +125,12 @@ const MyApp: React.FC = () => {
             console.log('Finished', values);
           }}
           formComponent={AntdForm}
-          formComponentProps={{ layout: 'vertical' }}
+          formComponentProps={{
+            layout: 'vertical',
+            component: ({ onSubmit, __onInnerSubmit, ...rest }: any) => {
+              return <form {...rest} onSubmit={__onInnerSubmit} />;
+            }
+          }}
           trigger={trigger}
           debounce={debounceTime}
           form={form}
