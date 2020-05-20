@@ -13,9 +13,9 @@
 
 </div>
 
-<img align="left" width="584px" alt="logo" src="./assets/demogif.gif" />
-
-<img align="right" width="640px" alt="logo" src="./assets/demo2.png" />
+|             Demo             |            Code             |
+| :--------------------------: | :-------------------------: |
+| ![gif](./assets/demogif.gif) | ![demo](./assets/demo2.png) |
 
 ## Features
 
@@ -26,10 +26,6 @@
 ### Schema based
 
 渲染时拥有一套定义表单的 `DSL`，帮助开发者前后统一表单协议
-
-![code](./docs/code.png)
-
-![demo2](./docs/demo2.jpg)
 
 ## Get Started
 
