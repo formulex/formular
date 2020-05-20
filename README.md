@@ -1,8 +1,17 @@
-# Formular
+<p align="center">
+  <img width="140px" alt="logo" src="./assets/formular_logo.svg" />
+</p>
 
-> Formular 是一个基于 `Mobx` 的响应-订阅式的通用表单解决方案
+<h1 align="center">Formular</h1>
+<p align="center">
+  A Mobx-based form resolution 🐺
+</p>
 
-<vedio src="./docs/demo.mp4"/>
+<div align="center">
+
+[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
+
+</div>
 
 ![formular](./docs/format.png)
 
@@ -31,3 +40,7 @@ $ yarn add @formular/react
 # or
 $ yarn add @formular/antd
 ```
+
+## License
+
+[MIT License](./LICENSE)
