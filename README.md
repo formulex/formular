@@ -13,9 +13,13 @@
 
 </div>
 
+<div align="center">
+
 ![gif](./assets/demogif.gif)
 
-![demo](./assets/demo2.png)
+<img width="584px" alt="demo" src="./assets/demo2.png" />
+
+</div>
 
 ## Features
 
