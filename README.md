@@ -13,9 +13,9 @@
 
 </div>
 
-|             Demo             |            Code             |
-| :--------------------------: | :-------------------------: |
-| ![gif](./assets/demogif.gif) | ![demo](./assets/demo2.png) |
+![gif](./assets/demogif.gif)
+
+![demo](./assets/demo2.png)
 
 ## Features
 
