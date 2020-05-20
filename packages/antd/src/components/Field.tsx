@@ -3,7 +3,8 @@ import { Form as AntDesignForm } from 'antd';
 import {
   Item as InnerItem,
   ItemProps as InnerItemProps,
-  FieldRenderableProps
+  FieldRenderableProps,
+  RegistryContext
 } from '@formular/react';
 import type { FormItemProps as AntDesignFormItemProps } from 'antd/lib/form/FormItem';
 
@@ -18,7 +19,7 @@ export interface FieldProps<P>
   extends ExplicitInnerItemProps,
     Omit<AntDesignFormItemProps, keyof ExplicitInnerItemProps | 'children'> {
   $itemMetaProps?: InnerItemPropsType;
-  component: React.ComponentType<P & { $meta: FieldRenderableProps }>;
+  component: React.ComponentType<P & { $meta: FieldRenderableProps }> | string;
   componentProps?: P;
   addonAfter?: React.ReactNode;
 }
@@ -72,41 +73,53 @@ export class Field<P> extends React.Component<FieldProps<P>> {
       ...restProps
     } = this.props;
     return (
-      <InnerItem
-        {...$itemMetaProps}
-        {...{ name, initialValue, rule, asyncRule, editable }}
-      >
-        {(meta) => {
-          const innerComponentProps = {
-            ...componentProps,
-            $meta: meta
-          };
-          const innerChildren = React.createElement(
-            component as React.ComponentType<typeof innerComponentProps>,
-            innerComponentProps
-          );
-          const extraStyle = { display: 'none' };
-          if (meta.field.show) {
-            delete extraStyle.display;
-          }
-          return (
-            <AntDesignForm.Item
-              {...restProps}
-              style={{ ...style, ...extraStyle }}
-              {...mapper(meta)}
-            >
-              {addonAfter ? (
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  {innerChildren}
-                  {addonAfter}
-                </div>
-              ) : (
-                innerChildren
-              )}
-            </AntDesignForm.Item>
-          );
-        }}
-      </InnerItem>
+      <RegistryContext.Consumer>
+        {(registry) => (
+          <InnerItem
+            {...$itemMetaProps}
+            {...{ name, initialValue, rule, asyncRule, editable }}
+          >
+            {(meta) => {
+              const innerComponentProps = {
+                ...componentProps,
+                $meta: meta
+              };
+              let Component = component;
+              if (
+                registry &&
+                typeof component === 'string' &&
+                registry.fields[component]
+              ) {
+                Component = registry.fields[component];
+              }
+              const innerChildren = React.createElement(
+                Component as React.ComponentType<typeof innerComponentProps>,
+                innerComponentProps
+              );
+              const extraStyle = { display: 'none' };
+              if (meta.field.show) {
+                delete extraStyle.display;
+              }
+              return (
+                <AntDesignForm.Item
+                  {...restProps}
+                  style={{ ...style, ...extraStyle }}
+                  {...mapper(meta)}
+                >
+                  {addonAfter ? (
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {innerChildren}
+                      {addonAfter}
+                    </div>
+                  ) : (
+                    innerChildren
+                  )}
+                </AntDesignForm.Item>
+              );
+            }}
+          </InnerItem>
+        )}
+      </RegistryContext.Consumer>
     );
   }
 }

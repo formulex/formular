@@ -5,10 +5,28 @@ import version from 'antd/lib/version';
 import Input from 'antd/lib/input';
 import 'antd/dist/antd.css';
 import './index.css';
-import { Form, Field, useForm, runWithResolvers } from '../../src';
+import { Form, Field, useForm, runWithResolvers, Registry } from '../../src';
 import { autorun } from 'mobx';
 import { addMiddleware } from 'mobx-state-tree';
 import { observer } from 'mobx-react';
+
+Registry.registerGlobalFields({
+  Input: observer(({ $meta: { field }, emptyContent, ...rest }: any) => {
+    if (field.editable === false) {
+      return <span>{field.value || emptyContent}</span>;
+    }
+    return (
+      <Input
+        {...rest}
+        disabled={field.disabled}
+        onChange={(e) => field.setValue(e.target.value)}
+        value={field.value}
+        onFocus={() => field.focus()}
+        onBlur={() => field.blur()}
+      />
+    );
+  })
+});
 
 const App: React.FC = () => {
   const [form] = useForm();
@@ -75,46 +93,23 @@ const App: React.FC = () => {
           name="greeting"
           initialValue="daddy"
           addonAfter="world"
-          component={observer(({ $meta: { field }, ...rest }: any) => {
-            if (field.editable === false) {
-              return <span>{field.value}</span>;
-            }
-            return (
-              <Input
-                {...rest}
-                disabled={field.disabled}
-                onChange={(e) => field.setValue(e.target.value)}
-                value={field.value}
-                onFocus={() => field.focus()}
-                onBlur={() => field.blur()}
-              />
-            );
-          })}
+          component="Input"
+          editable={true}
         />
         <Field
           label="同步问候"
           name="greetingSync"
-          component={observer(({ $meta: { field }, ...rest }: any) => {
-            if (field.editable === false) {
-              return <span>{field.value}</span>;
-            }
-            return (
-              <Input
-                {...rest}
-                disabled={field.disabled}
-                onChange={(e) => field.setValue(e.target.value)}
-                value={field.value}
-                onFocus={() => field.focus()}
-                onBlur={() => field.blur()}
-              />
-            );
-          })}
+          component="Input"
           rule={{
             type: 'string',
             minLength: 3,
             errorMessage: '请至少输入3位文本'
           }}
-          componentProps={{ addonAfter: 'hello', style: { width: '240px' } }}
+          componentProps={{
+            addonAfter: 'hello',
+            style: { width: '240px' },
+            emptyContent: '空白文案'
+          }}
           extra="This will sync with greeting..."
           addonAfter="hello"
         />

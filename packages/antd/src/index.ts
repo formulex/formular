@@ -3,6 +3,7 @@ export {
   Form as InnerForm,
   FormProps as InnerFormProps,
   useForm,
-  useField
+  useField,
+  Registry
 } from '@formular/react';
 export * from '@formular/core';

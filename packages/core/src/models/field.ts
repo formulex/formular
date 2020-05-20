@@ -85,12 +85,7 @@ export const Field = types
       set disabled(val: boolean) {
         self.setDisabled(val);
       },
-      get ignored(): boolean {
-        return self._ignored;
-      },
-      set ignored(val: boolean) {
-        self.setIgnored(val);
-      },
+
       get editable(): boolean {
         return self._editable ?? getParentOfType(self, Form).editable;
       },
@@ -114,6 +109,14 @@ export const Field = types
       }
     };
   })
+  .views((self) => ({
+    get ignored(): boolean {
+      return self._ignored || self.editable === false;
+    },
+    set ignored(val: boolean) {
+      self.setIgnored(val);
+    }
+  }))
   .actions((self) => ({
     blur() {
       if (!self._everBlured) {

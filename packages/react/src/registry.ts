@@ -61,36 +61,36 @@ export class Registry implements RegistryEntry {
     component: React.ComponentType<P>
   ) {
     if (component) {
-      this.global_formComponent = component;
+      Registry.global_formComponent = component;
     }
   }
 
   private static global_fields: {
     [key: string]: React.ComponentType<any>;
-  };
+  } = {};
   public static registerGlobalField(
     name: string,
     component: React.ComponentType<any>
   ) {
     if (typeof name === 'string' && component) {
-      if (this.global_fields[name]) {
+      if (Registry.global_fields[name]) {
         console.warn(`Component "${name}" exists. It will override.`);
       }
 
-      this.global_fields[name] = component;
-      if (typeof this.global_fields[name].displayName !== 'string') {
-        this.global_fields[name].displayName = name;
+      Registry.global_fields[name] = component;
+      if (typeof Registry.global_fields[name].displayName !== 'string') {
+        Registry.global_fields[name].displayName = name;
       }
     }
   }
   public static registerGlobalFields(obj: Registry['fields']) {
     Object.keys(obj).forEach((name) => {
       const component = obj[name];
-      this.registerGlobalField(name, component);
+      Registry.registerGlobalField(name, component);
     });
   }
   public static clear() {
-    this.global_fields = {};
+    Registry.global_fields = {};
   }
 
   constructor() {
