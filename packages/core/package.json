@@ -23,7 +23,7 @@
     "mobx-state-tree": "3.x"
   },
   "dependencies": {
-    "@babel/runtime": "^7.8.7",
+    "@babel/runtime": "^7.9.6",
     "ajv": "^6.12.2",
     "ajv-errors": "^1.0.1",
     "ajv-i18n": "^3.5.0",

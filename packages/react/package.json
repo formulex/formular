@@ -20,10 +20,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@babel/runtime": "^7.8.7",
+    "@babel/runtime": "^7.9.6",
     "@formular/core": "^0.0.1",
-    "@types/lodash.debounce": "^4.0.6",
-    "@types/lodash.memoize": "^4.1.6",
     "lodash.debounce": "^4.0.8",
     "lodash.memoize": "^4.1.2"
   },
@@ -34,13 +32,13 @@
     "react": "16.x"
   },
   "devDependencies": {
-    "@babel/preset-react": "^7.8.3",
-    "@types/react": "^16.9.23",
-    "@types/react-dom": "^16.9.5",
+    "@babel/preset-react": "^7.9.4",
+    "@types/react": "^16.9.35",
+    "@types/react-dom": "^16.9.8",
     "mobx-react": "^6.1.8",
     "parcel-bundler": "^1.12.4",
     "react": "^16.13.0",
-    "react-dom": "^16.13.0"
+    "react-dom": "^16.13.1"
   },
   "homepage": "https://github.com/formularx/formular#readme",
   "repository": {
