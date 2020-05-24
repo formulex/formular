@@ -37,7 +37,7 @@ const App: React.FC = () => {
       <Field
         label="问候"
         name="greeting"
-        initialValue="hello!"
+        // initialValue="hello!"
         component="Input"
         editable={true}
       />
@@ -64,7 +64,13 @@ const App: React.FC = () => {
         <Button type="primary" htmlType="submit">
           Submit
         </Button>
-        <Button htmlType="reset" style={{ marginLeft: '1rem' }}>
+        <Button
+          // onClick={() => {
+          //   form.resetFields();
+          // }}
+          htmlType="reset"
+          style={{ marginLeft: '1rem' }}
+        >
           Reset
         </Button>
 

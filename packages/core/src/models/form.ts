@@ -1,6 +1,6 @@
 import { getType, Instance, types, flow } from 'mobx-state-tree';
 import { createField, FieldInstance } from '.';
-import { autorun, IReactionDisposer, runInAction } from 'mobx';
+import { autorun, IReactionDisposer, runInAction, transaction } from 'mobx';
 import { setIn } from '../utils';
 import { getResolvers, SubscribeSetup } from '../sideEffect';
 import type { FormFeature } from '../features';
@@ -106,13 +106,22 @@ export const Form = types
         self.didUnregisterField(name);
       };
     },
-    initialize(data: object | ((values: object) => object)) {
+    initialize(
+      data: object | ((values: object) => object),
+      filter: (field: FieldInstance) => boolean
+    ) {
       const values = typeof data === 'function' ? data(self.values) : data;
       self.setFallbackInitialValues(values);
       self.fields.forEach((field) => {
         field.setFallbackInitialValue(undefined);
-        field.setValue(field.initialValue);
-        field.resetFlags();
+        if (filter(field)) {
+          setTimeout(() => {
+            transaction(() => {
+              field.__setValueSilently(field.initialValue);
+              field.resetFlags();
+            });
+          });
+        }
       });
     },
     subscribe(setup: SubscribeSetup): () => void {
@@ -150,7 +159,13 @@ export const Form = types
   }))
   .actions((self) => ({
     reset(initialValues: any = self.initialValues) {
-      self.initialize(initialValues || {});
+      self.initialize(initialValues || {}, () => true);
+      self.everValitated = false;
+    },
+    resetFields(names?: string[]) {
+      self.initialize({}, (field) =>
+        Array.isArray(names) ? names.includes(field.name) : true
+      );
       self.everValitated = false;
     },
     validate: flow(function* validate({
