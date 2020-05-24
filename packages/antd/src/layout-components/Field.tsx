@@ -6,6 +6,7 @@ import {
   FieldRenderableProps,
   RegistryContext
 } from '@formular/react';
+import { invariant } from '@formular/core';
 import type { FormItemProps as AntDesignFormItemProps } from 'antd/lib/form/FormItem';
 
 type InnerItemPropsType = Omit<InnerItemProps, 'render' | 'children'>;
@@ -15,11 +16,13 @@ type ExplicitInnerItemProps = Pick<
   'name' | 'initialValue' | 'rule' | 'asyncRule' | 'editable'
 >;
 
+export type RenderComponentProps<P> = P & { $meta: FieldRenderableProps };
+
 export interface FieldProps<P>
   extends ExplicitInnerItemProps,
     Omit<AntDesignFormItemProps, keyof ExplicitInnerItemProps | 'children'> {
   $itemMetaProps?: InnerItemPropsType;
-  component: React.ComponentType<P & { $meta: FieldRenderableProps }> | string;
+  component: React.ComponentType<RenderComponentProps<P>> | string;
   componentProps?: P;
   addonAfter?: React.ReactNode;
 }
@@ -36,14 +39,8 @@ const validateMapper: { [key: string]: any } = {
   IGNORED: 'default'
 };
 
-const mapper: MapFieldsMetaToItemPropsFrom = ({
-  fields,
-  field,
-  form,
-  type
-}) => {
+const mapper: MapFieldsMetaToItemPropsFrom = ({ field, form, type }) => {
   if (type === 'array') {
-    console.log(fields);
     return {};
   }
   return {
@@ -53,6 +50,7 @@ const mapper: MapFieldsMetaToItemPropsFrom = ({
       undefined,
     help:
       (field.modified || form.everValitated) &&
+      !field.ignored &&
       field.validation.messages.join(', ')
   };
 };
@@ -92,6 +90,10 @@ export class Field<P> extends React.Component<FieldProps<P>> {
               ) {
                 Component = registry.fields[component];
               }
+              invariant(
+                typeof Component !== 'string',
+                `Cannot find component "${component}". Do you register it correctly?`
+              );
               const innerChildren = React.createElement(
                 Component as React.ComponentType<typeof innerComponentProps>,
                 innerComponentProps

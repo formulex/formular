@@ -1,31 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
-import Input from 'antd/lib/input';
 import 'antd/dist/antd.css';
 import './index.css';
 import { Form, Field, useForm, Registry } from '../../src';
 import { reaction } from 'mobx';
-import { observer, Observer } from 'mobx-react';
+import { Observer } from 'mobx-react';
 import { Card } from 'antd';
+import * as components from '../../src/components';
 
-Registry.registerGlobalFields({
-  Input: observer(({ $meta: { field }, emptyContent, ...rest }: any) => {
-    if (field.editable === false) {
-      return <span>{field.value || emptyContent}</span>;
-    }
-    return (
-      <Input
-        {...rest}
-        disabled={field.disabled}
-        onChange={(e) => field.setValue(e.target.value)}
-        value={field.value}
-        onFocus={() => field.focus()}
-        onBlur={() => field.blur()}
-      />
-    );
-  })
-});
+Registry.registerGlobalFields(components);
 
 const App: React.FC = () => {
   const [form] = useForm();
@@ -58,6 +42,12 @@ const App: React.FC = () => {
         editable={true}
       />
       <Field
+        label="距离"
+        name="distance"
+        component="InputNumber"
+        addonAfter="米"
+      />
+      <Field
         label="异步的问候"
         name="greetingAsync"
         component="Input"
@@ -67,8 +57,7 @@ const App: React.FC = () => {
           errorMessage: 'The length is at least 5'
         }}
         componentProps={{
-          style: { width: '240px' },
-          emptyContent: 'Empty Tips'
+          style: { width: '240px' }
         }}
       />
       <Button type="primary" htmlType="submit">

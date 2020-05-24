@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.9.6",
-    "@formular/react": "^0.0.1"
+    "@formular/react": "latest"
   },
   "peerDependencies": {
     "antd": "4.x",

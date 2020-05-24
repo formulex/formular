@@ -1,2 +1,4 @@
-export { Form, FormProps } from './Form';
-export { Field, FieldProps } from './Field';
+export * from './Input';
+export * from './InputNumber';
+export * from './Password';
+export * from './TextArea';

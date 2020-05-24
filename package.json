@@ -18,8 +18,8 @@
     "example:antd": "yarn workspace @formular/antd run start",
     "test": "jest",
     "test:core": "jest packages/core",
-    "site": "dumi dev --no-babelrc",
-    "site:build": "dumi build --no-babelrc"
+    "site": "dumi dev",
+    "site:build": "dumi build"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
@@ -39,6 +39,7 @@
     "antd": "^4.2.4",
     "babel-jest": "^26.0.1",
     "babel-preset-power-assert": "^3.0.0",
+    "core-js": "^3.6.5",
     "cross-env": "^7.0.2",
     "eslint": "^7.0.0",
     "eslint-plugin-react": "^7.20.0",
