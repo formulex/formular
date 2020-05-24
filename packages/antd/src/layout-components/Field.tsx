@@ -9,11 +9,11 @@ import {
 import { invariant } from '@formular/core';
 import type { FormItemProps as AntDesignFormItemProps } from 'antd/lib/form/FormItem';
 
-type InnerItemPropsType = Omit<InnerItemProps, 'render' | 'children'>;
+type InnerItemPropsType = Omit<InnerItemProps, 'render'>;
 
 type ExplicitInnerItemProps = Pick<
   InnerItemPropsType,
-  'name' | 'initialValue' | 'rule' | 'asyncRule' | 'editable'
+  'initialValue' | 'rule' | 'asyncRule' | 'editable'
 >;
 
 export type RenderComponentProps<P> = P & { $meta: FieldRenderableProps };
@@ -22,9 +22,12 @@ export interface FieldProps<P>
   extends ExplicitInnerItemProps,
     Omit<AntDesignFormItemProps, keyof ExplicitInnerItemProps | 'children'> {
   $itemMetaProps?: InnerItemPropsType;
-  component: React.ComponentType<RenderComponentProps<P>> | string;
   componentProps?: P;
   addonAfter?: React.ReactNode;
+
+  // basic
+  component?: React.ComponentType<RenderComponentProps<P>> | string;
+  name?: string;
 }
 
 export interface MapFieldsMetaToItemPropsFrom {
@@ -68,59 +71,79 @@ export class Field<P> extends React.Component<FieldProps<P>> {
       editable,
       addonAfter,
       style,
+      children,
       ...restProps
     } = this.props;
     return (
       <RegistryContext.Consumer>
-        {(registry) => (
-          <InnerItem
-            {...$itemMetaProps}
-            {...{ name, initialValue, rule, asyncRule, editable }}
-          >
-            {(meta) => {
-              const innerComponentProps = {
-                ...componentProps,
-                $meta: meta
-              };
-              let Component = component;
-              if (
-                registry &&
-                typeof component === 'string' &&
-                registry.fields[component]
-              ) {
-                Component = registry.fields[component];
-              }
-              invariant(
-                typeof Component !== 'string',
-                `Cannot find component "${component}". Do you register it correctly?`
-              );
-              const innerChildren = React.createElement(
-                Component as React.ComponentType<typeof innerComponentProps>,
-                innerComponentProps
-              );
-              const extraStyle = { display: 'none' };
-              if (meta.field.show) {
-                delete extraStyle.display;
-              }
-              return (
-                <AntDesignForm.Item
-                  {...restProps}
-                  style={{ ...style, ...extraStyle }}
-                  {...mapper(meta)}
-                >
-                  {addonAfter ? (
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      {innerChildren}
-                      {addonAfter}
-                    </div>
-                  ) : (
-                    innerChildren
-                  )}
-                </AntDesignForm.Item>
-              );
-            }}
-          </InnerItem>
-        )}
+        {(registry) => {
+          if (name && component) {
+            return (
+              <InnerItem
+                {...$itemMetaProps}
+                {...{ name, initialValue, rule, asyncRule, editable }}
+              >
+                {(meta) => {
+                  const innerComponentProps = {
+                    ...componentProps,
+                    $meta: meta
+                  };
+                  let Component = component;
+                  if (
+                    registry &&
+                    typeof component === 'string' &&
+                    registry.fields[component]
+                  ) {
+                    Component = registry.fields[component];
+                  }
+                  invariant(
+                    typeof Component !== 'string',
+                    `Cannot find component "${component}". Do you register it correctly?`
+                  );
+                  const innerChildren = React.createElement(
+                    Component as React.ComponentType<
+                      typeof innerComponentProps
+                    >,
+                    innerComponentProps
+                  );
+                  const extraStyle = { display: 'none' };
+                  if (meta.field.show) {
+                    delete extraStyle.display;
+                  }
+                  return (
+                    <AntDesignForm.Item
+                      {...restProps}
+                      style={{ ...style, ...extraStyle }}
+                      {...mapper(meta)}
+                    >
+                      {addonAfter ? (
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {innerChildren}
+                          {addonAfter}
+                        </div>
+                      ) : (
+                        innerChildren
+                      )}
+                    </AntDesignForm.Item>
+                  );
+                }}
+              </InnerItem>
+            );
+          } else {
+            return (
+              <AntDesignForm.Item {...restProps} style={style}>
+                {addonAfter ? (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {children}
+                    {addonAfter}
+                  </div>
+                ) : (
+                  children
+                )}
+              </AntDesignForm.Item>
+            );
+          }
+        }}
       </RegistryContext.Consumer>
     );
   }

@@ -60,20 +60,23 @@ const App: React.FC = () => {
           style: { width: '240px' }
         }}
       />
-      <Button type="primary" htmlType="submit">
-        Submit
-      </Button>
-      <Button htmlType="reset" style={{ marginLeft: '1rem' }}>
-        Reset
-      </Button>
-      <Button
-        style={{ marginLeft: '1rem' }}
-        onClick={() => {
-          form.editable = !form.editable;
-        }}
-      >
-        Toggle Editable
-      </Button>
+      <Field label="panel">
+        <Button type="primary" htmlType="submit">
+          Submit
+        </Button>
+        <Button htmlType="reset" style={{ marginLeft: '1rem' }}>
+          Reset
+        </Button>
+
+        <Button
+          style={{ marginLeft: '1rem' }}
+          onClick={() => {
+            form.editable = !form.editable;
+          }}
+        >
+          Toggle Editable
+        </Button>
+      </Field>
       <Card style={{ marginTop: '1rem' }}>
         <Observer>
           {() => <pre>{JSON.stringify(form.values, null, 2)}</pre>}
