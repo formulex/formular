@@ -86,7 +86,7 @@ export const Form = types
         });
         self.addField(name, field);
       }
-      let field = self.fields.get(name)!;
+      const field = self.fields.get(name)!;
       setTimeout(() => {
         runInAction('innerSetValue', () => {
           if (field.initialValue) {

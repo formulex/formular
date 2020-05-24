@@ -9,9 +9,10 @@
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "bootstrap:china": "lerna bootstrap --registry=https://registry.npm.taobao.org",
-    "build": "yarn workspaces run build",
+    "build": "yarn run build:core && yarn run build:react && yarn run build:antd",
     "build:react": "yarn workspace @formular/react run build",
     "build:core": "yarn workspace @formular/core run build",
+    "build:antd": "yarn workspace @formular/antd run build",
     "lint": "yarn workspaces run lint",
     "type-check": "yarn workspaces run type-check",
     "example:react": "yarn workspace @formular/react run start",
@@ -19,7 +20,9 @@
     "test": "jest",
     "test:core": "jest packages/core",
     "site": "dumi dev",
-    "site:build": "dumi build"
+    "site:build": "dumi build",
+    "prepublish": "yarn run lint && yarn run test && yarn run build",
+    "publish": "lerna publish"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",

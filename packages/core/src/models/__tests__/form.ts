@@ -21,17 +21,13 @@ describe('models/form', () => {
 
       const fieldEffect = jest.fn();
       form.registerField('hello', fieldEffect, {});
-      assert.deepEqual(form.values, { hello: 'world' });
+      assert.deepEqual(form.values, {});
 
       form.registerField('name', void 0, { initialValue: 'daddy' });
-      assert.deepEqual(form.values, { hello: 'world', name: 'daddy' });
+      assert.deepEqual(form.values, {});
 
       form.registerField('other', void 0, { initialValue: 'dad' });
-      assert.deepEqual(form.values, {
-        hello: 'world',
-        name: 'daddy',
-        other: 'dad'
-      });
+      assert.deepEqual(form.values, {});
     });
   });
 });
