@@ -1,6 +1,6 @@
 {
   "name": "@formular/react",
-  "version": "0.0.1-alpha.2",
+  "version": "0.0.1",
   "sideEffects": false,
   "type": "module",
   "main": "lib/index.js",
