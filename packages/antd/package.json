@@ -1,6 +1,6 @@
 {
   "name": "@formular/antd",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "sideEffects": false,
   "type": "module",
   "main": "lib/index.js",
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.9.6",
-    "@formular/react": "0.x"
+    "@formular/react": "^0.0.2"
   },
   "peerDependencies": {
     "antd": "4.x",
