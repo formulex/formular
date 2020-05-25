@@ -13,6 +13,14 @@
 
 </div>
 
+## Packages
+
+- [@formular/core](./packages/core) [![NPM version](https://img.shields.io/npm/v/@formular/core.svg?style=flat)](https://npmjs.org/package/@formular/core) [![NPM downloads](http://img.shields.io/npm/dm/@formular/core.svg?style=flat)](https://npmjs.org/package/@formular/core)
+
+- [@formular/react](./packages/core) [![NPM version](https://img.shields.io/npm/v/@formular/react.svg?style=flat)](https://npmjs.org/package/@formular/react) [![NPM downloads](http://img.shields.io/npm/dm/@formular/react.svg?style=flat)](https://npmjs.org/package/@formular/react)
+
+- [@formular/antd](./packages/antd) [![NPM version](https://img.shields.io/npm/v/@formular/antd.svg?style=flat)](https://npmjs.org/package/@formular/antd) [![NPM downloads](http://img.shields.io/npm/dm/@formular/antd.svg?style=flat)](https://npmjs.org/package/@formular/antd)
+
 <div align="center">
 
 ![gif](./assets/demogif.gif)
