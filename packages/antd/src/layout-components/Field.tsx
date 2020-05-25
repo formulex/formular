@@ -16,7 +16,10 @@ type ExplicitInnerItemProps = Pick<
   'initialValue' | 'rule' | 'asyncRule' | 'editable'
 >;
 
-export type RenderComponentProps<P> = P & { $meta: FieldRenderableProps };
+export type RenderComponentProps<P> = P & {
+  $meta: FieldRenderableProps;
+  mapPropsToShow?: (props: P & { $meta: FieldRenderableProps }) => any;
+};
 
 export interface FieldProps<P>
   extends ExplicitInnerItemProps,

@@ -1,24 +1,25 @@
 import React from 'react';
 import { RenderComponentProps } from '../layout-components';
-import { Typography, InputNumber as AntdInputNumber } from 'antd';
+import { Typography, Checkbox as AntdCheckbox } from 'antd';
 import { useRenderConfig } from '../contexts';
 import { useFieldEditable, mapFieldMetaToProps } from '../utils';
-import { InputNumberProps } from 'antd/lib/input-number';
+import { CheckboxProps } from 'antd/es/checkbox';
 
 const mapper = mapFieldMetaToProps({
-  getValueFromEvent: (val) => val
+  valuePropName: 'checked',
+  getValueFromEvent: (e) => e.target.checked
 });
 
-export const InputNumber: React.FC<RenderComponentProps<InputNumberProps>> = ({
+export const Checkbox: React.FC<RenderComponentProps<CheckboxProps>> = ({
   $meta,
   ...antdProps
 }) => {
   const renderConfig = useRenderConfig();
   return useFieldEditable(
     $meta,
-    <AntdInputNumber {...antdProps} {...mapper($meta, antdProps)} />,
+    <AntdCheckbox {...antdProps} {...mapper($meta, antdProps)} />,
     <Typography.Text>
-      {$meta.field.value || renderConfig.emptyContent}
+      {antdProps.children || renderConfig.emptyContent}
     </Typography.Text>
   );
 };
