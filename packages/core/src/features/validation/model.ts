@@ -3,7 +3,8 @@ import {
   getEnv,
   getParentOfType,
   Instance,
-  types
+  types,
+  isAlive
 } from 'mobx-state-tree';
 import type { AsyncRule, Rule } from './types';
 import { FormEnvironment } from '../../models/form';
@@ -196,7 +197,9 @@ export const Validation = types
         : warningKeys;
       return () => {
         ajv.removeSchema(customSchemaKey);
-        self.clearSchema();
+        if (isAlive(self)) {
+          self.clearSchema();
+        }
         if (customKeyword) {
           ajv.removeKeyword(customKeyword);
         }
