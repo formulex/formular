@@ -1,1 +1,2 @@
-export { renderComponent, RenderableProps } from './render';
+export { renderComponent } from './render';
+export type { RenderableProps } from './render';
