@@ -32,7 +32,7 @@ export const Field = types
         self.modified = true;
       }
     },
-    __setValueSilently(val: any) {
+    setValueSilently(val: any) {
       self._value = val;
     },
     setFallbackInitialValue(val: any) {
@@ -52,6 +52,9 @@ export const Field = types
     },
     setEditable(editable: boolean) {
       self._editable = editable;
+    },
+    __rename(name: string) {
+      self.name = name;
     }
   }))
   .views((self) => {
@@ -115,6 +118,12 @@ export const Field = types
     },
     set ignored(val: boolean) {
       self.setIgnored(val);
+    },
+    get silentValue() {
+      return self.value;
+    },
+    set silentValue(val: any) {
+      self.setValueSilently(val);
     }
   }))
   .actions((self) => ({
@@ -179,6 +188,40 @@ export const Field = types
       }
 
       return result;
+    },
+    remove(index: number) {
+      if (!Array.isArray(self.value)) {
+        throw new Error(
+          `Cannot use "remove" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
+        );
+      }
+      const clone = [...self.value];
+      const returnValue = clone[index];
+      clone.splice(index, 1);
+      self._value = clone;
+
+      const pattern = new RegExp(
+        `^${escapeRegexTokens(self.name)}\\[(\\d+)\\](.*)`
+      );
+      const form = getParentOfType(self, Form);
+      for (const key of [...form.fields.keys()]) {
+        const tokens = pattern.exec(key);
+        if (tokens) {
+          const fieldIndex = Number(tokens[1]);
+          if (fieldIndex === index) {
+            // delete any subfields for this array item
+            form.removeField(key);
+          } else if (fieldIndex > index) {
+            // shift all higher ones down
+            const decrementedKey = `${self.name}[${fieldIndex - 1}]${
+              tokens[2]
+            }`;
+            form.renameField(key, decrementedKey);
+          }
+        }
+      }
+
+      return returnValue;
     }
   }));
 
@@ -186,6 +229,7 @@ export interface FieldConfig {
   name: string;
   initialValue?: any;
   type?: 'array';
+  uid?: string;
 }
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}

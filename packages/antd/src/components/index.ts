@@ -9,3 +9,4 @@ export * from './Select';
 export * from './MultipleSelect';
 export * from './TagSelect';
 export * from './Upload';
+export * from './TableArray';

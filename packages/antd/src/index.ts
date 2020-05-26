@@ -3,9 +3,9 @@ export * from './contexts';
 export * from './utils';
 export {
   Form as InnerForm,
-  FormProps as InnerFormProps,
   useForm,
   useField,
   Registry
 } from '@formular/react';
+export type { FormProps as InnerFormProps } from '@formular/react';
 export * from '@formular/core';

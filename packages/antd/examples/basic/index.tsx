@@ -1,16 +1,86 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
 import './index.css';
-import { Form, Field, useForm, Registry } from '../../src';
-import { reaction } from 'mobx';
+import {
+  Form,
+  Field,
+  useForm,
+  Registry,
+  runWithResolvers,
+  escapeRegexTokens
+} from '../../src';
+import { reaction, autorun } from 'mobx';
 import { Observer } from 'mobx-react';
 import { Card, Select } from 'antd';
 import * as components from '../../src/components';
 import { PlusOutlined } from '@ant-design/icons';
+import { ColumnType } from 'antd/es/table';
+import { useSideEffects } from '@formular/react';
 
-Registry.registerGlobalFields(components);
+Registry.registerGlobalFields({
+  ...components,
+  TableArray: (props: any) => {
+    const renderAfter = useCallback(({ $meta: { field } }) => {
+      return field.editable ? (
+        <Button onClick={() => field.push()}>添加一个</Button>
+      ) : null;
+    }, []);
+    const enhanceColumns = useCallback(
+      (columns: ColumnType<any>[], { $meta: { field, form, fields } }) => {
+        return field.editable
+          ? columns.concat([
+              {
+                key: 'action',
+                title: '操作',
+                render: (_, __, index) => {
+                  return (
+                    <Button.Group style={{ marginBottom: '24px' }}>
+                      <Button
+                        onClick={() => {
+                          field.remove(index);
+                        }}
+                      >
+                        删除
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          field.push();
+                          const prePath = field.name;
+                          setTimeout(() => {
+                            runWithResolvers(form, ({ field, value }) => {
+                              columns.forEach(({ key }) => {
+                                field(
+                                  `${prePath}[${fields.length}].${key}`
+                                )!.setValueSilently(
+                                  value(`${prePath}[${index}].${key}`)
+                                );
+                              });
+                            });
+                          });
+                        }}
+                      >
+                        复制并新增到尾端
+                      </Button>
+                    </Button.Group>
+                  );
+                }
+              }
+            ])
+          : columns;
+      },
+      []
+    );
+    return (
+      <components.TableArray
+        {...props}
+        renderAfter={renderAfter}
+        enhanceColumns={enhanceColumns}
+      />
+    );
+  }
+});
 const { Option } = Select;
 
 const uploadButton = (
@@ -30,6 +100,29 @@ const formItemLayout = {
   wrapperCol: { span: 14 }
 };
 
+const ReuseLogic: React.FC = ({ children }) => {
+  useSideEffects(function* ({ field, value }, form) {
+    yield autorun(() => {
+      const pattern = new RegExp('^table\\[(\\d+)\\].firstname');
+      form.fields.forEach((_, key) => {
+        const tokens = pattern.exec(key);
+        if (tokens) {
+          const fieldIndex = Number(tokens[1]);
+          const wholename = field(`table[${fieldIndex}].wholename`);
+          if (wholename) {
+            wholename.silentValue = value(`table[${fieldIndex}].firstname`)
+              ? `${value(`table[${fieldIndex}].firstname`) || ''} ${
+                  value(`table[${fieldIndex}].lastname`) || ''
+                }`
+              : undefined;
+          }
+        }
+      });
+    });
+  });
+  return <>{children}</>;
+};
+
 const App: React.FC = () => {
   const [form] = useForm();
   return (
@@ -37,7 +130,6 @@ const App: React.FC = () => {
       <Form
         className="App"
         form={form}
-        layout="vertical"
         {...formItemLayout}
         onFinish={(values) => {
           console.log('finish', values);
@@ -178,6 +270,43 @@ const App: React.FC = () => {
             style: { width: '240px' }
           }}
         />
+        <ReuseLogic>
+          <Field label="表格" name="table" type="array" component="TableArray">
+            <Field
+              label="前名字"
+              name="firstname"
+              component="Input"
+              rule={{
+                type: 'string',
+                minLength: 1,
+                errorMessage: '该字段非空'
+              }}
+              componentProps={{ placeholder: '请输入FirstName' }}
+            />
+            <Field
+              label="后名字"
+              name="lastname"
+              component="Input"
+              rule={{
+                type: 'string',
+                minLength: 1,
+                errorMessage: '该字段非空'
+              }}
+              componentProps={{ placeholder: '请输入LastName' }}
+            />
+            <Field
+              label="全名字"
+              name="wholename"
+              component="Input"
+              rule={{
+                type: 'string',
+                minLength: 1,
+                errorMessage: '该字段非空'
+              }}
+              componentProps={{ placeholder: '自动计算', disabled: true }}
+            />
+          </Field>
+        </ReuseLogic>
         <Field label="panel">
           <Button type="primary" htmlType="submit">
             Submit

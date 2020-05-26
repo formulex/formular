@@ -1,5 +1,5 @@
 import { useFieldContext } from '../contexts';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import type {
   FieldInstance,
   FieldRegisterConfig,
@@ -8,6 +8,7 @@ import type {
 } from '@formular/core';
 import { isFieldInstance } from '@formular/core';
 import { FieldFeatures } from '../components/Item';
+import { reaction } from 'mobx';
 
 const noop = () => {};
 
@@ -25,7 +26,7 @@ export function useField(
   const fieldRef = useRef<FieldInstance>();
   const [, forceUpdate] = useState();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const unregister = form.registerField(name, undefined, {
       initialValue,
       type
@@ -38,6 +39,28 @@ export function useField(
       fieldRef.current = undefined;
     };
   }, [form, name]);
+
+  useLayoutEffect(
+    () =>
+      reaction(
+        () => form.fields.values(),
+        () => {
+          if (isFieldInstance(fieldRef.current)) {
+            const target = form.fields.get(name);
+
+            if (
+              target &&
+              (target as any).$treenode.nodeId !==
+                (fieldRef.current as any).$treenode.nodeId
+            ) {
+              fieldRef.current = target;
+              forceUpdate({});
+            }
+          }
+        }
+      ),
+    [form, name]
+  );
 
   useEffect(() => {
     if (

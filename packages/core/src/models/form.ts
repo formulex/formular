@@ -1,4 +1,4 @@
-import { getType, Instance, types, flow } from 'mobx-state-tree';
+import { getType, Instance, types, flow, detach } from 'mobx-state-tree';
 import { createField, FieldInstance } from '.';
 import { autorun, IReactionDisposer, runInAction, transaction } from 'mobx';
 import { setIn } from '../utils';
@@ -57,6 +57,14 @@ export const Form = types
     removeField(name: string) {
       self.fields.delete(name);
     },
+    renameField(name: string, to: string) {
+      const target = self.fields.get(name);
+      if (target) {
+        const field = detach(target);
+        field.__rename(to);
+        self.fields.set(to, field);
+      }
+    },
     setFallbackInitialValues(initialVal: any) {
       self._fallbackInitialValues = initialVal;
     },
@@ -90,7 +98,7 @@ export const Form = types
       setTimeout(() => {
         runInAction('innerSetValue', () => {
           if (field.initialValue) {
-            field.__setValueSilently(field.initialValue);
+            field.setValueSilently(field.initialValue);
           }
         });
       });
@@ -117,7 +125,7 @@ export const Form = types
         if (filter(field)) {
           setTimeout(() => {
             transaction(() => {
-              field.__setValueSilently(field.initialValue);
+              field.setValueSilently(field.initialValue);
               field.resetFlags();
             });
           });

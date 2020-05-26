@@ -43,7 +43,7 @@ export function mapFieldMetaToProps(
       },
 
       // diabled
-      disabled: field.disabled
+      disabled: originalProps.disabled ?? field.disabled
     };
   };
 }

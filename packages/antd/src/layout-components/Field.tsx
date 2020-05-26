@@ -13,7 +13,7 @@ type InnerItemPropsType = Omit<InnerItemProps, 'render'>;
 
 type ExplicitInnerItemProps = Pick<
   InnerItemPropsType,
-  'initialValue' | 'rule' | 'asyncRule' | 'editable'
+  'initialValue' | 'rule' | 'asyncRule' | 'editable' | 'type'
 >;
 
 export type RenderComponentProps<P> = P & {
@@ -75,6 +75,7 @@ export class Field<P> extends React.Component<FieldProps<P>> {
       addonAfter,
       style,
       children,
+      type,
       ...restProps
     } = this.props;
     return (
@@ -84,7 +85,7 @@ export class Field<P> extends React.Component<FieldProps<P>> {
             return (
               <InnerItem
                 {...$itemMetaProps}
-                {...{ name, initialValue, rule, asyncRule, editable }}
+                {...{ name, initialValue, rule, asyncRule, editable, type }}
               >
                 {(meta) => {
                   const innerComponentProps = {
@@ -107,7 +108,8 @@ export class Field<P> extends React.Component<FieldProps<P>> {
                     Component as React.ComponentType<
                       typeof innerComponentProps
                     >,
-                    innerComponentProps
+                    innerComponentProps,
+                    meta.type === 'array' ? children : undefined
                   );
                   const extraStyle = { display: 'none' };
                   if (meta.field.show) {
