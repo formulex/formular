@@ -3,14 +3,15 @@ import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
 import './index.css';
-import { Form, Field, useForm, Registry, runWithResolvers } from '../../src';
+import { Form, Field } from '../../src';
 import { reaction, autorun } from 'mobx';
 import { Observer } from 'mobx-react';
 import { Card, Select } from 'antd';
 import * as components from '../../src/components';
 import { PlusOutlined } from '@ant-design/icons';
 import { ColumnType } from 'antd/es/table';
-import { useSideEffects } from '@formular/react';
+import { useSideEffects, Registry, useForm } from '@formular/react';
+import { runWithResolvers } from '@formular/core';
 
 Registry.registerGlobalFields({
   ...components,
