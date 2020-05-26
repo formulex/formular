@@ -3,14 +3,7 @@ import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
 import './index.css';
-import {
-  Form,
-  Field,
-  useForm,
-  Registry,
-  runWithResolvers,
-  escapeRegexTokens
-} from '../../src';
+import { Form, Field, useForm, Registry, runWithResolvers } from '../../src';
 import { reaction, autorun } from 'mobx';
 import { Observer } from 'mobx-react';
 import { Card, Select } from 'antd';
