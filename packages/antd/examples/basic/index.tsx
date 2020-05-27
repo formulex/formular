@@ -95,23 +95,21 @@ const formItemLayout = {
 };
 
 const ReuseLogic: React.FC = ({ children }) => {
-  useSideEffects(function* ({ field, value }, form) {
+  useSideEffects(function* ({ value, fieldsPattern }) {
     yield autorun(() => {
-      const pattern = new RegExp('^table\\[(\\d+)\\].firstname');
-      form.fields.forEach((_, key) => {
-        const tokens = pattern.exec(key);
-        if (tokens) {
+      fieldsPattern(
+        '^table\\[(\\d+)\\].wholename',
+        (wholenameField, _, __, tokens) => {
           const fieldIndex = Number(tokens[1]);
-          const wholename = field(`table[${fieldIndex}].wholename`);
-          if (wholename) {
-            wholename.silentValue = value(`table[${fieldIndex}].firstname`)
+          if (wholenameField) {
+            wholenameField.silentValue = value(`table[${fieldIndex}].firstname`)
               ? `${value(`table[${fieldIndex}].firstname`) || ''} ${
                   value(`table[${fieldIndex}].lastname`) || ''
                 }`
               : undefined;
           }
         }
-      });
+      );
     });
   });
   return <>{children}</>;

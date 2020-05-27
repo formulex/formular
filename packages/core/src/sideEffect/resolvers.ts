@@ -4,6 +4,15 @@ import { escapeRegexTokens, setIn } from '../utils';
 export interface Resolvers {
   field: (name: string) => FieldInstance | undefined;
   value: <V>(name: string) => V | undefined;
+  fieldsPattern: (
+    pattern: string,
+    forEachCallbackfn: (
+      value: FieldInstance,
+      key: string,
+      map: Map<string, FieldInstance>,
+      tokensArray: RegExpExecArray
+    ) => void
+  ) => void;
 }
 
 export function getResolvers(form: FormInstance): Resolvers {
@@ -36,8 +45,28 @@ export function getResolvers(form: FormInstance): Resolvers {
       return field.value;
     }
   }
+
+  function fieldsPattern(
+    pattern: string,
+    forEachCallbackfn: (
+      value: FieldInstance,
+      key: string,
+      map: Map<string, FieldInstance>,
+      tokensArray: RegExpExecArray
+    ) => void
+  ): void {
+    const reg = new RegExp(pattern);
+    form.fields.forEach((_, key, _map) => {
+      const tokens = reg.exec(key);
+      if (tokens) {
+        forEachCallbackfn(_, key, _map, tokens);
+      }
+    });
+  }
+
   return {
     field,
+    fieldsPattern,
     value
   };
 }
