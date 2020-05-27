@@ -3,9 +3,9 @@ import { RenderComponentProps } from '../layout-components';
 import { Table } from 'antd';
 import { invariant } from '@formular/core';
 import { Observer, observer } from 'mobx-react';
-import type { ColumnType } from 'antd/es/table';
+import type { ColumnType, TableProps } from 'antd/es/table';
 
-export interface TableArrayProps {
+export interface TableArrayProps extends TableProps<any> {
   renderAfter?: (
     props: RenderComponentProps<TableArrayProps>
   ) => React.ReactNode;
@@ -44,8 +44,11 @@ export const TableArray: React.FC<RenderComponentProps<
         key: name,
         title: label,
         dataIndex: name,
-        render: (_, __, index) => {
-          const fieldName = `${$meta.field.name}[${index}].${child.props.name}`;
+        width: child.props?.componentProps?.['data-width'],
+        render: (_, { _index }, index) => {
+          const fieldName = `${$meta.field.name}[${_index ?? index}].${
+            child.props.name
+          }`;
           return (
             <Observer>
               {() =>
@@ -62,13 +65,11 @@ export const TableArray: React.FC<RenderComponentProps<
       } as ColumnType<any>;
     })?.filter((_) => _) ?? [];
 
-  const baseDataSource = $meta.field.value ?? [];
-  const dataSource = baseDataSource.map((obj: any) => {
-    if (typeof obj === 'object' && obj !== null) {
-      return obj;
-    } else {
-      return {};
-    }
+  const baseDataSource = Array.isArray($meta.field.value)
+    ? $meta.field.value
+    : [];
+  const dataSource = baseDataSource.map((obj: any, index) => {
+    return { _index: index };
   });
   return (
     <>

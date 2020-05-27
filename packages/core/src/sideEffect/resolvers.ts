@@ -1,18 +1,15 @@
 import { FormInstance, FieldInstance } from '../models';
 import { escapeRegexTokens, setIn } from '../utils';
+import type { PatternSubscribeSetup } from './types';
+import { autorun, untracked } from 'mobx';
 
 export interface Resolvers {
   field: (name: string) => FieldInstance | undefined;
   value: <V>(name: string) => V | undefined;
   fieldsPattern: (
     pattern: string,
-    forEachCallbackfn: (
-      value: FieldInstance,
-      key: string,
-      map: Map<string, FieldInstance>,
-      tokensArray: RegExpExecArray
-    ) => void
-  ) => void;
+    subscription: PatternSubscribeSetup
+  ) => () => void;
 }
 
 export function getResolvers(form: FormInstance): Resolvers {
@@ -48,20 +45,31 @@ export function getResolvers(form: FormInstance): Resolvers {
 
   function fieldsPattern(
     pattern: string,
-    forEachCallbackfn: (
-      value: FieldInstance,
-      key: string,
-      map: Map<string, FieldInstance>,
-      tokensArray: RegExpExecArray
-    ) => void
-  ): void {
+    subscription: PatternSubscribeSetup
+  ): () => void {
     const reg = new RegExp(pattern);
-    form.fields.forEach((_, key, _map) => {
-      const tokens = reg.exec(key);
-      if (tokens) {
-        forEachCallbackfn(_, key, _map, tokens);
-      }
+    const unsubscriptions: (() => void)[] = [];
+    const disposer = autorun(() => {
+      [...form.fields.keys()];
+      untracked(() => {
+        unsubscriptions.forEach((f) => f());
+        form.fields.forEach((field, key) => {
+          const tokens = reg.exec(key);
+          if (tokens) {
+            const gen = subscription(field, tokens);
+            for (const unsubscribe of gen) {
+              if (typeof unsubscribe === 'function') {
+                unsubscriptions.push(unsubscribe);
+              }
+            }
+          }
+        });
+      });
     });
+    return () => {
+      unsubscriptions.forEach((f) => f());
+      disposer();
+    };
   }
 
   return {

@@ -6,6 +6,8 @@ import {
   Validation
 } from '../features/validation/model';
 
+const AnyArray = types.array(types.frozen());
+
 export const Field = types
   .model('Field', {
     name: types.string,
@@ -23,7 +25,11 @@ export const Field = types
     _show: types.boolean,
     _disabled: types.boolean,
     _ignored: types.boolean,
-    _editable: types.maybe(types.boolean)
+    _editable: types.maybe(types.boolean),
+
+    // options
+    _enum: types.maybe(AnyArray),
+    _loading: types.maybe(types.boolean)
   })
   .actions((self) => ({
     setValue(val: any) {
@@ -52,6 +58,12 @@ export const Field = types
     },
     setEditable(editable: boolean) {
       self._editable = editable;
+    },
+    setEnum(val?: any[]) {
+      self._enum = AnyArray.create(val);
+    },
+    setLoading(loading?: boolean) {
+      self._loading = loading;
     },
     __rename(name: string) {
       self.name = name;
@@ -88,12 +100,23 @@ export const Field = types
       set disabled(val: boolean) {
         self.setDisabled(val);
       },
-
       get editable(): boolean {
         return self._editable ?? getParentOfType(self, Form).editable;
       },
       set editable(val: boolean) {
         self.setEditable(val);
+      },
+      get enum() {
+        return self._enum;
+      },
+      set enum(val: any[] | undefined) {
+        self.setEnum(val);
+      },
+      get loading(): boolean | undefined {
+        return self._loading;
+      },
+      set loading(val: boolean | undefined) {
+        self.setLoading(val);
       },
       get initialValue(): any {
         return (
@@ -222,6 +245,11 @@ export const Field = types
       }
 
       return returnValue;
+    }
+  }))
+  .actions((self) => ({
+    runInAction(debugName: string, action: (this: typeof self) => any) {
+      action.call(self);
     }
   }));
 

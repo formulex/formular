@@ -171,6 +171,12 @@ export const Form = types
       self.everValitated = false;
     },
     resetFields(names?: string[]) {
+      self.initialize(self.initialValues || {}, (field) =>
+        Array.isArray(names) ? names.includes(field.name) : true
+      );
+      self.everValitated = false;
+    },
+    forceResetFields(names?: string[]) {
       self.initialize({}, (field) =>
         Array.isArray(names) ? names.includes(field.name) : true
       );
@@ -238,6 +244,11 @@ export const Form = types
         return asyncErrors;
       }
     })
+  }))
+  .actions((self) => ({
+    runInAction(debugName: string, action: (this: typeof self) => any) {
+      action.call(self);
+    }
   }));
 
 export type FormInstance = Instance<typeof Form>;

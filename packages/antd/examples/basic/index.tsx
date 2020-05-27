@@ -96,21 +96,52 @@ const formItemLayout = {
 
 const ReuseLogic: React.FC = ({ children }) => {
   useSideEffects(function* ({ value, fieldsPattern }) {
-    yield autorun(() => {
-      fieldsPattern(
-        '^table\\[(\\d+)\\].wholename',
-        (wholenameField, _, __, tokens) => {
-          const fieldIndex = Number(tokens[1]);
-          if (wholenameField) {
-            wholenameField.silentValue = value(`table[${fieldIndex}].firstname`)
-              ? `${value(`table[${fieldIndex}].firstname`) || ''} ${
-                  value(`table[${fieldIndex}].lastname`) || ''
-                }`
-              : undefined;
-          }
-        }
-      );
+    const dis = fieldsPattern('^table\\[(\\d+)\\].wholename', function* (
+      wholename,
+      tokens
+    ) {
+      const fieldIndex = Number(tokens[1]);
+      yield autorun(() => {
+        wholename.silentValue =
+          value(`table[${fieldIndex}].firstname`) +
+          ' ' +
+          value(`table[${fieldIndex}].lastname`);
+      });
     });
+    yield () => {
+      console.log('dis');
+      dis();
+    };
+    // const entries = fieldsPattern('^table\\[(\\d+)\\].wholename');
+    // yield reaction(
+    //   () => entries.map(({ field }) => field.name),
+    //   () => {
+    //     const fieldIndex = Number(tokens[1]);
+    //     autorun(() => {
+    //       if (field) {
+    //         field.silentValue = value(`table[${fieldIndex}].firstname`)
+    //           ? `${value(`table[${fieldIndex}].firstname`) || ''} ${
+    //               value(`table[${fieldIndex}].lastname`) || ''
+    //             }`
+    //           : undefined;
+    //       }
+    //     });
+    //   }
+    // );
+    // for (const { field, tokens } of fieldsPattern(
+    //   '^table\\[(\\d+)\\].wholename'
+    // )) {
+    //   const fieldIndex = Number(tokens[1]);
+    //   yield autorun(() => {
+    //     if (field) {
+    //       field.silentValue = value(`table[${fieldIndex}].firstname`)
+    //         ? `${value(`table[${fieldIndex}].firstname`) || ''} ${
+    //             value(`table[${fieldIndex}].lastname`) || ''
+    //           }`
+    //         : undefined;
+    //     }
+    //   });
+    // }
   });
   return <>{children}</>;
 };
@@ -133,10 +164,27 @@ const App: React.FC = () => {
           yield reaction(
             () => value('greeting'),
             async (greetingValue) => {
+              field('personenum')!.runInAction('addEnum', function () {
+                const value = Math.random();
+                this.enum ?? (this.enum = []);
+                this.enum?.push({
+                  value,
+                  label: value
+                });
+                // this.validation.syncMessages.push('daddyddd');
+                this.loading = true;
+                console.log('status', this.validation.status);
+              });
               await new Promise((r) => setTimeout(r, 1000));
               field('greetingAsync')!.value = greetingValue;
             }
           );
+
+          // field('personenum')!.enum = [
+          //   { value: 'lucy', label: '露西2' },
+          //   { value: 'will', label: '威尔' },
+          //   { value: 'you-know-who', label: '神秘人', disabled: true }
+          // ];
         }}
       >
         <Field
@@ -195,6 +243,7 @@ const App: React.FC = () => {
             ]
           }}
         />
+        <Field label="人选enum" name="personenum" component="Select" />
         <Field
           label="人选children"
           name="personchildren"
