@@ -48,11 +48,12 @@ export function getResolvers(form: FormInstance): Resolvers {
     subscription: PatternSubscribeSetup
   ): () => void {
     const reg = new RegExp(pattern);
-    const unsubscriptions: (() => void)[] = [];
+    let unsubscriptions: (() => void)[] = [];
     const disposer = autorun(() => {
       [...form.fields.keys()];
       untracked(() => {
         unsubscriptions.forEach((f) => f());
+        unsubscriptions = [];
         form.fields.forEach((field, key) => {
           const tokens = reg.exec(key);
           if (tokens) {
