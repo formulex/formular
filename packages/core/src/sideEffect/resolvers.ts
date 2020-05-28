@@ -1,14 +1,18 @@
 import { FormInstance, FieldInstance } from '../models';
 import { escapeRegexTokens, setIn } from '../utils';
-import type { PatternSubscribeSetup } from './types';
+import type { PatternSubscribeSetup, PatternGroupSetup } from './types';
 import { autorun, untracked } from 'mobx';
 
 export interface Resolvers {
   field: (name: string) => FieldInstance | undefined;
   value: <V>(name: string) => V | undefined;
-  fieldsPattern: (
-    pattern: string,
+  fieldsEffects: (
+    pattern: string | RegExp,
     subscription: PatternSubscribeSetup
+  ) => () => void;
+  fieldsGroupEffects: (
+    pattern: string | RegExp,
+    subscription: PatternGroupSetup
   ) => () => void;
 }
 
@@ -43,8 +47,8 @@ export function getResolvers(form: FormInstance): Resolvers {
     }
   }
 
-  function fieldsPattern(
-    pattern: string,
+  function fieldsEffects(
+    pattern: string | RegExp,
     subscription: PatternSubscribeSetup
   ): () => void {
     const reg = new RegExp(pattern);
@@ -73,9 +77,39 @@ export function getResolvers(form: FormInstance): Resolvers {
     };
   }
 
+  function fieldsGroupEffects(
+    pattern: string | RegExp,
+    subscription: PatternGroupSetup
+  ): () => void {
+    const reg = new RegExp(pattern);
+    const disposer = autorun(() => {
+      [...form.fields.keys()];
+      const filteredFields: {
+        field: FieldInstance;
+        tokens: RegExpExecArray;
+      }[] = [];
+      untracked(() => {
+        form.fields.forEach((field, key) => {
+          const tokens = reg.exec(key);
+          if (tokens) {
+            filteredFields.push({ field, tokens });
+          }
+        });
+      });
+      subscription(
+        filteredFields.map(({ field }) => field),
+        filteredFields
+      );
+    });
+    return () => {
+      disposer();
+    };
+  }
+
   return {
     field,
-    fieldsPattern,
+    fieldsEffects,
+    fieldsGroupEffects,
     value
   };
 }

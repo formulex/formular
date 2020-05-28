@@ -17,6 +17,7 @@ export const Validation = types
   .model('Validation', {
     asyncMessages: types.array(types.string),
     syncMessages: types.array(types.string),
+    effectMessages: types.map(types.string),
     pending: types.boolean,
     valid: types.maybe(types.boolean),
     schemaKey: types.maybe(types.string),
@@ -62,7 +63,11 @@ export const Validation = types
     }
     return {
       get messages() {
-        return [...self.syncMessages, ...self.asyncMessages];
+        return [
+          ...self.syncMessages,
+          ...self.asyncMessages,
+          ...self.effectMessages.values()
+        ];
       },
       get warningsPasser() {
         if (self.warningKeys === 'all' || Array.isArray(self.warningKeys)) {
@@ -160,6 +165,30 @@ export const Validation = types
     clearAsyncSchema() {
       self.asyncSchemaKey = undefined;
       self.asyncWarningKeys = undefined;
+    },
+    setEffectMessages(
+      messages: { [key: string]: string },
+      flag?: 'errors' | 'warning'
+    ) {
+      Object.keys(messages).forEach((key) => {
+        const errorMessage = messages[key];
+        self.effectMessages.set(key, errorMessage);
+      });
+      if (flag === 'errors') {
+        self.valid = self.messages.length === 0;
+      } else if (flag === 'warning') {
+        self.valid = true;
+      }
+    },
+    removeEffectMessages(keys?: string[]) {
+      if (Array.isArray(keys)) {
+        keys.forEach((key) => {
+          self.effectMessages.delete(key);
+        });
+      } else {
+        self.effectMessages.clear();
+        self.valid = self.messages.length === 0;
+      }
     }
   }))
   .actions((self) => ({

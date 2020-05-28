@@ -3,7 +3,7 @@ import { RenderComponentProps } from '../layout-components';
 import { Upload as AntdUpload } from 'antd';
 import { useRenderConfig } from '../contexts';
 import { useFieldEditable, mapFieldMetaToProps } from '../utils';
-import type { UploadProps } from 'antd/es/upload/interface';
+import type { UploadProps } from 'antd/lib/upload/interface';
 
 const mapper = mapFieldMetaToProps({
   valuePropName: 'fileList',

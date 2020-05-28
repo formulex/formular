@@ -3,7 +3,7 @@ import { RenderComponentProps } from '../layout-components';
 import { Table } from 'antd';
 import { invariant } from '@formular/core';
 import { Observer, observer } from 'mobx-react';
-import type { ColumnType, TableProps } from 'antd/es/table';
+import type { ColumnType, TableProps } from 'antd/lib/table';
 
 export interface TableArrayProps extends TableProps<any> {
   renderAfter?: (

@@ -56,7 +56,7 @@ export const Item: React.FC<ItemProps> = ({
     editable
   });
   return (
-    <Observer key={`_field_${name}`}>
+    <Observer>
       {() => {
         return (
           (field &&

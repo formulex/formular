@@ -109,7 +109,9 @@ export class Field<P> extends React.Component<FieldProps<P>> {
                       typeof innerComponentProps
                     >,
                     innerComponentProps,
-                    meta.type === 'array' ? children : undefined
+                    meta.type === 'array'
+                      ? children ?? (innerComponentProps as any).children
+                      : (innerComponentProps as any).children ?? children
                   );
                   const extraStyle = { display: 'none' };
                   if (meta.field.show) {

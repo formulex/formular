@@ -4,7 +4,7 @@ import { generalMapper } from './commons';
 import { Typography } from 'antd';
 import { useRenderConfig } from '../contexts';
 import { useFieldEditable } from '../utils';
-import TextArea, { TextAreaProps } from 'antd/es/input/TextArea';
+import TextArea, { TextAreaProps } from 'antd/lib/input/TextArea';
 
 export const InputArea: React.FC<RenderComponentProps<TextAreaProps>> = ({
   $meta,

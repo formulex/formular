@@ -1,6 +1,6 @@
 import React from 'react';
 import { RenderComponentProps } from '../layout-components';
-import { default as AntdInput, InputProps } from 'antd/es/input/Input';
+import { default as AntdInput, InputProps } from 'antd/lib/input/Input';
 import { generalMapper } from './commons';
 import { Typography } from 'antd';
 import { useRenderConfig } from '../contexts';

@@ -3,7 +3,7 @@ import { RenderComponentProps } from '../layout-components';
 import { Typography, Checkbox as AntdCheckbox } from 'antd';
 import { useRenderConfig } from '../contexts';
 import { useFieldEditable, mapFieldMetaToProps } from '../utils';
-import { CheckboxProps } from 'antd/es/checkbox';
+import { CheckboxProps } from 'antd/lib/checkbox';
 
 const mapper = mapFieldMetaToProps({
   valuePropName: 'checked',

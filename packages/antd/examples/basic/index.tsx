@@ -9,7 +9,7 @@ import { Observer } from 'mobx-react';
 import { Card, Select } from 'antd';
 import * as components from '../../src/components';
 import { PlusOutlined } from '@ant-design/icons';
-import { ColumnType } from 'antd/es/table';
+import { ColumnType } from 'antd/lib/table';
 import { useSideEffects, Registry, useForm } from '@formular/react';
 import { runWithResolvers } from '@formular/core';
 
@@ -95,8 +95,8 @@ const formItemLayout = {
 };
 
 const ReuseLogic: React.FC = ({ children }) => {
-  useSideEffects(function* ({ value, fieldsPattern }) {
-    const dis = fieldsPattern('^table\\[(\\d+)\\].wholename', function* (
+  useSideEffects(function* ({ value, fieldsEffects }) {
+    const dis = fieldsEffects('^table\\[(\\d+)\\].wholename', function* (
       wholename,
       tokens
     ) {

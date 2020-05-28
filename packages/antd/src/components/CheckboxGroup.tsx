@@ -3,7 +3,7 @@ import { RenderComponentProps } from '../layout-components';
 import { Typography, Checkbox as AntdCheckbox } from 'antd';
 import { useRenderConfig } from '../contexts';
 import { useFieldEditable, mapFieldMetaToProps } from '../utils';
-import { CheckboxGroupProps } from 'antd/es/checkbox';
+import { CheckboxGroupProps } from 'antd/lib/checkbox';
 
 const mapper = mapFieldMetaToProps({
   getValueFromEvent: (val) => val

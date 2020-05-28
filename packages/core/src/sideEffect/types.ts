@@ -16,3 +16,10 @@ export interface PatternSubscribeSetup {
     void
   >;
 }
+
+export interface PatternGroupSetup {
+  (
+    fields: FieldInstance[],
+    fullArray: Array<{ field: FieldInstance; tokens: RegExpExecArray }>
+  ): void;
+}

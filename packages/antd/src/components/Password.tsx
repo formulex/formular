@@ -4,7 +4,10 @@ import { generalMapper } from './commons';
 import { Typography } from 'antd';
 import { useRenderConfig } from '../contexts';
 import { useFieldEditable } from '../utils';
-import { default as AntdPassword, PasswordProps } from 'antd/es/input/Password';
+import {
+  default as AntdPassword,
+  PasswordProps
+} from 'antd/lib/input/Password';
 
 export const Password: React.FC<RenderComponentProps<PasswordProps>> = ({
   $meta,

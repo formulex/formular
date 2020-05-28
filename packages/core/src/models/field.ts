@@ -1,12 +1,18 @@
-import { getParentOfType, getType, Instance, types } from 'mobx-state-tree';
+import {
+  getParentOfType,
+  getType,
+  Instance,
+  types,
+  cast,
+  castToSnapshot
+} from 'mobx-state-tree';
 import { escapeRegexTokens, getIn } from '../utils';
 import { Form } from './form';
 import {
   createFieldValidation,
   Validation
 } from '../features/validation/model';
-
-const AnyArray = types.array(types.frozen());
+import { observable } from 'mobx';
 
 export const Field = types
   .model('Field', {
@@ -28,9 +34,15 @@ export const Field = types
     _editable: types.maybe(types.boolean),
 
     // options
-    _enum: types.maybe(AnyArray),
-    _loading: types.maybe(types.boolean)
+    _enum: types.maybe(types.array(types.frozen())),
+    _loading: types.maybe(types.boolean),
+
+    // extends
+    _frozenExtend: types.frozen()
   })
+  .volatile(() => ({
+    hotExtend: observable.object<{ [key: string]: any }>({})
+  }))
   .actions((self) => ({
     setValue(val: any) {
       self._value = val;
@@ -60,13 +72,16 @@ export const Field = types
       self._editable = editable;
     },
     setEnum(val?: any[]) {
-      self._enum = AnyArray.create(val);
+      self._enum = cast(val);
     },
     setLoading(loading?: boolean) {
       self._loading = loading;
     },
     __rename(name: string) {
       self.name = name;
+    },
+    setFrozenExtend(val: any) {
+      self._frozenExtend = val;
     }
   }))
   .views((self) => {
@@ -117,6 +132,12 @@ export const Field = types
       },
       set loading(val: boolean | undefined) {
         self.setLoading(val);
+      },
+      get frozenExtend() {
+        return self._frozenExtend;
+      },
+      set frozenExtend(val: any) {
+        self._frozenExtend = val;
       },
       get initialValue(): any {
         return (
@@ -253,6 +274,9 @@ export const Field = types
     }
   }));
 
+type FieldDesignType = typeof Field;
+export interface FieldDesignInterface extends FieldDesignType {}
+
 export interface FieldConfig {
   name: string;
   initialValue?: any;
@@ -262,7 +286,7 @@ export interface FieldConfig {
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
 
-export type FieldInstance = Instance<typeof Field>;
+export interface FieldInstance extends Instance<FieldDesignInterface> {}
 
 export function isFieldInstance(o: any): o is FieldInstance {
   return getType(o) === Field;
@@ -285,6 +309,7 @@ export function createField({
     _ignored: false,
     modified: false,
     _editable: undefined,
-    validation: createFieldValidation()
+    validation: castToSnapshot(createFieldValidation()),
+    _frozenExtend: {}
   });
 }

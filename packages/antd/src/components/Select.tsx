@@ -4,7 +4,8 @@ import { RenderComponentProps } from '../layout-components';
 import { SelectProps } from 'antd/lib/select';
 import { useRenderConfig } from '../contexts';
 import { Typography, Select as AntdSelect } from 'antd';
-import { useObserver } from 'mobx-react';
+import { runInAction } from 'mobx';
+import { observer } from 'mobx-react';
 
 const mapper = mapFieldMetaToProps({
   getValueFromEvent: (val) => val
@@ -12,13 +13,14 @@ const mapper = mapFieldMetaToProps({
 
 export const Select: React.FC<RenderComponentProps<
   SelectProps<string | number>
->> = ({ $meta, mapPropsToShow, ...antdProps }) => {
+>> = observer(({ $meta, mapPropsToShow, ...antdProps }) => {
   const renderConfig = useRenderConfig();
   let selectText: string = $meta.field.value;
-  const options = useObserver(
-    () => antdProps.options ?? [...($meta.field.enum ?? [])]
-  );
-  const loading = useObserver(() => antdProps.loading ?? $meta.field.loading);
+  let options: any[] | undefined = antdProps.options ?? [
+    ...($meta.field.enum ?? [])
+  ];
+  options = options.length ? options : undefined;
+  const loading = antdProps.loading ?? $meta.field.loading;
   if (!$meta.field.editable && Array.isArray(options)) {
     const target = options.find((el) => {
       if (typeof el === 'string') {
@@ -36,12 +38,24 @@ export const Select: React.FC<RenderComponentProps<
       }
     }
   }
+
+  const onSearch = (val: any) => {
+    runInAction('onSearch', () => {
+      $meta.field.hotExtend.search = val;
+    });
+
+    if (typeof antdProps.onSearch === 'function') {
+      antdProps.onSearch.call(null, val);
+    }
+  };
+
   return useFieldEditable(
     $meta,
     <AntdSelect
       {...antdProps}
       options={options}
       loading={loading}
+      onSearch={onSearch}
       {...mapper($meta, antdProps)}
       mode={undefined}
     />,
@@ -52,4 +66,4 @@ export const Select: React.FC<RenderComponentProps<
         renderConfig.emptyContent}
     </Typography.Text>
   );
-};
+});

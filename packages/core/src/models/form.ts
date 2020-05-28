@@ -4,7 +4,7 @@ import { autorun, IReactionDisposer, runInAction, transaction } from 'mobx';
 import { setIn } from '../utils';
 import { getResolvers, SubscribeSetup } from '../sideEffect';
 import type { FormFeature } from '../features';
-import { Field, FieldRegisterConfig } from './field';
+import { Field, FieldRegisterConfig, FieldDesignInterface } from './field';
 import type { CreateValidationFeatureOptions } from '../features/validation';
 import { createAjv, createValidationFeature } from '../features/validation';
 import ajvErrors from 'ajv-errors';
@@ -22,7 +22,7 @@ export const Form = types
     FormLifecycleHooks,
     types.model({
       _fallbackInitialValues: types.frozen(),
-      fields: types.map(types.late(() => Field)),
+      fields: types.map(types.late((): FieldDesignInterface => Field)),
       validating: types.boolean,
       everValitated: types.boolean,
       _editable: types.boolean
@@ -251,7 +251,10 @@ export const Form = types
     }
   }));
 
-export type FormInstance = Instance<typeof Form>;
+type FormDesignType = typeof Form;
+export interface FormDesignInterface extends FormDesignType {}
+
+export interface FormInstance extends Instance<FormDesignInterface> {}
 
 export interface FormValidateCallOptions {
   abortEarly?: boolean;
