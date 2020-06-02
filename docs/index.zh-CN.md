@@ -1,8 +1,8 @@
 ---
-title: Formular - A Mobx-based form resolution 🐺
+title: Formular - 基于 Mobx 的通用表单解决方案 🐺
 hero:
   title: Formular
-  desc: A Mobx-based form resolution 🐺
+  desc: 基于 Mobx 的通用表单解决方案 🐺
   actions:
     - text: 快速上手
       link: /guide/getting-started

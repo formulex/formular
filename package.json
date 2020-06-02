@@ -31,6 +31,7 @@
     "@babel/plugin-transform-runtime": "^7.9.6",
     "@babel/preset-env": "^7.9.6",
     "@babel/preset-typescript": "^7.9.0",
+    "@rushstack/eslint-config": "^0.5.8",
     "@types/jest": "^25.2.3",
     "@types/lodash.debounce": "^4.0.6",
     "@types/lodash.memoize": "^4.1.6",
@@ -44,11 +45,11 @@
     "babel-preset-power-assert": "^3.0.0",
     "core-js": "^3.6.5",
     "cross-env": "^7.0.2",
-    "eslint": "^7.0.0",
+    "dumi": "^1.0.26",
+    "eslint": "^6.8.0",
     "eslint-plugin-react": "^7.20.0",
     "jest": "^26.0.1",
     "lerna": "^3.21.0",
-    "mini-store": "3.0.3",
     "mobx": "^5.15.4",
     "mobx-devtools-mst": "^0.9.22",
     "mobx-state-tree": "^3.16.0",
@@ -59,6 +60,9 @@
     "react-dom": "^16.13.1",
     "rimraf": "^3.0.2",
     "typescript": "^3.9.3"
+  },
+  "resolutions": {
+    "eslint": "^6.8.0"
   },
   "license": "MIT"
 }

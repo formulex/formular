@@ -1,3 +1,6 @@
+// See https://github.com/umijs/dumi/issues/117
+require('@rushstack/eslint-config/patch-eslint6');
+
 module.exports = {
   env: {
     browser: true,

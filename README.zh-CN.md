@@ -1,4 +1,4 @@
-English | [中文](./README.zh-CN.md)
+[English](./README.md) | 中文
 
 <p align="center">
   <img width="140px" alt="logo" src="./assets/formular_logo.svg" />
