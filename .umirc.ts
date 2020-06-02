@@ -1,13 +1,15 @@
 import { defineConfig } from 'dumi';
 
+const PUBLIC_PATH = '/formular/';
+
 export default defineConfig({
   mode: 'site',
   hash: true,
   title: 'Formular',
-  logo: '/images/formular_logo.svg',
+  logo: PUBLIC_PATH + 'images/formular_logo.svg',
   links: [
     {
-      href: '/fonts/fira-code/fira_code.css',
+      href: PUBLIC_PATH + 'fonts/fira-code/fira_code.css',
       rel: 'stylesheet',
       type: 'text/css'
     }
@@ -18,7 +20,7 @@ export default defineConfig({
   font-size: 14px;
 }`
   ],
-  publicPath: '/formular/',
+  publicPath: PUBLIC_PATH,
   exportStatic: {},
   ssr: {},
   dynamicImport: {},
