@@ -1,0 +1,1 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([[9],{"7EGE":function(a,e,n){"use strict";n.r(e);var t=n("q1tI"),p=n.n(t),r=n("2/Rp"),w=()=>p.a.createElement(r["a"],{type:"primary"},"\u6211\u662f antd \u7684\u6309\u94ae");e["default"]=w}}]);
