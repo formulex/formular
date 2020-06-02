@@ -21,8 +21,8 @@
     "test:core": "jest packages/core",
     "site": "dumi dev",
     "site:build": "dumi build",
-    "prepublish": "yarn run lint && yarn run test && yarn run build",
-    "publish": "lerna publish"
+    "prenpm": "yarn run lint && yarn run test && yarn run build",
+    "npm": "lerna publish"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
