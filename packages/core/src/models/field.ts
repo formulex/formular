@@ -137,7 +137,7 @@ export const Field = types
         return self._frozenExtend;
       },
       set frozenExtend(val: any) {
-        self._frozenExtend = val;
+        self.setFrozenExtend(val);
       },
       get initialValue(): any {
         return (

@@ -20,6 +20,7 @@ export const Validation = types
     effectMessages: types.map(types.string),
     pending: types.boolean,
     valid: types.maybe(types.boolean),
+    effectValid: types.maybe(types.boolean),
     schemaKey: types.maybe(types.string),
     warningKeys: types.maybe(
       types.union(types.literal('all'), types.array(types.string))
@@ -99,7 +100,7 @@ export const Validation = types
       if (self.pending || self.valid === undefined) {
         return 'PENDING';
       }
-      if (self.valid === false) {
+      if (self.valid === false || self.effectValid === false) {
         return 'INVALID';
       } else {
         if (self.messages.length) {
@@ -175,9 +176,9 @@ export const Validation = types
         self.effectMessages.set(key, errorMessage);
       });
       if (flag === 'errors') {
-        self.valid = self.messages.length === 0;
+        self.effectValid = false;
       } else if (flag === 'warning') {
-        self.valid = true;
+        self.effectValid = true;
       }
     },
     removeEffectMessages(keys?: string[]) {
@@ -187,7 +188,7 @@ export const Validation = types
         });
       } else {
         self.effectMessages.clear();
-        self.valid = self.messages.length === 0;
+        self.effectValid = undefined;
       }
     }
   }))
@@ -292,6 +293,10 @@ export const Validation = types
       if (!field || field.ignored) {
         return;
       }
+
+      // clear custom results
+      self.effectValid = undefined;
+      self.effectMessages.clear();
 
       // Sync
       if (typeof validator === 'function' && sync) {

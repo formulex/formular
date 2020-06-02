@@ -1,7 +1,7 @@
 import { getType, Instance, types, flow, detach } from 'mobx-state-tree';
 import { createField, FieldInstance } from '.';
 import { autorun, IReactionDisposer, runInAction, transaction } from 'mobx';
-import { setIn } from '../utils';
+import { setIn, getIn } from '../utils';
 import { getResolvers, SubscribeSetup } from '../sideEffect';
 import type { FormFeature } from '../features';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from './field';
@@ -121,7 +121,7 @@ export const Form = types
       const values = typeof data === 'function' ? data(self.values) : data;
       self.setFallbackInitialValues(values);
       self.fields.forEach((field) => {
-        field.setFallbackInitialValue(undefined);
+        field.setFallbackInitialValue(getIn(values, field.name));
         if (filter(field)) {
           setTimeout(() => {
             transaction(() => {
