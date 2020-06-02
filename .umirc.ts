@@ -20,6 +20,7 @@ export default defineConfig({
   font-size: 14px;
 }`
   ],
+  base: PUBLIC_PATH,
   publicPath: PUBLIC_PATH,
   exportStatic: {},
   ssr: {},
