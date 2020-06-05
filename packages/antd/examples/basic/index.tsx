@@ -164,17 +164,6 @@ const App: React.FC = () => {
           yield reaction(
             () => value('greeting'),
             async (greetingValue) => {
-              field('personenum')!.runInAction('addEnum', function () {
-                const value = Math.random();
-                this.enum ?? (this.enum = []);
-                this.enum?.push({
-                  value,
-                  label: value
-                });
-                // this.validation.syncMessages.push('daddyddd');
-                this.loading = true;
-                console.log('status', this.validation.status);
-              });
               await new Promise((r) => setTimeout(r, 1000));
               field('greetingAsync')!.value = greetingValue;
             }
