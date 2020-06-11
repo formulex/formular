@@ -19,7 +19,8 @@ export function useField(
     type,
     rule,
     asyncRule,
-    editable
+    editable,
+    enum: enums
   }: FieldRegisterConfig & FieldValidationConfig & FieldFeatures
 ): [FieldInstance | undefined, FormInstance] {
   const form = useFieldContext();
@@ -62,7 +63,13 @@ export function useField(
     [form, name]
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (isFieldInstance(fieldRef.current) && type !== fieldRef.current.type) {
+      fieldRef.current?.setType(type);
+    }
+  }, [type]);
+
+  useLayoutEffect(() => {
     if (
       isFieldInstance(fieldRef.current) &&
       initialValue !== fieldRef.current.initialValue
@@ -96,16 +103,16 @@ export function useField(
   }, [asyncRule]);
 
   useEffect(() => {
-    if (isFieldInstance(fieldRef.current) && type !== fieldRef.current.type) {
-      fieldRef.current?.setType(type);
-    }
-  }, [type]);
-
-  useEffect(() => {
     if (isFieldInstance(fieldRef.current) && typeof editable === 'boolean') {
       fieldRef.current?.setEditable(editable);
     }
   }, [editable]);
+
+  useEffect(() => {
+    if (isFieldInstance(fieldRef.current) && Array.isArray(enums)) {
+      fieldRef.current?.setEnum(enums);
+    }
+  }, [enums]);
 
   return [fieldRef.current, form];
 }

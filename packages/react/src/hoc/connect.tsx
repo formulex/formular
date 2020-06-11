@@ -15,11 +15,15 @@ export interface TransformOptions<P> {
     componentProps: P,
     meta: FieldRenderableProps
   ) => P;
-  renderTextContent?: (
+  renderTextContent?: TextContentRenderer<P> | true;
+}
+
+export interface TextContentRenderer<P> {
+  (
     meta: FieldRenderableProps,
     renderConfig: RenderConfig,
     componentProps: P
-  ) => React.ReactNode;
+  ): React.ReactNode;
 }
 
 export function remainOwnEventHandler(
@@ -32,18 +36,22 @@ export function remainOwnEventHandler(
   };
 }
 
+export type ConnectedComponentProps<P> = P & {
+  $meta: FieldRenderableProps;
+  ref?: React.Ref<any>;
+};
+
 export function connect<P extends { [key: string]: any }>({
   trigger = 'onChange',
   valuePropName = 'value',
   getValueFromEvent = (e) => e.target.value,
   getValueProps = (value) => value,
   getDerivedPropsFromFieldMeta = (props) => props,
-  renderTextContent = (
-    { field },
-    { PreviewComponent = 'span', emptyContent }
-  ) => <PreviewComponent>{field.value ?? emptyContent}</PreviewComponent>
+  renderTextContent
 }: TransformOptions<P> = {}) {
-  return function decorate(Component: React.ComponentType<P>) {
+  return function decorate(
+    Component: React.ComponentType<P>
+  ): React.ComponentType<ConnectedComponentProps<P>> {
     const DecoratedInnerComponent: React.FC<
       P & { forwardedRef: RefType<any> } & { $meta: FieldRenderableProps }
     > = ({ forwardedRef, $meta, ...rest }) => {
@@ -52,8 +60,21 @@ export function connect<P extends { [key: string]: any }>({
       const ownComponentProps = rest as P;
 
       // When show detail
-      if (!field.editable) {
-        return <>{renderTextContent($meta, renderConfig, ownComponentProps)}</>;
+      if (
+        typeof renderTextContent === 'function' ||
+        renderTextContent === true
+      ) {
+        if (!field.editable) {
+          const fn =
+            typeof renderTextContent === 'function'
+              ? renderTextContent
+              : ((({ field }, { PreviewComponent = 'span', emptyContent }) => (
+                  <PreviewComponent>
+                    {field.value ?? emptyContent}
+                  </PreviewComponent>
+                )) as TextContentRenderer<P>);
+          return <>{fn($meta, renderConfig, ownComponentProps)}</>;
+        }
       }
 
       const injectProps = {
@@ -84,9 +105,12 @@ export function connect<P extends { [key: string]: any }>({
         $meta
       );
       return (
-        <Component ref={forwardedRef} {...derivedProps} {...injectProps} />
+        <Component {...derivedProps} {...injectProps} ref={forwardedRef} />
       );
     };
+
+    const name = Component.displayName || Component.name;
+    DecoratedInnerComponent.displayName = `Connect(${name})`;
 
     const DecoratedComponent = observer(DecoratedInnerComponent);
 
@@ -95,9 +119,8 @@ export function connect<P extends { [key: string]: any }>({
       ref
     ) => <DecoratedComponent {...props} forwardedRef={ref} />;
 
-    const name = Component.displayName || Component.name;
-    forwardRef.displayName = `connect(${name})`;
+    forwardRef.displayName = `forwardRefConnect(${name})`;
 
-    return React.forwardRef(forwardRef);
+    return React.forwardRef<any, any>(forwardRef) as any;
   };
 }

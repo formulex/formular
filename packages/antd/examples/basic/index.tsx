@@ -222,32 +222,17 @@ const App: React.FC = () => {
         <Field
           label="人选"
           name="person"
-          component="Select"
-          initialValue="will"
+          component="CSelect"
+          initialValue="lucy"
+          enum={[
+            { value: 'lucy', label: '露西' },
+            { value: 'will', label: '威尔' },
+            { value: 'you-know-who', label: '神秘人', disabled: true }
+          ]}
           componentProps={{
-            options: [
-              { value: 'lucy', label: '露西' },
-              { value: 'will', label: '威尔' },
-              { value: 'you-know-who', label: '神秘人', disabled: true }
-            ]
-          }}
-        />
-        <Field label="人选enum" name="personenum" component="Select" />
-        <Field
-          label="人选children"
-          name="personchildren"
-          component="Select"
-          componentProps={{
-            children: (
-              <>
-                <Option value="jack">Jack</Option>
-                <Option value="lucy">Lucy</Option>
-                <Option value="disabled" disabled>
-                  Disabled
-                </Option>
-                <Option value="Yiminghe">yiminghe</Option>
-              </>
-            )
+            showSearch: true,
+            filterOption: (input: string, option: any) =>
+              option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }}
         />
         <Field

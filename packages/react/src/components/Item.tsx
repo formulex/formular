@@ -26,6 +26,7 @@ export interface FieldRenderableProps {
 
 export interface FieldFeatures {
   editable?: boolean;
+  enum?: any[];
 }
 
 export interface ItemProps
@@ -46,14 +47,16 @@ export const Item: React.FC<ItemProps> = ({
   initialValue,
   rule,
   asyncRule,
-  editable
+  editable,
+  enum: enums
 }) => {
   const [field, form] = useField(name, {
     type,
     initialValue,
     rule,
     asyncRule,
-    editable
+    editable,
+    enum: enums
   });
   return (
     <Observer>
