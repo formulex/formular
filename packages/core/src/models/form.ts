@@ -97,7 +97,7 @@ export const Form = types
       const field = self.fields.get(name)!;
       setTimeout(() => {
         runInAction('innerSetValue', () => {
-          if (field.initialValue) {
+          if (field.initialValue !== undefined) {
             field.setValueSilently(field.initialValue);
           }
         });

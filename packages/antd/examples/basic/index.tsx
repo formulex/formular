@@ -6,7 +6,7 @@ import './index.css';
 import { Form, Field } from '../../src';
 import { reaction, autorun } from 'mobx';
 import { Observer } from 'mobx-react';
-import { Card, Select } from 'antd';
+import { Card } from 'antd';
 import * as components from '../../src/components';
 import { PlusOutlined } from '@ant-design/icons';
 import { ColumnType } from 'antd/lib/table';
@@ -75,7 +75,6 @@ Registry.registerGlobalFields({
     );
   }
 });
-const { Option } = Select;
 
 const uploadButton = (
   <div>
@@ -222,7 +221,7 @@ const App: React.FC = () => {
         <Field
           label="人选"
           name="person"
-          component="CSelect"
+          component="Select"
           initialValue="lucy"
           enum={[
             { value: 'lucy', label: '露西' },
