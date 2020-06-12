@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <link
+      href="/formular/fonts/fira-code/fira_code.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <style>
+      code[class*="language-"][class*="language-"],
+      pre[class*="language-"][class*="language-"] {
+        font-family: "Fira Code", Consolas, Monaco, "Andale Mono", "Ubuntu Mono",
+          monospace;
+        font-size: 14px;
+      }
+    </style>
+    <link rel="stylesheet" href="/formular/umi.a5ddef09.css" />
+    <script>
+      window.routerBase = "/formular/";
+    </script>
+    <script>
+      //! umi version: 3.2.3
+    </script>
+    <title>&#x81EA;&#x5B9A;&#x4E49;&#x6269;&#x5C55;&#x7EC4;&#x4EF6;</title>
+  
+<script>
+      window.g_useSSR = true;
+      window.g_initialProps = {};
+
+    </script>
+    </head>
+  <body>
+    <div id="root"><div class="__dumi-default-layout" data-show-sidemenu="true" data-show-slugs="false" data-site-mode="true" data-gapless="false"><div class="__dumi-default-navbar" data-mode="site"><button class="__dumi-default-navbar-toggle"></button><a class="__dumi-default-navbar-logo" style="background-image:url(&#x27;/formular/images/formular_logo.svg&#x27;)" href="/formular//zh-CN">Formular</a><nav><div class="__dumi-default-search"><input type="search" class="__dumi-default-search-input" value=""/><ul></ul></div><a aria-current="page" class="active" href="/formular//zh-CN/guide">教程</a><a href="/formular//zh-CN/api">API</a><a target="_blank" rel="noopener noreferrer" href="https://github.com/formularx/formular">GitHub 仓库<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="__dumi-default-external-link-icon"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path><polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a><div class="__dumi-default-locale-select" data-locale-count="2"><span>English</span></div></nav></div><div class="__dumi-default-menu" data-mode="site"><div class="__dumi-default-menu-inner"><div class="__dumi-default-menu-header"><a class="__dumi-default-menu-logo" style="background-image:url(&#x27;/formular/images/formular_logo.svg&#x27;)" href="/formular//zh-CN"></a><h1>Formular</h1><p></p></div><div class="__dumi-default-menu-mobile-area"><ul class="__dumi-default-menu-nav-list"><li><a aria-current="page" class="active" href="/formular//zh-CN/guide">教程</a></li><li><a href="/formular//zh-CN/api">API</a></li><li><a target="_blank" rel="noopener noreferrer" href="https://github.com/formularx/formular">GitHub 仓库<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="__dumi-default-external-link-icon"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path><polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></li></ul><div class="__dumi-default-locale-select" data-locale-count="2"><span>English</span></div></div><ul class="__dumi-default-menu-list"><li><a aria-current="page" class="active" href="/formular//zh-CN/guide/extend-component">自定义扩展组件</a><ul role="slug-list"><li title="扩展表单容器" data-depth="2" class=""><a href="/formular//zh-CN/guide/extend-component#扩展表单容器"><span>扩展表单容器</span></a></li></ul></li><li><a href="/formular//zh-CN/guide/getting-started">🚀 快速上手</a></li><li><a href="/formular//zh-CN/guide/help">help</a></li></ul></div></div><div class="__dumi-default-layout-content"><div class="markdown"><h1 id="自定义扩展组件"><a aria-hidden="true" href="#自定义扩展组件"><span class="icon icon-link"></span></a>自定义扩展组件</h1><p>Formular 具有竞争力的特性之一就是可以灵活地定制或接入第三方各种表单控件，包括下面三种组件：</p><ol><li>表单容器。类比 <code>&lt;form&gt;</code></li><li>表单项控件。用于提供标签 label、校验、布局等，类比一些典型 UI 库的 form control 概念</li><li>表单部件。用于收集数据的最直接的组件，例如 <code>&lt;input&gt;</code>、<code>&lt;select&gt;</code>、<code>&lt;textarea&gt;</code></li></ol><p>对于上面三种组件，Formular 使用<a href="https://reactjs.org/docs/higher-order-components.html" target="_blank" rel="noopener noreferrer">高阶组件<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="__dumi-default-external-link-icon"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path><polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>的设计模式轻松地对其进行自定义扩展</p><h2 id="扩展表单容器"><a aria-hidden="true" href="#扩展表单容器"><span class="icon icon-link"></span></a>扩展表单容器</h2><p>这里有一个 Formular 自定义扩展组件的示例：</p></div><div class="__dumi-default-previewer "><div class="__dumi-default-previewer-demo"><form class="ant-form ant-form-horizontal"><pre>{}</pre></form></div><div class="__dumi-default-previewer-desc"></div><div class="__dumi-default-previewer-actions"><form style="display:flex" method="POST" action="https://codesandbox.io/api/v1/sandboxes/define?query=module=/demo.tsx" target="_blank"><button class="__dumi-default-icon" role="codesandbox" type="submit"></button><input type="hidden" value="" name="parameters"/></form><a target="_blank" rel="noopener noreferrer" href="/_demos/basic"><button class="__dumi-default-icon" role="open-demo" type="button"></button></a><span></span><button title="" type="button" class="__dumi-default-icon __dumi-default-btn-copy " data-status="copy"></button><button class="__dumi-default-icon" role="source" type="button"></button></div></div><div class="__dumi-default-layout-footer-meta"><a target="_blank" rel="noopener noreferrer" href="https://github.com/formularx/formular/edit/master/docs/guide/extend-component.zh-CN.md">在 GitHub 上编辑这篇文档<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="__dumi-default-external-link-icon"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path><polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a><span data-updated-text="最后更新时间：">6/12/2020, 3:55:02 AM</span></div></div></div></div>
+
+    <script src="/formular/umi.1f86d09f.js"></script>
+    <script src="/formular/vendors~docs__guide__demo__basic~docs__guide__extend-component.zh-CN.md~docs__index.md~docs__index.z~8fb956d0.296dbd24.async.js"></script>
+    <script src="/formular/vendors~docs__guide__demo__basic~docs__guide__extend-component.zh-CN.md.2ab534b1.async.js"></script>
+    <script src="/formular/docs__guide__extend-component.zh-CN.md.373bb8cf.async.js"></script>
+  </body>
+</html>
