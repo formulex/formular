@@ -56,7 +56,7 @@ export const TableArray: React.FC<RenderComponentProps<
                   ...child.props,
                   name: fieldName,
                   label: undefined,
-                  editable: $meta.field.editable
+                  plain: $meta.field.plain
                 })
               }
             </Observer>

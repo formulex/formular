@@ -1,5 +1,5 @@
 import { render } from 'react-dom';
-import { Form, Item, useForm, useSetup } from '../../src';
+import { Form, Item, useForm } from '../../src';
 import React, { useEffect, useState } from 'react';
 import { Observer } from 'mobx-react';
 import { autorun } from 'mobx';

@@ -13,7 +13,14 @@ type InnerItemPropsType = Omit<InnerItemProps, 'render'>;
 
 type ExplicitInnerItemProps = Pick<
   InnerItemPropsType,
-  'initialValue' | 'rule' | 'asyncRule' | 'editable' | 'type' | 'enum'
+  | 'initialValue'
+  | 'rule'
+  | 'asyncRule'
+  | 'plain'
+  | 'type'
+  | 'enum'
+  | 'triggers'
+  | 'debounce'
 >;
 
 export type RenderComponentProps<P> = P & {
@@ -71,11 +78,13 @@ export class Field<P> extends React.Component<FieldProps<P>> {
       initialValue,
       rule,
       asyncRule,
-      editable,
+      plain,
       addonAfter,
       style,
       children,
       type,
+      triggers,
+      debounce,
       enum: enums,
       ...restProps
     } = this.props;
@@ -91,9 +100,11 @@ export class Field<P> extends React.Component<FieldProps<P>> {
                   initialValue,
                   rule,
                   asyncRule,
-                  editable,
+                  plain,
                   type,
-                  enum: enums
+                  enum: enums,
+                  triggers,
+                  debounce
                 }}
               >
                 {(meta) => {

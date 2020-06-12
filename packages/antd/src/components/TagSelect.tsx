@@ -16,7 +16,7 @@ export const TagSelect: React.FC<RenderComponentProps<
   const selectTexts: (string | number | boolean)[] = $meta.field.value || [];
   let result: undefined | string = undefined;
   if (
-    !$meta.field.editable &&
+    $meta.field.plain &&
     Array.isArray(antdProps.options) &&
     antdProps.options.length >= 1
   ) {

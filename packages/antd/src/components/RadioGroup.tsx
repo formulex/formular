@@ -15,7 +15,7 @@ export const RadioGroup: React.FC<RenderComponentProps<RadioGroupProps>> = ({
 }) => {
   const renderConfig = useRenderConfig();
   let selectText: string = $meta.field.value;
-  if (!$meta.field.editable && Array.isArray(antdProps.options)) {
+  if ($meta.field.plain && Array.isArray(antdProps.options)) {
     const target = antdProps.options.find((el) => {
       if (typeof el === 'string') {
         return el === selectText;
