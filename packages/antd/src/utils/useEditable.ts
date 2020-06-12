@@ -7,7 +7,7 @@ export function useFieldEditable(
   outputElement: any
 ) {
   return useObserver(() => {
-    if (field.editable === false) {
+    if (field.plain === true) {
       return outputElement;
     } else {
       return entryElement;

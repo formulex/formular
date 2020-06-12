@@ -1,5 +1,5 @@
 import { render } from 'react-dom';
-import { Form, Item, useForm } from '../../src';
+import { Form, Item, useForm, useSetup } from '../../src';
 import React, { useEffect, useState } from 'react';
 import { Observer } from 'mobx-react';
 import { autorun } from 'mobx';
@@ -10,13 +10,13 @@ import {
   Form as AntdForm,
   Input,
   Rate,
-  Radio,
-  InputNumber
+  InputNumber,
+  Select
 } from 'antd';
 import 'antd/dist/antd.css';
 import { DisplayRender } from './DisplayRender';
 import type { RateProps } from 'antd/lib/rate';
-import { configure } from '@formular/core';
+import { configure, TriggerEnumType } from '@formular/core';
 import { addMiddleware } from 'mobx-state-tree';
 
 configure({
@@ -97,23 +97,44 @@ const DynamicItems: React.FC<{ show: boolean }> = ({ show }) => {
 const MyApp: React.FC = () => {
   const [form] = useForm();
   const [show, setShow] = React.useState(false);
-  const [trigger, setTrigger] = useState<'change' | 'blur' | 'none'>('change');
+  const [triggers, setTriggers] = useState<TriggerEnumType[]>([]);
   const [debounceTime, setDebounceTime] = useState(16);
 
   useEffect(() => {
     (window as any).form = form;
   }, [form]);
+
+  // useSetup(form, function* () {
+  //   yield addMiddleware(form, (call, next) => {
+  //     console.log(
+  //       call.name,
+  //       call.context?.field?.name ?? call.context?.name,
+  //       call.args
+
+  //       // JSON.stringify(call.args, null, 2),
+  //       // JSON.stringify(call.context, null, 2)
+  //     );
+  //     next(call);
+  //   });
+  // });
   return (
     <div style={{ padding: '1rem' }}>
       <h1>MyApp</h1>
       <Button onClick={() => setShow((_) => !_)}>
         {show ? '点击隐藏' : '点击显示'}
       </Button>
-      <Radio.Group value={trigger} onChange={(e) => setTrigger(e.target.value)}>
-        <Radio.Button value="change">Change</Radio.Button>
-        <Radio.Button value="blur">Blur</Radio.Button>
-        <Radio.Button value="none">None</Radio.Button>
-      </Radio.Group>
+      <Select
+        style={{ width: '240px' }}
+        value={triggers}
+        onChange={(val) => {
+          setTriggers(val);
+        }}
+        mode="multiple"
+        options={[
+          { value: 'change', label: 'change' },
+          { value: 'blur', label: 'blur' }
+        ]}
+      />
       <InputNumber
         value={debounceTime}
         onChange={(e) => setDebounceTime(e || (0 as any))}
@@ -132,22 +153,30 @@ const MyApp: React.FC = () => {
               return <form {...rest} onSubmit={__onInnerSubmit} />;
             }
           }}
-          trigger={trigger}
+          triggers={triggers}
           debounce={debounceTime}
           form={form}
           initialValues={{ stars: 4 }}
           subscribe={function* ({ field, value }) {
             yield addMiddleware(form, (call, next) => {
-              console.log(call);
+              console.log(
+                call.name,
+                call.context?.field?.name ?? call.context?.name,
+                call.args
+
+                // JSON.stringify(call.args, null, 2),
+                // JSON.stringify(call.context, null, 2)
+              );
               next(call);
             });
-            // yield autorun(() => {
-            //   const reason = field('reason')!;
-            //   reason.show = value('stars') !== 5;
-            //   if (!reason.show) {
-            //     reason.value = '';
-            //   }
-            // });
+
+            yield autorun(() => {
+              if (value('stars') !== 5) {
+                field('reason')?.setShow(true);
+              } else {
+                field('reason')?.setValue('');
+              }
+            });
             // field('stars')!.setIgnored(true);
           }}
         >
@@ -167,7 +196,7 @@ const MyApp: React.FC = () => {
             }}
             asyncRule={{
               asyncValidator: async (val: number) => {
-                await new Promise((r) => setTimeout(r, 3000));
+                await new Promise((r) => setTimeout(r, 2000));
                 return val !== 1;
               },
               errorMessage: '不能为1星'
@@ -177,14 +206,15 @@ const MyApp: React.FC = () => {
               <AntdForm.Item
                 label="评分"
                 validateStatus={
-                  ((field.touched || form.everValitated) &&
+                  ((field.visited || form.everValitated) &&
                     validateMapper[field.validation.status]) ||
                   undefined
                 }
                 help={
-                  (field.touched || form.everValitated) &&
+                  (field.visited || form.everValitated) &&
                   field.validation.messages.join(', ')
                 }
+                extra={field.validation.status}
               >
                 <DisplayRender />
                 <AntdRate
@@ -209,14 +239,15 @@ const MyApp: React.FC = () => {
                 style={field.show ? undefined : { display: 'none' }}
                 label="不给5星的理由"
                 validateStatus={
-                  ((field.touched || form.everValitated) &&
+                  ((field.visited || form.everValitated) &&
                     validateMapper[field.validation.status]) ||
                   undefined
                 }
                 help={
-                  (field.touched || form.everValitated) &&
+                  (field.visited || form.everValitated) &&
                   field.validation.messages.join(', ')
                 }
+                extra={field.validation.status}
               >
                 <DisplayRender />
                 <Input
@@ -252,7 +283,7 @@ const MyApp: React.FC = () => {
               <div style={{ position: 'relative' }}>
                 <pre>
                   <DisplayRender />
-                  {JSON.stringify(form, null, 2)}
+                  {JSON.stringify(form.values, null, 2)}
                 </pre>
               </div>
             )}

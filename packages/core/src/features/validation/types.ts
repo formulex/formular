@@ -10,7 +10,11 @@ export interface AsyncRule extends Omit<Rule, 'validator'> {
   asyncValidator?: (value: any) => Promise<boolean>;
 }
 
+export type TriggerEnumType = 'change' | 'blur';
+
 export interface FieldValidationConfig {
   rule?: Rule;
   asyncRule?: AsyncRule;
+  triggers?: TriggerEnumType[];
+  debounce?: number;
 }

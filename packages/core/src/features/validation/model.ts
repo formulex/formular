@@ -4,8 +4,7 @@ import {
   getParentOfType,
   Instance,
   types,
-  isAlive,
-  cast
+  isAlive
 } from 'mobx-state-tree';
 import type { AsyncRule, Rule } from './types';
 import { FormEnvironment } from '../../models/form';
@@ -13,28 +12,28 @@ import { Field } from '../../models/field';
 import { ValidationError, ErrorObject } from 'ajv';
 import { globalConfig } from '../../globalConfigure';
 import ajvErrors from 'ajv-errors';
+import { FeatureTriggers } from './inner-features';
 
 export const Validation = types
-  .model('Validation', {
-    asyncMessages: types.array(types.string),
-    syncMessages: types.array(types.string),
-    effectMessages: types.map(types.string),
-    pending: types.boolean,
-    valid: types.maybe(types.boolean),
-    effectValid: types.maybe(types.boolean),
-    schemaKey: types.maybe(types.string),
-    warningKeys: types.maybe(
-      types.union(types.literal('all'), types.array(types.string))
-    ),
-    asyncSchemaKey: types.maybe(types.string),
-    asyncWarningKeys: types.maybe(
-      types.union(types.literal('all'), types.array(types.string))
-    ),
-    _triggers: types.maybe(
-      types.array(types.union(types.literal('change'), types.literal('blur')))
-    ),
-    _debounce: types.maybe(types.number)
-  })
+  .compose(
+    FeatureTriggers,
+    types.model('Validation', {
+      asyncMessages: types.array(types.string),
+      syncMessages: types.array(types.string),
+      effectMessages: types.map(types.string),
+      pending: types.boolean,
+      valid: types.maybe(types.boolean),
+      effectValid: types.maybe(types.boolean),
+      schemaKey: types.maybe(types.string),
+      warningKeys: types.maybe(
+        types.union(types.literal('all'), types.array(types.string))
+      ),
+      asyncSchemaKey: types.maybe(types.string),
+      asyncWarningKeys: types.maybe(
+        types.union(types.literal('all'), types.array(types.string))
+      )
+    })
+  )
   .views((self) => {
     function getWarningKeysPasser(warningKeys: 'all' | string[]) {
       return (errors: ErrorObject[] | null | undefined) => {
@@ -164,6 +163,15 @@ export const Validation = types
     }
   }))
   .actions((self) => ({
+    resetValidationFlags() {
+      self.effectValid = undefined;
+      self.effectMessages.clear();
+      self.syncMessages.clear();
+      self.asyncMessages.clear();
+      self.valid = undefined;
+    }
+  }))
+  .actions((self) => ({
     clearSchema() {
       self.schemaKey = undefined;
       self.warningKeys = undefined;
@@ -195,26 +203,6 @@ export const Validation = types
         self.effectMessages.clear();
         self.effectValid = undefined;
       }
-    },
-    setTriggers(triggers: Array<'change' | 'blur'> | undefined) {
-      self._triggers = cast(triggers);
-    },
-    setDebounce(debounce: number | undefined) {
-      self._debounce = debounce;
-    }
-  }))
-  .views((self) => ({
-    get triggers() {
-      return self._triggers;
-    },
-    set triggers(triggers: Array<'change' | 'blur'> | undefined) {
-      self.setTriggers(triggers);
-    },
-    get debounce() {
-      return self._debounce;
-    },
-    set debounce(time: number | undefined) {
-      self.setDebounce(time);
     }
   }))
   .actions((self) => ({
@@ -296,12 +284,15 @@ export const Validation = types
         : warningKeys;
       return () => {
         ajv.removeSchema(customSchemaKey);
-        self.clearAsyncSchema();
+        if (isAlive(self)) {
+          self.clearAsyncSchema();
+        }
         if (customKeyword) {
           ajv.removeKeyword(customKeyword);
         }
       };
     },
+
     validate: flow(function* validate({
       sync = true,
       async = true,
@@ -319,9 +310,7 @@ export const Validation = types
         return;
       }
 
-      // clear custom results
-      self.effectValid = undefined;
-      self.effectMessages.clear();
+      self.resetValidationFlags();
 
       // Sync
       if (typeof validator === 'function' && sync) {
@@ -337,7 +326,6 @@ export const Validation = types
         }
         self.valid = isValid;
         self.syncMessages.replace(messages);
-        self.asyncMessages.clear();
         if (!isValid) {
           return;
         }

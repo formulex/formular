@@ -17,7 +17,7 @@ export const XSelect = connect<SelectProps<string | number>>({
   getDerivedPropsFromFieldMeta(componentProps, { field }) {
     const computedProps = {
       onSearch: remainOwnEventHandler(componentProps.onSearch, (val: any) => {
-        field.hotExtend.search = val;
+        field.hotState.search = val;
       })
     };
     if (!componentProps.showSearch) {

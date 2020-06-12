@@ -1,8 +1,8 @@
 import type { FormInstance, SubscribeSetup } from '@formular/core';
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 export function useSetup(form: FormInstance, setup?: SubscribeSetup) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     let unsubscribe: () => void | undefined;
     if (typeof setup === 'function') {
       unsubscribe = form.subscribe(setup);

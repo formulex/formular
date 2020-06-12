@@ -20,7 +20,9 @@ export function useField(
     rule,
     asyncRule,
     plain,
-    enum: enums
+    enum: enums,
+    triggers,
+    debounce
   }: FieldRegisterConfig & FieldValidationConfig & FieldFeatures
 ): [FieldInstance | undefined, FormInstance] {
   const form = useFieldContext();
@@ -102,7 +104,7 @@ export function useField(
     return unapply;
   }, [asyncRule]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isFieldInstance(fieldRef.current) && typeof plain === 'boolean') {
       fieldRef.current?.setPlain(plain);
     }
@@ -113,6 +115,13 @@ export function useField(
       fieldRef.current?.setEnum(enums);
     }
   }, [enums]);
+
+  useLayoutEffect(() => {
+    if (isFieldInstance(fieldRef.current)) {
+      fieldRef.current?.validation.setTriggers(triggers);
+      fieldRef.current?.validation.setDebounce(debounce);
+    }
+  }, [triggers, debounce]);
 
   return [fieldRef.current, form];
 }

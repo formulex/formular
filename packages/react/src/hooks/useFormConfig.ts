@@ -29,6 +29,7 @@ export function useFormConfig<V>(
   }, [form, plain]);
 
   useEffect(() => {
+    console.log('triggers change to', triggers, debounce);
     return form.use(createValidationFeature({ triggers, debounce }));
   }, [form, triggers, debounce]);
 }

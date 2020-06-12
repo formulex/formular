@@ -71,16 +71,16 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
       triggers,
       debounce,
       plain
-      // onFinish,
-      // onFinishFailed
     });
     useImperativeHandle(ref, () => formInstance);
-    useSetup(formInstance, subscribe);
+
     useDecorators(formInstance, decorators);
     const [registry] = useRegistry({
       fields,
       formComponent
     });
+
+    useSetup(formInstance, subscribe);
 
     const onSubmit: ((
       event: React.FormEvent<HTMLFormElement>
@@ -90,7 +90,7 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
       if (formInstance.validating) {
         return;
       }
-      const errors = await formInstance.validate({ abortEarly });
+      const errors = await formInstance.validateFields({ abortEarly });
       if (Array.isArray(errors)) {
         onFinishFailed?.(errors);
       } else {

@@ -48,7 +48,9 @@ export const Item: React.FC<ItemProps> = ({
   rule,
   asyncRule,
   plain,
-  enum: enums
+  enum: enums,
+  triggers,
+  debounce
 }) => {
   const [field, form] = useField(name, {
     type,
@@ -56,7 +58,9 @@ export const Item: React.FC<ItemProps> = ({
     rule,
     asyncRule,
     plain,
-    enum: enums
+    enum: enums,
+    triggers,
+    debounce
   });
   return (
     <Observer>

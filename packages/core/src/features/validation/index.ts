@@ -2,8 +2,8 @@ import type { FormFeature } from '../types';
 import memoize from 'lodash.memoize';
 import debounce from 'lodash.debounce';
 import { addMiddleware, applyAction, IActionContext } from 'mobx-state-tree';
-export type { Rule, AsyncRule, FieldValidationConfig } from './types';
 import Ajv from 'ajv';
+import { TriggerEnumType } from '..';
 
 const getDispatch = memoize((cacheKey: string, ms: number) =>
   debounce((call: IActionContext) => {
@@ -15,7 +15,7 @@ const getDispatch = memoize((cacheKey: string, ms: number) =>
 );
 
 export interface CreateValidationFeatureOptions {
-  triggers?: Array<'change' | 'blur'>;
+  triggers?: Array<TriggerEnumType>;
   debounce?: number;
 }
 

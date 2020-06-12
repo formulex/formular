@@ -117,6 +117,7 @@ export const Form = types
             transaction(() => {
               field.setValueSilently(field.initialValue);
               field.resetFlags();
+              field.validation.resetValidationFlags();
             });
           });
         }
@@ -172,7 +173,7 @@ export const Form = types
       );
       self.everValitated = false;
     },
-    validate: flow(function* validate({
+    validateFields: flow(function* validate({
       abortEarly = false
     }: FormValidateCallOptions = {}) {
       if (!self.everValitated) {
@@ -208,7 +209,7 @@ export const Form = types
       const errors = yield Promise.all(
         [...self.fields.values()].map((field) =>
           field.validation
-            .validate({ sync: false, async: true, noPending: true })
+            .validate({ sync: false, async: true, noPending: false })
             .then(() => {
               if (field.validation.status === 'INVALID') {
                 asyncErrors.push({
