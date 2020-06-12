@@ -64,7 +64,7 @@ export function connect<P extends { [key: string]: any }>({
         typeof renderTextContent === 'function' ||
         renderTextContent === true
       ) {
-        if (!field.editable) {
+        if (field.plain === true) {
           const fn =
             typeof renderTextContent === 'function'
               ? renderTextContent

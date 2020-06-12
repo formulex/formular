@@ -19,7 +19,7 @@ export function useField(
     type,
     rule,
     asyncRule,
-    editable,
+    plain,
     enum: enums
   }: FieldRegisterConfig & FieldValidationConfig & FieldFeatures
 ): [FieldInstance | undefined, FormInstance] {
@@ -103,10 +103,10 @@ export function useField(
   }, [asyncRule]);
 
   useEffect(() => {
-    if (isFieldInstance(fieldRef.current) && typeof editable === 'boolean') {
-      fieldRef.current?.setEditable(editable);
+    if (isFieldInstance(fieldRef.current) && typeof plain === 'boolean') {
+      fieldRef.current?.setPlain(plain);
     }
-  }, [editable]);
+  }, [plain]);
 
   useEffect(() => {
     if (isFieldInstance(fieldRef.current) && Array.isArray(enums)) {

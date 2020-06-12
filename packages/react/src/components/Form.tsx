@@ -23,7 +23,7 @@ type BaseFormProps = Omit<
 >;
 
 export interface FormFeatures {
-  editable?: boolean;
+  plain?: boolean;
 }
 
 export interface FormProps<V, XFP>
@@ -54,13 +54,13 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
       initialValues,
       onFinish,
       onFinishFailed,
-      trigger,
+      triggers,
       debounce,
       abortEarly,
       fields,
       formComponent,
       formComponentProps,
-      editable,
+      plain,
       ...restProps
     },
     ref
@@ -68,9 +68,9 @@ export const Form = React.forwardRef<FormInstance, FormProps<any, any>>(
     const [formInstance] = useForm(form);
     useFormConfig(formInstance, {
       initialValues,
-      trigger,
+      triggers,
       debounce,
-      editable
+      plain
       // onFinish,
       // onFinishFailed
     });

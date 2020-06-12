@@ -5,7 +5,7 @@ import { FormFeatures } from '../components/Form';
 
 export function useFormConfig<V>(
   form: FormInstance,
-  { initialValues, trigger, debounce, editable }: FormConfig<V> & FormFeatures
+  { initialValues, triggers, debounce, plain }: FormConfig<V> & FormFeatures
 ) {
   const isFirstRender = useRef(true);
 
@@ -23,12 +23,12 @@ export function useFormConfig<V>(
   }, [form, initialValues]);
 
   useEffect(() => {
-    if (typeof editable === 'boolean') {
-      form.editable = editable;
+    if (typeof plain === 'boolean') {
+      form.plain = plain;
     }
-  }, [form, editable]);
+  }, [form, plain]);
 
   useEffect(() => {
-    return form.use(createValidationFeature({ trigger, debounce }));
-  }, [form, trigger, debounce]);
+    return form.use(createValidationFeature({ triggers, debounce }));
+  }, [form, triggers, debounce]);
 }

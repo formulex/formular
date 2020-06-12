@@ -1,14 +1,15 @@
 import { getType, Instance, types, flow, detach } from 'mobx-state-tree';
-import { createField, FieldInstance } from '.';
+import { createField, FieldInstance } from '../';
 import { autorun, IReactionDisposer, runInAction, transaction } from 'mobx';
-import { setIn, getIn } from '../utils';
-import { getResolvers, SubscribeSetup } from '../sideEffect';
-import type { FormFeature } from '../features';
-import { Field, FieldRegisterConfig, FieldDesignInterface } from './field';
-import type { CreateValidationFeatureOptions } from '../features/validation';
-import { createAjv, createValidationFeature } from '../features/validation';
+import { setIn, getIn } from '../../utils';
+import { getResolvers, SubscribeSetup } from '../../sideEffect';
+import type { FormFeature } from '../../features';
+import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
+import type { CreateValidationFeatureOptions } from '../../features/validation';
+import { createAjv } from '../../features/validation';
 import ajvErrors from 'ajv-errors';
 import { Ajv } from 'ajv';
+import { FeatureCollection } from './inner-features';
 
 const FormLifecycleHooks = types
   .model('FormLifecycleHooks', {})
@@ -20,15 +21,15 @@ const FormLifecycleHooks = types
 export const Form = types
   .compose(
     FormLifecycleHooks,
+    FeatureCollection,
     types.model({
       _fallbackInitialValues: types.frozen(),
       fields: types.map(types.late((): FieldDesignInterface => Field)),
       validating: types.boolean,
-      everValitated: types.boolean,
-      _editable: types.boolean
+      everValitated: types.boolean
     })
   )
-  .named('Form')
+
   .views((self) => ({
     get values(): { [key: string]: any } {
       let result: { [key: string]: any } = {};
@@ -67,17 +68,6 @@ export const Form = types
     },
     setFallbackInitialValues(initialVal: any) {
       self._fallbackInitialValues = initialVal;
-    },
-    setEditable(editable: boolean) {
-      self._editable = editable;
-    }
-  }))
-  .views((self) => ({
-    get editable(): boolean {
-      return self._editable;
-    },
-    set editable(val: boolean) {
-      self.setEditable(val);
     }
   }))
   .actions((self) => ({
@@ -249,7 +239,8 @@ export const Form = types
     runInAction(debugName: string, action: (this: typeof self) => any) {
       action.call(self);
     }
-  }));
+  }))
+  .named('Form');
 
 type FormDesignType = typeof Form;
 export interface FormDesignInterface extends FormDesignType {}
@@ -275,10 +266,8 @@ export function isFormInstance(o: any): o is FormInstance {
 }
 
 export function createForm<V = any>({
-  initialValues,
-  trigger,
-  debounce
-}: FormConfig<V>): FormInstance {
+  initialValues
+}: Pick<FormConfig<V>, 'initialValues'>): FormInstance {
   const ajv = createAjv();
   ajvErrors(ajv);
   const form = Form.create(
@@ -286,19 +275,10 @@ export function createForm<V = any>({
       _fallbackInitialValues: initialValues ? { ...initialValues } : {},
       validating: false,
       everValitated: false,
-      _editable: true
+      _plain: false
     },
     { ajv }
   );
-
-  if (typeof trigger === 'string') {
-    form.use(
-      createValidationFeature({
-        trigger,
-        debounce
-      })
-    );
-  }
 
   return form;
 }

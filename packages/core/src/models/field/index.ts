@@ -3,46 +3,45 @@ import {
   getType,
   Instance,
   types,
-  cast,
   castToSnapshot
 } from 'mobx-state-tree';
-import { escapeRegexTokens, getIn } from '../utils';
-import { Form } from './form';
+import { escapeRegexTokens, getIn } from '../../utils';
+import { Form } from '../form';
+import { createFieldValidation } from '../../features/validation/model';
 import {
-  createFieldValidation,
-  Validation
-} from '../features/validation/model';
-import { observable } from 'mobx';
+  FeatureShow,
+  FeatureDisabled,
+  FeatureLoading,
+  FeatureStateFlags,
+  FeatureEnum,
+  FeatureValidation,
+  FeatureFrozenState,
+  FeatureHotState,
+  FeatureCollection
+} from './inner-features';
+
+const Features = types.compose(
+  FeatureShow,
+  FeatureDisabled,
+  FeatureLoading,
+  FeatureStateFlags,
+  FeatureEnum,
+  FeatureValidation,
+  FeatureFrozenState,
+  FeatureHotState,
+  FeatureCollection
+);
 
 export const Field = types
-  .model('Field', {
-    name: types.string,
-    _value: types.frozen(),
-    _fallbackInitialValue: types.frozen(),
-    _everBlured: types.boolean,
-    _everFocused: types.boolean,
-    type: types.maybe(types.literal('array')),
-
-    active: types.boolean,
-    modified: types.boolean,
-
-    // features
-    validation: Validation,
-    _show: types.boolean,
-    _disabled: types.boolean,
-    _ignored: types.boolean,
-    _editable: types.maybe(types.boolean),
-
-    // options
-    _enum: types.maybe(types.array(types.frozen())),
-    _loading: types.maybe(types.boolean),
-
-    // extends
-    _frozenExtend: types.frozen()
-  })
-  .volatile(() => ({
-    hotExtend: observable.object<{ [key: string]: any }>({})
-  }))
+  .compose(
+    Features,
+    types.model({
+      name: types.string,
+      _value: types.frozen(),
+      _fallbackInitialValue: types.frozen(),
+      type: types.maybe(types.literal('array'))
+    })
+  )
   .actions((self) => ({
     setValue(val: any) {
       self._value = val;
@@ -59,29 +58,8 @@ export const Field = types
     setType(type?: 'array') {
       self.type = type;
     },
-    setShow(shouldShow: boolean) {
-      self._show = shouldShow;
-    },
-    setDisabled(disabled: boolean) {
-      self._disabled = disabled;
-    },
-    setIgnored(ignored: boolean) {
-      self._ignored = ignored;
-    },
-    setEditable(editable: boolean) {
-      self._editable = editable;
-    },
-    setEnum(val?: any[]) {
-      self._enum = cast(val);
-    },
-    setLoading(loading?: boolean) {
-      self._loading = loading;
-    },
     __rename(name: string) {
       self.name = name;
-    },
-    setFrozenExtend(val: any) {
-      self._frozenExtend = val;
     }
   }))
   .views((self) => {
@@ -103,42 +81,6 @@ export const Field = types
       set value(val: any) {
         self.setValue(val);
       },
-      get show(): boolean {
-        return self._show;
-      },
-      set show(val: boolean) {
-        self.setShow(val);
-      },
-      get disabled(): boolean {
-        return self._disabled;
-      },
-      set disabled(val: boolean) {
-        self.setDisabled(val);
-      },
-      get editable(): boolean {
-        return self._editable ?? getParentOfType(self, Form).editable;
-      },
-      set editable(val: boolean) {
-        self.setEditable(val);
-      },
-      get enum() {
-        return self._enum;
-      },
-      set enum(val: any[] | undefined) {
-        self.setEnum(val);
-      },
-      get loading(): boolean | undefined {
-        return self._loading;
-      },
-      set loading(val: boolean | undefined) {
-        self.setLoading(val);
-      },
-      get frozenExtend() {
-        return self._frozenExtend;
-      },
-      set frozenExtend(val: any) {
-        self.setFrozenExtend(val);
-      },
       get initialValue(): any {
         return (
           getVal(self._fallbackInitialValue) ??
@@ -147,22 +89,10 @@ export const Field = types
           ) ??
           (self.type === 'array' ? [] : undefined)
         );
-      },
-      get touched(): boolean {
-        return self._everBlured && self._everFocused;
-      },
-      get visited(): boolean {
-        return self._everFocused;
       }
     };
   })
   .views((self) => ({
-    get ignored(): boolean {
-      return self._ignored || self.editable === false;
-    },
-    set ignored(val: boolean) {
-      self.setIgnored(val);
-    },
     get silentValue() {
       return self.value;
     },
@@ -171,28 +101,6 @@ export const Field = types
     }
   }))
   .actions((self) => ({
-    blur() {
-      if (!self._everBlured) {
-        self._everBlured = true;
-      }
-      if (self.active) {
-        self.active = false;
-      }
-    },
-    focus() {
-      if (!self._everFocused) {
-        self._everFocused = true;
-      }
-      if (!self.active) {
-        self.active = true;
-      }
-    },
-    resetFlags() {
-      self._everBlured = false;
-      self._everFocused = false;
-      self.active = false;
-      self.modified = false;
-    },
     toArray() {
       self._value = [self.value];
     },
@@ -272,7 +180,8 @@ export const Field = types
     runInAction(debugName: string, action: (this: typeof self) => any) {
       action.call(self);
     }
-  }));
+  }))
+  .named('Field');
 
 type FieldDesignType = typeof Field;
 export interface FieldDesignInterface extends FieldDesignType {}
@@ -305,11 +214,12 @@ export function createField({
     type,
     _show: true,
     _disabled: false,
+    _loading: undefined,
     active: false,
     _ignored: false,
     modified: false,
-    _editable: undefined,
+    _plain: undefined,
     validation: castToSnapshot(createFieldValidation()),
-    _frozenExtend: {}
+    _frozenState: {}
   });
 }

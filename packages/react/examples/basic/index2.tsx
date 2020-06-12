@@ -17,6 +17,7 @@ import 'antd/dist/antd.css';
 import { DisplayRender } from './DisplayRender';
 import type { RateProps } from 'antd/lib/rate';
 import { configure } from '@formular/core';
+import { addMiddleware } from 'mobx-state-tree';
 
 configure({
   ajvLocalize: require('ajv-i18n/localize/zh')
@@ -115,7 +116,7 @@ const MyApp: React.FC = () => {
       </Radio.Group>
       <InputNumber
         value={debounceTime}
-        onChange={(e) => setDebounceTime(e || 0)}
+        onChange={(e) => setDebounceTime(e || (0 as any))}
       />
       <p>圆圈 ⭕️里的数字 = 该组件渲染次数</p>
       <DisplayRender />
@@ -136,15 +137,18 @@ const MyApp: React.FC = () => {
           form={form}
           initialValues={{ stars: 4 }}
           subscribe={function* ({ field, value }) {
-            yield autorun(() => {
-              let reason = field('reason')!;
-              reason.show = value('stars') !== 5;
-              if (!reason.show) {
-                reason.value = '';
-              }
+            yield addMiddleware(form, (call, next) => {
+              console.log(call);
+              next(call);
             });
-
-            field('stars')!.setIgnored(true);
+            // yield autorun(() => {
+            //   const reason = field('reason')!;
+            //   reason.show = value('stars') !== 5;
+            //   if (!reason.show) {
+            //     reason.value = '';
+            //   }
+            // });
+            // field('stars')!.setIgnored(true);
           }}
         >
           <DisplayRender />
@@ -248,7 +252,7 @@ const MyApp: React.FC = () => {
               <div style={{ position: 'relative' }}>
                 <pre>
                   <DisplayRender />
-                  {JSON.stringify(form.values, null, 2)}
+                  {JSON.stringify(form, null, 2)}
                 </pre>
               </div>
             )}

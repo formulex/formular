@@ -15,12 +15,12 @@ const getDispatch = memoize((cacheKey: string, ms: number) =>
 );
 
 export interface CreateValidationFeatureOptions {
-  trigger?: 'change' | 'blur' | 'none';
+  triggers?: Array<'change' | 'blur'>;
   debounce?: number;
 }
 
 export function createValidationFeature({
-  trigger = 'change',
+  triggers = ['blur'],
   debounce = 16 * 6
 }: CreateValidationFeatureOptions = {}): FormFeature {
   return (form) => {
@@ -28,7 +28,7 @@ export function createValidationFeature({
       switch (call.name) {
         case 'setValue':
           if (
-            trigger === 'change' &&
+            triggers.includes('change') &&
             typeof call.context.validation.validate === 'function'
           ) {
             getDispatch(`${call.context.name}:${call.name}`, debounce)(call);
@@ -36,7 +36,7 @@ export function createValidationFeature({
           break;
         case 'blur':
           if (
-            trigger === 'blur' &&
+            triggers.includes('blur') &&
             typeof call.context.validation.validate === 'function'
           ) {
             getDispatch(`${call.context.name}:${call.name}`, 0)(call);

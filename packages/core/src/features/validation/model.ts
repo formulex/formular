@@ -4,7 +4,8 @@ import {
   getParentOfType,
   Instance,
   types,
-  isAlive
+  isAlive,
+  cast
 } from 'mobx-state-tree';
 import type { AsyncRule, Rule } from './types';
 import { FormEnvironment } from '../../models/form';
@@ -28,7 +29,11 @@ export const Validation = types
     asyncSchemaKey: types.maybe(types.string),
     asyncWarningKeys: types.maybe(
       types.union(types.literal('all'), types.array(types.string))
-    )
+    ),
+    _triggers: types.maybe(
+      types.array(types.union(types.literal('change'), types.literal('blur')))
+    ),
+    _debounce: types.maybe(types.number)
   })
   .views((self) => {
     function getWarningKeysPasser(warningKeys: 'all' | string[]) {
@@ -190,6 +195,26 @@ export const Validation = types
         self.effectMessages.clear();
         self.effectValid = undefined;
       }
+    },
+    setTriggers(triggers: Array<'change' | 'blur'> | undefined) {
+      self._triggers = cast(triggers);
+    },
+    setDebounce(debounce: number | undefined) {
+      self._debounce = debounce;
+    }
+  }))
+  .views((self) => ({
+    get triggers() {
+      return self._triggers;
+    },
+    set triggers(triggers: Array<'change' | 'blur'> | undefined) {
+      self.setTriggers(triggers);
+    },
+    get debounce() {
+      return self._debounce;
+    },
+    set debounce(time: number | undefined) {
+      self.setDebounce(time);
     }
   }))
   .actions((self) => ({
