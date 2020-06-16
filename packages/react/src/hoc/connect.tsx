@@ -1,24 +1,21 @@
 import React from 'react';
 import { observer } from 'mobx-react';
-import { FieldRenderableProps } from '../components';
 import { useRenderConfig } from '../contexts';
-import { RenderConfig } from '../contexts/RenderContext';
+import type { RenderConfig } from '../contexts/RenderContext';
+import type { FieldUnionMeta } from './asFormField';
 
 export interface TransformOptions<P> {
   trigger?: string;
   valuePropName?: string;
   getValueFromEvent?: (...args: any[]) => any;
   getValueProps?: (value: any) => any;
-  getDerivedPropsFromFieldMeta?: (
-    componentProps: P,
-    meta: FieldRenderableProps
-  ) => P;
+  getDerivedPropsFromFieldMeta?: (componentProps: P, meta: FieldUnionMeta) => P;
   renderTextContent?: TextContentRenderer<P> | true;
 }
 
 export interface TextContentRenderer<P> {
   (
-    meta: FieldRenderableProps,
+    meta: FieldUnionMeta,
     renderConfig: RenderConfig,
     componentProps: P
   ): React.ReactNode;
@@ -35,7 +32,7 @@ export function remainOwnEventHandler(
 }
 
 export type ConnectedComponentProps<P> = P & {
-  $meta: FieldRenderableProps;
+  $meta: FieldUnionMeta;
   ref?: React.Ref<any>;
 };
 
@@ -51,7 +48,7 @@ export function connect<P extends { [key: string]: any }>({
     Component: React.ComponentType<P>
   ): React.ComponentType<ConnectedComponentProps<P>> {
     const DecoratedInnerComponent: React.FC<
-      P & { forwardedRef: React.Ref<any> } & { $meta: FieldRenderableProps }
+      P & { forwardedRef: React.Ref<any> } & { $meta: FieldUnionMeta }
     > = ({ forwardedRef, $meta, ...rest }) => {
       const renderConfig = useRenderConfig();
       const { field } = $meta;

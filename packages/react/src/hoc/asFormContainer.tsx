@@ -1,5 +1,5 @@
 import React, { useImperativeHandle } from 'react';
-import {
+import type {
   FormInstance,
   FormFeature,
   SubscribeSetup,
@@ -13,7 +13,7 @@ import {
   useFormConfig,
   useRegistry
 } from '../hooks';
-import { RegistryEntry } from '../registry';
+import type { RegistryEntry } from '../registry';
 import { RegistryContext, FieldContext } from '../contexts';
 
 export interface InjectProps {
@@ -37,10 +37,8 @@ export interface FormMetaProps<P, V>
   forwardedRef?: React.Ref<any>;
 }
 
-export type FormEntryProps<
-  P extends { [key: string]: any },
-  V = any
-> = FormMetaProps<P, V> & Omit<P, keyof FormMetaProps<P, V>>;
+export type FormEntryProps<P, V = any> = FormMetaProps<P, V> &
+  Omit<P, keyof FormMetaProps<P, V>>;
 
 export function asFormContainer<P extends { [key: string]: any }, V = any>({
   getDerivedProps = (formComponentProps, injectProps) => ({

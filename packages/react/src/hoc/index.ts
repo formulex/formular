@@ -6,3 +6,12 @@ export type {
   ContainerTransformOptions,
   FormMetaProps
 } from './asFormContainer';
+export { asFormField } from './asFormField';
+export type {
+  FieldSingleMeta,
+  FieldArrayMeta,
+  FieldUnionMeta,
+  FieldEntryProps,
+  FieldMetaProps,
+  FieldTransformOptions
+} from './asFormField';
