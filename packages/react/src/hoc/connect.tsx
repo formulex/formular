@@ -4,8 +4,6 @@ import { FieldRenderableProps } from '../components';
 import { useRenderConfig } from '../contexts';
 import { RenderConfig } from '../contexts/RenderContext';
 
-type RefType<T> = Parameters<React.ForwardRefRenderFunction<T>>[1];
-
 export interface TransformOptions<P> {
   trigger?: string;
   valuePropName?: string;
@@ -53,7 +51,7 @@ export function connect<P extends { [key: string]: any }>({
     Component: React.ComponentType<P>
   ): React.ComponentType<ConnectedComponentProps<P>> {
     const DecoratedInnerComponent: React.FC<
-      P & { forwardedRef: RefType<any> } & { $meta: FieldRenderableProps }
+      P & { forwardedRef: React.Ref<any> } & { $meta: FieldRenderableProps }
     > = ({ forwardedRef, $meta, ...rest }) => {
       const renderConfig = useRenderConfig();
       const { field } = $meta;
@@ -78,23 +76,16 @@ export function connect<P extends { [key: string]: any }>({
       }
 
       const injectProps = {
-        // onChange
         [trigger]: remainOwnEventHandler(
           ownComponentProps[trigger],
           (...args: any[]) => {
             field.setValue(getValueFromEvent(...args));
           }
         ),
-
-        // value
         [valuePropName]: getValueProps(field.value),
-
-        // focus
         onFocus: remainOwnEventHandler(ownComponentProps.onFocus, () => {
           field.focus();
         }),
-
-        // blur
         onBlur: remainOwnEventHandler(ownComponentProps.onBlur, () => {
           field.blur();
         })
@@ -118,7 +109,6 @@ export function connect<P extends { [key: string]: any }>({
       props,
       ref
     ) => <DecoratedComponent {...props} forwardedRef={ref} />;
-
     forwardRef.displayName = `forwardRefConnect(${name})`;
 
     return React.forwardRef<any, any>(forwardRef) as any;

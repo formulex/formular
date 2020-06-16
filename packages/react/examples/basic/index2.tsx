@@ -146,13 +146,15 @@ const MyApp: React.FC = () => {
           onFinish={(values) => {
             console.log('Finished', values);
           }}
-          formComponent={AntdForm}
-          formComponentProps={{
-            layout: 'vertical',
-            component: ({ onSubmit, __onInnerSubmit, ...rest }: any) => {
-              return <form {...rest} onSubmit={__onInnerSubmit} />;
-            }
-          }}
+          formComponentProps={
+            // {
+            //   layout: 'vertical',
+            //   component: ({ onSubmit, __onInnerSubmit, ...rest }: any) => {
+            //     return <form {...rest} onSubmit={__onInnerSubmit} />;
+            //   }
+            // } as any
+            undefined
+          }
           triggers={triggers}
           debounce={debounceTime}
           form={form}
@@ -271,13 +273,7 @@ const MyApp: React.FC = () => {
               </Button>
             )}
           </Observer>
-          <Button
-            onClick={() => {
-              form.reset();
-            }}
-          >
-            重置
-          </Button>
+          <Button htmlType="reset">重置</Button>
           <Observer>
             {() => (
               <div style={{ position: 'relative' }}>

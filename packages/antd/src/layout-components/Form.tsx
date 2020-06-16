@@ -1,83 +1,19 @@
 import React from 'react';
-import { Form as AntDesignForm } from 'antd';
+import AntDesignForm from 'antd/lib/form/Form';
 import type { FormProps as AntDesignFormProps } from 'antd/lib/form/Form';
-import {
-  Form as InnerForm,
-  FormProps as InnerFormProps
-} from '@formular/react';
+import { asFormContainer } from '@formular/react';
 
-type InnerFormPropsType<V, XFP> = Omit<
-  InnerFormProps<V, XFP>,
-  'formComponent' | 'formComponentProps'
->;
+export const component: React.FC<any> = ({ __onSubmit, onSubmit, ...rest }) => {
+  return <form {...rest} onSubmit={__onSubmit ?? onSubmit} />;
+};
 
-type ExplicitInnerFormProps<V, XFP> = Pick<
-  InnerFormPropsType<V, XFP>,
-  | 'subscribe'
-  | 'onFinish'
-  | 'onFinishFailed'
-  | 'form'
-  | 'plain'
-  | 'triggers'
-  | 'debounce'
-  | 'abortEarly'
->;
-
-export interface FormProps<V, XFP>
-  extends ExplicitInnerFormProps<V, XFP>,
-    Omit<AntDesignFormProps, keyof ExplicitInnerFormProps<V, XFP>> {
-  $formMetaProps?: InnerFormPropsType<V, XFP>;
-  onSubmit?: (e: any) => any;
-}
-
-export const AntDesignInnerFormComponent: React.FC<any> = ({
-  onSubmit,
-  __onInnerSubmit,
-  ...rest
-}) => <form {...rest} onSubmit={__onInnerSubmit ?? onSubmit} />;
-
-export const Form: React.FC<FormProps<
-  any,
-  AntDesignFormProps
->> = React.forwardRef(
-  (
-    {
-      $formMetaProps,
-      subscribe,
-      onFinish,
-      onFinishFailed,
-      plain,
-      triggers,
-      debounce,
-      form,
-      children,
-      abortEarly,
-      ...restProps
-    },
-    ref
-  ) => {
-    return (
-      <InnerForm
-        {...$formMetaProps}
-        {...{
-          subscribe,
-          onFinish,
-          onFinishFailed,
-          form,
-          plain,
-          triggers,
-          debounce,
-          abortEarly
-        }}
-        formComponentProps={{
-          ...restProps,
-          component: AntDesignInnerFormComponent
-        }}
-        formComponent={AntDesignForm}
-        ref={ref as any}
-      >
-        {children}
-      </InnerForm>
-    );
+export const Form = asFormContainer<AntDesignFormProps>({
+  getDerivedProps(formComponentProps, injectProps) {
+    return {
+      ...formComponentProps,
+      ...injectProps,
+      __onSubmit: injectProps.onSubmit,
+      component
+    };
   }
-);
+})(AntDesignForm);

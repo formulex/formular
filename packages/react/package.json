@@ -12,7 +12,7 @@
   "author": "HeskeyBaozi <hezhiyu233@foxmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "parcel examples/basic/index.html --open",
+    "start": "parcel examples/basic/index.html",
     "lint": "eslint --ext .ts,.tsx src",
     "build": "npm run build:es && npm run build:lib",
     "build:es": "rimraf es && cross-env ESMODULE=1 babel src --out-dir es --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir es",
@@ -30,15 +30,6 @@
     "mobx-react": "6.x",
     "mobx-state-tree": "3.x",
     "react": "16.x"
-  },
-  "devDependencies": {
-    "@babel/preset-react": "^7.9.4",
-    "@types/react": "^16.9.35",
-    "@types/react-dom": "^16.9.8",
-    "mobx-react": "^6.1.8",
-    "parcel-bundler": "^1.12.4",
-    "react": "^16.13.0",
-    "react-dom": "^16.13.1"
   },
   "homepage": "https://github.com/formularx/formular#readme",
   "repository": {

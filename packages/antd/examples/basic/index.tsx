@@ -180,7 +180,7 @@ const App: React.FC = () => {
           name="greeting"
           // initialValue="hello!"
           component="Input"
-          editable={true}
+          plain={false}
         />
         <Field
           label="距离"
@@ -338,10 +338,10 @@ const App: React.FC = () => {
           <Button
             style={{ marginLeft: '1rem' }}
             onClick={() => {
-              form.editable = !form.editable;
+              form.plain = !form.plain;
             }}
           >
-            Toggle Editable
+            Toggle Plain
           </Button>
         </Field>
         <Card style={{ marginTop: '1rem' }}>
