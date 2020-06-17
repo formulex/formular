@@ -20,7 +20,7 @@ export interface CreateValidationFeatureOptions {
 }
 
 export function createValidationFeature({
-  triggers = ['blur'],
+  triggers = ['change'],
   debounce = 16 * 6
 }: CreateValidationFeatureOptions = {}): FormFeature {
   return (form) => {

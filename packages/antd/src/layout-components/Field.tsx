@@ -1,48 +1,6 @@
 import React from 'react';
-import { Form as AntDesignForm } from 'antd';
-import {
-  Item as InnerItem,
-  ItemProps as InnerItemProps,
-  FieldRenderableProps,
-  RegistryContext
-} from '@formular/react';
-import { invariant } from '@formular/core';
-import type { FormItemProps as AntDesignFormItemProps } from 'antd/lib/form/FormItem';
-
-type InnerItemPropsType = Omit<InnerItemProps, 'render'>;
-
-type ExplicitInnerItemProps = Pick<
-  InnerItemPropsType,
-  | 'initialValue'
-  | 'rule'
-  | 'asyncRule'
-  | 'plain'
-  | 'type'
-  | 'enum'
-  | 'triggers'
-  | 'debounce'
->;
-
-export type RenderComponentProps<P> = P & {
-  $meta: FieldRenderableProps;
-  mapPropsToShow?: (props: P & { $meta: FieldRenderableProps }) => any;
-};
-
-export interface FieldProps<P>
-  extends ExplicitInnerItemProps,
-    Omit<AntDesignFormItemProps, keyof ExplicitInnerItemProps | 'children'> {
-  $itemMetaProps?: InnerItemPropsType;
-  componentProps?: P;
-  addonAfter?: React.ReactNode;
-
-  // basic
-  component?: React.ComponentType<RenderComponentProps<P>> | string;
-  name?: string;
-}
-
-export interface MapFieldsMetaToItemPropsFrom {
-  (meta: FieldRenderableProps): { [key: string]: any };
-}
+import FormItem, { FormItemProps } from 'antd/lib/form/FormItem';
+import { asFormField, FieldEntryProps } from '@formular/react';
 
 const validateMapper: { [key: string]: any } = {
   PENDING: 'validating',
@@ -52,126 +10,76 @@ const validateMapper: { [key: string]: any } = {
   IGNORED: 'default'
 };
 
-const mapper: MapFieldsMetaToItemPropsFrom = ({ field, form, type }) => {
-  if (type === 'array') {
-    return {};
-  }
-  return {
-    validateStatus:
-      ((field.modified || form.everValitated) &&
-        validateMapper[field.validation.status]) ||
-      undefined,
-    help:
-      (field.modified || form.everValitated) &&
-      !field.ignored &&
-      field.validation.messages.join(', ')
-  };
-};
+const NamedField = asFormField<FormItemProps>({
+  getDerivedPropsFromFieldMeta({
+    fieldComponentProps,
+    componentProps,
+    meta,
+    Component
+  }) {
+    const { field, type, form } = meta;
+    const extraStyle = { display: 'none' };
+    if (field.show) {
+      delete extraStyle.display;
+    }
+    const children = React.createElement(
+      Component as React.ComponentType<any>,
+      { ...componentProps, $meta: meta },
+      type === 'array'
+        ? fieldComponentProps.children ?? (componentProps as any)?.children
+        : (componentProps as any)?.children ?? fieldComponentProps.children
+    );
 
-export class Field<P> extends React.Component<FieldProps<P>> {
-  render() {
-    const {
-      $itemMetaProps,
-      component,
-      componentProps,
-      name,
-      initialValue,
-      rule,
-      asyncRule,
-      plain,
-      addonAfter,
-      style,
-      children,
-      type,
-      triggers,
-      debounce,
-      enum: enums,
-      ...restProps
-    } = this.props;
+    const common = {
+      style: { ...fieldComponentProps.style, ...extraStyle },
+      children
+    };
+    if (type === 'array') {
+      return { ...fieldComponentProps, ...common };
+    }
+    return {
+      ...fieldComponentProps,
+      ...common,
+      validateStatus:
+        ((field.visited || form.everValitated) &&
+          validateMapper[field.validation.status]) ||
+        undefined,
+      help:
+        (field.visited || form.everValitated) &&
+        !field.ignored &&
+        field.validation.messages.join(', ')
+    };
+  }
+})<any>(FormItem);
+
+export function Field<CP>(props: Partial<FieldEntryProps<FormItemProps, CP>>) {
+  const {
+    name,
+    component,
+    componentProps,
+    initialValue,
+    fieldComponentProps,
+    type,
+    plain,
+    enum: enums,
+    rule,
+    asyncRule,
+    triggers,
+    debounce,
+    children,
+    style,
+    ...rest
+  } = props;
+  if (name && component) {
     return (
-      <RegistryContext.Consumer>
-        {(registry) => {
-          if (name && component) {
-            return (
-              <InnerItem
-                {...$itemMetaProps}
-                {...{
-                  name,
-                  initialValue,
-                  rule,
-                  asyncRule,
-                  plain,
-                  type,
-                  enum: enums,
-                  triggers,
-                  debounce
-                }}
-              >
-                {(meta) => {
-                  const innerComponentProps = {
-                    ...componentProps,
-                    $meta: meta
-                  };
-                  let Component = component;
-                  if (
-                    registry &&
-                    typeof component === 'string' &&
-                    registry.fields[component]
-                  ) {
-                    Component = registry.fields[component];
-                  }
-                  invariant(
-                    typeof Component !== 'string',
-                    `Cannot find component "${component}". Do you register it correctly?`
-                  );
-                  const innerChildren = React.createElement(
-                    Component as React.ComponentType<
-                      typeof innerComponentProps
-                    >,
-                    innerComponentProps,
-                    meta.type === 'array'
-                      ? children ?? (innerComponentProps as any).children
-                      : (innerComponentProps as any).children ?? children
-                  );
-                  const extraStyle = { display: 'none' };
-                  if (meta.field.show) {
-                    delete extraStyle.display;
-                  }
-                  return (
-                    <AntDesignForm.Item
-                      {...restProps}
-                      style={{ ...style, ...extraStyle }}
-                      {...mapper(meta)}
-                    >
-                      {addonAfter ? (
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                          {innerChildren}
-                          {addonAfter}
-                        </div>
-                      ) : (
-                        innerChildren
-                      )}
-                    </AntDesignForm.Item>
-                  );
-                }}
-              </InnerItem>
-            );
-          } else {
-            return (
-              <AntDesignForm.Item {...restProps} style={style}>
-                {addonAfter ? (
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {children}
-                    {addonAfter}
-                  </div>
-                ) : (
-                  children
-                )}
-              </AntDesignForm.Item>
-            );
-          }
-        }}
-      </RegistryContext.Consumer>
+      <NamedField {...props} {...{ name, component, componentProps }}>
+        {children}
+      </NamedField>
     );
   }
+  return (
+    <FormItem {...rest} {...fieldComponentProps}>
+      {children}
+    </FormItem>
+  );
 }

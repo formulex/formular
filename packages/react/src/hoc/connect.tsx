@@ -9,16 +9,19 @@ export interface TransformOptions<P> {
   valuePropName?: string;
   getValueFromEvent?: (...args: any[]) => any;
   getValueProps?: (value: any) => any;
-  getDerivedPropsFromFieldMeta?: (componentProps: P, meta: FieldUnionMeta) => P;
+  getDerivedPropsFromFieldMeta?: (source: {
+    componentProps: P;
+    meta: FieldUnionMeta;
+  }) => P;
   renderTextContent?: TextContentRenderer<P> | true;
 }
 
 export interface TextContentRenderer<P> {
-  (
-    meta: FieldUnionMeta,
-    renderConfig: RenderConfig,
-    componentProps: P
-  ): React.ReactNode;
+  (source: {
+    meta: FieldUnionMeta;
+    renderConfig: RenderConfig;
+    componentProps: P;
+  }): React.ReactNode;
 }
 
 export function remainOwnEventHandler(
@@ -41,7 +44,11 @@ export function connect<P extends { [key: string]: any }>({
   valuePropName = 'value',
   getValueFromEvent = (e) => e.target.value,
   getValueProps = (value) => value,
-  getDerivedPropsFromFieldMeta = (props) => props,
+  getDerivedPropsFromFieldMeta = ({ componentProps, meta: { field } }) => ({
+    ...componentProps,
+    disabled: field.disabled,
+    loading: field.loading
+  }),
   renderTextContent
 }: TransformOptions<P> = {}) {
   return function decorate(
@@ -63,12 +70,23 @@ export function connect<P extends { [key: string]: any }>({
           const fn =
             typeof renderTextContent === 'function'
               ? renderTextContent
-              : ((({ field }, { PreviewComponent = 'span', emptyContent }) => (
+              : ((({
+                  meta: { field },
+                  renderConfig: { PreviewComponent = 'span', emptyContent }
+                }) => (
                   <PreviewComponent>
                     {field.value ?? emptyContent}
                   </PreviewComponent>
                 )) as TextContentRenderer<P>);
-          return <>{fn($meta, renderConfig, ownComponentProps)}</>;
+          return (
+            <>
+              {fn({
+                meta: $meta,
+                renderConfig,
+                componentProps: ownComponentProps
+              })}
+            </>
+          );
         }
       }
 
@@ -88,10 +106,10 @@ export function connect<P extends { [key: string]: any }>({
         })
       };
 
-      const derivedProps = getDerivedPropsFromFieldMeta(
-        ownComponentProps as P,
-        $meta
-      );
+      const derivedProps = getDerivedPropsFromFieldMeta({
+        componentProps: ownComponentProps as P,
+        meta: $meta
+      });
       return (
         <Component {...derivedProps} {...injectProps} ref={forwardedRef} />
       );

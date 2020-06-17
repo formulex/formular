@@ -1,40 +1,28 @@
 import React from 'react';
-import { RenderComponentProps } from '../layout-components';
-import { Typography, Checkbox as AntdCheckbox } from 'antd';
-import { useRenderConfig } from '../contexts';
-import { useFieldEditable, mapFieldMetaToProps } from '../utils';
-import { CheckboxGroupProps } from 'antd/lib/checkbox';
+import AntdCheckboxGroup, { CheckboxGroupProps } from 'antd/lib/checkbox/Group';
+import { connect } from '@formular/react';
 
-const mapper = mapFieldMetaToProps({
-  getValueFromEvent: (val) => val
-});
-
-export const CheckboxGroup: React.FC<RenderComponentProps<
-  CheckboxGroupProps
->> = ({ $meta, ...antdProps }) => {
-  const renderConfig = useRenderConfig();
-  const selectTexts: (string | number | boolean)[] = $meta.field.value || [];
-  let result: undefined | string = undefined;
-  if (
-    $meta.field.plain &&
-    Array.isArray(antdProps.options) &&
-    antdProps.options.length >= 1
-  ) {
-    const first = antdProps.options[0];
-    if (typeof first === 'string') {
-      result = selectTexts.join(', ');
-    } else if (typeof first.value === 'string' && first.label) {
-      result = antdProps.options
-        .filter(
-          (el) => typeof el !== 'string' && selectTexts.includes(el.value)
-        )
-        .map((el) => (typeof el !== 'string' ? el.label : el))
+export const CheckboxGroup = connect<CheckboxGroupProps>({
+  getValueFromEvent: (val) => val,
+  renderTextContent({
+    meta: { field },
+    renderConfig: { emptyContent, PreviewComponent = 'span' }
+  }) {
+    let text: string | undefined = undefined;
+    if (Array.isArray(field.value) && Array.isArray(field.enum)) {
+      text = field.enum
+        .filter(({ value }) => field.value.includes(value))
+        .map(({ label }) => label)
         .join(', ');
     }
+    return <PreviewComponent>{text ?? emptyContent}</PreviewComponent>;
+  },
+  getDerivedPropsFromFieldMeta({ componentProps, meta: { field } }) {
+    return {
+      ...componentProps,
+      options: field.enum,
+      disabled: field.disabled,
+      loading: field.loading
+    };
   }
-  return useFieldEditable(
-    $meta,
-    <AntdCheckbox.Group {...antdProps} {...mapper($meta, antdProps)} />,
-    <Typography.Text>{result || renderConfig.emptyContent}</Typography.Text>
-  );
-};
+})(AntdCheckboxGroup);

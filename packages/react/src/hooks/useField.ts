@@ -1,14 +1,9 @@
 import { useFieldContext } from '../contexts';
 import { useEffect, useRef, useState, useLayoutEffect } from 'react';
-import type {
-  FieldInstance,
-  FieldRegisterConfig,
-  FieldValidationConfig,
-  FormInstance
-} from '@formular/core';
+import type { FieldInstance, FormInstance } from '@formular/core';
 import { isFieldInstance } from '@formular/core';
-import { FieldFeatures } from '../components/Item';
 import { reaction } from 'mobx';
+import { FieldMetaProps } from '../hoc';
 
 const noop = () => {};
 
@@ -22,8 +17,13 @@ export function useField(
     plain,
     enum: enums,
     triggers,
-    debounce
-  }: FieldRegisterConfig & FieldValidationConfig & FieldFeatures
+    debounce,
+    disabled,
+    loading
+  }: Omit<
+    FieldMetaProps<any, any>,
+    'fieldComponentProps' | 'componentProps' | 'component' | 'name'
+  >
 ): [FieldInstance | undefined, FormInstance] {
   const form = useFieldContext();
   const fieldRef = useRef<FieldInstance>();
@@ -115,6 +115,18 @@ export function useField(
       fieldRef.current?.setEnum(enums);
     }
   }, [enums]);
+
+  useEffect(() => {
+    if (isFieldInstance(fieldRef.current) && typeof disabled === 'boolean') {
+      fieldRef.current?.setDisabled(disabled);
+    }
+  }, [disabled]);
+
+  useEffect(() => {
+    if (isFieldInstance(fieldRef.current) && typeof loading === 'boolean') {
+      fieldRef.current?.setLoading(loading);
+    }
+  }, [loading]);
 
   useLayoutEffect(() => {
     if (isFieldInstance(fieldRef.current)) {

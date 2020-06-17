@@ -3,5 +3,13 @@
   "compilerOptions": {
     "jsx": "react"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/components/MultipleSelect.tsx",
+    "src/components/Select.tsx",
+    "src/components/TableArray.tsx",
+    "src/components/TagSelect.tsx",
+    "src/components/TextArea.tsx",
+    "src/components/Upload.tsx"
+  ]
 }

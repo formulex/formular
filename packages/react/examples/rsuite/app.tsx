@@ -39,11 +39,11 @@ const noop: React.FC = ({ children }) => {
 };
 
 const RField = asFormField<TextFieldProps>({
-  getDerivedPropsFromFieldMeta(ownFieldComponentProps, meta, Component) {
+  getDerivedPropsFromFieldMeta({ fieldComponentProps, meta, Component }) {
     const { field, form } = meta;
     return {
-      ...ownFieldComponentProps,
-      children: <Component name={ownFieldComponentProps.name} $meta={meta} />,
+      ...fieldComponentProps,
+      children: <Component name={fieldComponentProps.name} $meta={meta} />,
       hasError:
         (field.visited || form.everValitated) &&
         field.validation.status === 'INVALID',

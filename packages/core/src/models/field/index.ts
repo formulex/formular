@@ -190,7 +190,6 @@ export interface FieldConfig {
   name: string;
   initialValue?: any;
   type?: 'array';
-  uid?: string;
 }
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}

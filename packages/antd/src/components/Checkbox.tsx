@@ -1,25 +1,18 @@
+import AntdCheckbox, { CheckboxProps } from 'antd/lib/checkbox/Checkbox';
+import { connect } from '@formular/react';
 import React from 'react';
-import { RenderComponentProps } from '../layout-components';
-import { Typography, Checkbox as AntdCheckbox } from 'antd';
-import { useRenderConfig } from '../contexts';
-import { useFieldEditable, mapFieldMetaToProps } from '../utils';
-import { CheckboxProps } from 'antd/lib/checkbox';
 
-const mapper = mapFieldMetaToProps({
+export const Checkbox = connect<CheckboxProps>({
   valuePropName: 'checked',
-  getValueFromEvent: (e) => e.target.checked
-});
-
-export const Checkbox: React.FC<RenderComponentProps<CheckboxProps>> = ({
-  $meta,
-  ...antdProps
-}) => {
-  const renderConfig = useRenderConfig();
-  return useFieldEditable(
-    $meta,
-    <AntdCheckbox {...antdProps} {...mapper($meta, antdProps)} />,
-    <Typography.Text>
-      {antdProps.children || renderConfig.emptyContent}
-    </Typography.Text>
-  );
-};
+  getValueFromEvent: (e) => e.target.checked,
+  renderTextContent({
+    renderConfig: { emptyContent, PreviewComponent = 'span' },
+    componentProps
+  }) {
+    return (
+      <PreviewComponent>
+        {componentProps.children ?? emptyContent}
+      </PreviewComponent>
+    );
+  }
+})(AntdCheckbox);

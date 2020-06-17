@@ -14,9 +14,12 @@ import { useRegistryContext } from '../contexts';
 export interface FieldSingleMeta {
   field: FieldInstance;
   form: FormInstance;
+  type: undefined;
 }
 
-export interface FieldArrayMeta extends FieldSingleMeta {
+export interface FieldArrayMeta {
+  field: FieldInstance;
+  form: FormInstance;
   type: 'array';
   fields: {
     name: string;
@@ -29,45 +32,57 @@ export interface FieldArrayMeta extends FieldSingleMeta {
 
 export type FieldUnionMeta = FieldSingleMeta | FieldArrayMeta;
 
-export interface FieldTransformOptions<P> {
+export interface GetDerivedPropsFromFieldMetaSource<P, CP> {
+  fieldComponentProps: P;
+  meta: FieldUnionMeta;
+  componentProps: CP;
+  Component: React.ComponentType<ConnectedComponentProps<CP>>;
+}
+export interface FieldTransformOptions<P, CP> {
   getDerivedPropsFromFieldMeta?: (
-    componentProps: P,
-    meta: FieldUnionMeta,
-    Component: React.ComponentType<ConnectedComponentProps<P>>
+    source: GetDerivedPropsFromFieldMetaSource<P, CP>
   ) => P;
 }
 
-export interface FieldMetaProps<P>
+export interface FieldMetaProps<P, CP>
   extends FieldRegisterConfig,
     FieldValidationConfig {
   fieldComponentProps?: P;
   name: string;
-  component: React.ComponentType<ConnectedComponentProps<P>> | string;
+  componentProps?: CP;
+  component: React.ComponentType<ConnectedComponentProps<CP>> | string;
   type?: 'array';
   plain?: boolean;
   enum?: any[];
+  disabled?: boolean;
+  loading?: boolean;
 }
 
-export type FieldEntryProps<P> = FieldMetaProps<P> &
-  Omit<P, keyof FieldMetaProps<P>>;
+export type FieldEntryProps<P, CP = any> = FieldMetaProps<P, CP> &
+  Omit<P, keyof FieldMetaProps<P, CP>>;
 
 export function asFormField<P extends { [key: string]: any }>({
-  getDerivedPropsFromFieldMeta = (props) => props
-}: FieldTransformOptions<P> = {}) {
-  return function decorate(
+  getDerivedPropsFromFieldMeta = ({ fieldComponentProps }) => ({
+    ...fieldComponentProps
+  })
+}: FieldTransformOptions<P, any> = {}) {
+  return function decorate<CP>(
     ItemComponent: React.ComponentType<P>
-  ): React.ComponentType<FieldEntryProps<P>> {
+  ): React.ComponentType<FieldEntryProps<P, CP>> {
     const DecoratedFieldComponent: React.FC<
-      FieldMetaProps<P> & { forwardedRef: React.Ref<any> }
+      FieldMetaProps<P, CP> & { forwardedRef: React.Ref<any> }
     > = ({
       forwardedRef,
       fieldComponentProps,
       name,
       component,
+      componentProps,
       type,
       plain,
       enum: enums,
       initialValue,
+      disabled,
+      loading,
 
       // FieldValidationConfig
       rule,
@@ -85,7 +100,9 @@ export function asFormField<P extends { [key: string]: any }>({
         plain,
         enum: enums,
         triggers,
-        debounce
+        debounce,
+        disabled,
+        loading
       });
       if (!fieldInstance) {
         return null;
@@ -109,42 +126,40 @@ export function asFormField<P extends { [key: string]: any }>({
         ...fieldComponentProps
       };
 
-      const extraMeta: Partial<Omit<FieldArrayMeta, keyof FieldSingleMeta>> =
-        type === 'array'
-          ? {
-              fields: {
-                name,
-                value: fieldInstance.value,
-                length: fieldInstance.value?.length ?? 0,
-                map(iterator) {
-                  const len = fieldInstance.value?.length ?? 0;
-                  const results: any[] = [];
-                  for (let i = 0; i < len; i++) {
-                    results.push(iterator(`${name}[${i}]`, i));
-                  }
-                  return results;
-                },
-                forEach(iterator) {
-                  const len = fieldInstance.value?.length ?? 0;
-                  for (let i = 0; i < len; i++) {
-                    iterator(`${name}[${i}]`, i);
-                  }
-                }
-              }
-            }
-          : {};
-
       return (
         <ItemComponent
-          {...getDerivedPropsFromFieldMeta(
-            ownFieldComponentProps,
-            {
-              field: fieldInstance,
-              form: formInstance,
-              ...extraMeta
-            },
+          {...getDerivedPropsFromFieldMeta({
+            componentProps,
+            fieldComponentProps: ownFieldComponentProps,
+            meta:
+              type === 'array'
+                ? {
+                    field: fieldInstance,
+                    form: formInstance,
+                    type,
+                    fields: {
+                      name,
+                      value: fieldInstance.value,
+                      length: fieldInstance.value?.length ?? 0,
+                      map(iterator) {
+                        const len = fieldInstance.value?.length ?? 0;
+                        const results: any[] = [];
+                        for (let i = 0; i < len; i++) {
+                          results.push(iterator(`${name}[${i}]`, i));
+                        }
+                        return results;
+                      },
+                      forEach(iterator) {
+                        const len = fieldInstance.value?.length ?? 0;
+                        for (let i = 0; i < len; i++) {
+                          iterator(`${name}[${i}]`, i);
+                        }
+                      }
+                    }
+                  }
+                : { field: fieldInstance, form: formInstance, type },
             Component
-          )}
+          })}
           ref={forwardedRef}
         />
       );
