@@ -1,1 +1,0 @@
-(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([[8],{oJYU:function(e,t,n){"use strict";n.r(t);var a=n("q1tI"),r=n.n(a);n("B2uJ"),n("+su7"),n("qOys"),n("5Yjd");t["default"]=function(){return r.a.createElement(r.a.Fragment,null,r.a.createElement("div",{className:"markdown"},r.a.createElement("p",null,"todo: getting-started.md")))}}}]);
