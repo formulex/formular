@@ -21,8 +21,7 @@ export const RadioGroup = connect<RadioGroupProps>({
     return {
       ...componentProps,
       options: field.enum,
-      disabled: field.disabled,
-      loading: field.loading
+      disabled: field.disabled ?? componentProps.disabled
     };
   }
 })(AntdRadioGroup);

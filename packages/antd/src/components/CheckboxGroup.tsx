@@ -21,8 +21,7 @@ export const CheckboxGroup = connect<CheckboxGroupProps>({
     return {
       ...componentProps,
       options: field.enum,
-      disabled: field.disabled,
-      loading: field.loading
+      disabled: field.disabled ?? componentProps.disabled
     };
   }
 })(AntdCheckboxGroup);

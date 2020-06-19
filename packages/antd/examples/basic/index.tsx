@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
@@ -9,17 +9,62 @@ import { Observer, useLocalStore } from 'mobx-react';
 import { Card } from 'antd';
 import * as components from '../../src/components';
 import { PlusOutlined } from '@ant-design/icons';
-import { ColumnType } from 'antd/lib/table';
 import {
   useSideEffects,
   Registry,
   useForm,
-  RenderConfigProvider,
-  useFieldContext
+  RenderConfigProvider
 } from '@formular/react';
-import { runWithResolvers, FieldInstance } from '@formular/core';
+import { FieldInstance, runWithResolvers } from '@formular/core';
 import RJV from 'react-json-view';
-import { addMiddleware } from 'mobx-state-tree';
+import { XTableProps } from '../../src/components';
+import { ColumnType } from 'antd/lib/table';
+
+const enhanceColumns: XTableProps['enhanceColumns'] = (
+  columns: ColumnType<any>[],
+  { meta: { field, form, fields } }
+) => {
+  return !field.plain
+    ? columns.concat([
+        {
+          key: 'action',
+          title: '操作',
+          render: (_, __, index) => {
+            return (
+              <Button.Group style={{ marginBottom: '24px' }}>
+                <Button
+                  onClick={() => {
+                    field.remove(index);
+                  }}
+                >
+                  删除
+                </Button>
+                <Button
+                  onClick={() => {
+                    field.push();
+                    const prePath = field.name;
+                    setTimeout(() => {
+                      runWithResolvers(form, ({ field, value }) => {
+                        columns.forEach(({ key }) => {
+                          field(
+                            `${prePath}[${fields.length}].${key}`
+                          )!.setValueSilently(
+                            value(`${prePath}[${index}].${key}`)
+                          );
+                        });
+                      });
+                    });
+                  }}
+                >
+                  复制并新增到尾端
+                </Button>
+              </Button.Group>
+            );
+          }
+        }
+      ])
+    : columns;
+};
 
 Registry.registerGlobalFields({
   ...components
@@ -29,51 +74,7 @@ Registry.registerGlobalFields({
   //       <Button onClick={() => field.push()}>添加一个</Button>
   //     ) : null;
   //   }, []);
-  //   const enhanceColumns = useCallback(
-  //     (columns: ColumnType<any>[], { $meta: { field, form, fields } }) => {
-  //       return field.editable
-  //         ? columns.concat([
-  //             {
-  //               key: 'action',
-  //               title: '操作',
-  //               render: (_, __, index) => {
-  //                 return (
-  //                   <Button.Group style={{ marginBottom: '24px' }}>
-  //                     <Button
-  //                       onClick={() => {
-  //                         field.remove(index);
-  //                       }}
-  //                     >
-  //                       删除
-  //                     </Button>
-  //                     <Button
-  //                       onClick={() => {
-  //                         field.push();
-  //                         const prePath = field.name;
-  //                         setTimeout(() => {
-  //                           runWithResolvers(form, ({ field, value }) => {
-  //                             columns.forEach(({ key }) => {
-  //                               field(
-  //                                 `${prePath}[${fields.length}].${key}`
-  //                               )!.setValueSilently(
-  //                                 value(`${prePath}[${index}].${key}`)
-  //                               );
-  //                             });
-  //                           });
-  //                         });
-  //                       }}
-  //                     >
-  //                       复制并新增到尾端
-  //                     </Button>
-  //                   </Button.Group>
-  //                 );
-  //               }
-  //             }
-  //           ])
-  //         : columns;
-  //     },
-  //     []
-  //   );
+
   //   return (
   //     <components.TableArray
   //       {...props}
@@ -83,12 +84,12 @@ Registry.registerGlobalFields({
   //   );
 });
 
-// const uploadButton = (
-//   <div>
-//     <PlusOutlined />
-//     <div className="ant-upload-text">上传</div>
-//   </div>
-// );
+const uploadButton = (
+  <div>
+    <PlusOutlined />
+    <div className="ant-upload-text">上传</div>
+  </div>
+);
 
 const options = [
   { value: 'Linhu', label: '林虎🐯' },
@@ -118,57 +119,27 @@ const DynamicPropsLogic: React.FC<{
   return <Observer>{() => <>{children(store.fieldx)}</>}</Observer>;
 };
 
-// const ReuseLogic: React.FC = ({ children }) => {
-//   useSideEffects(function* ({ value, fieldsEffects }) {
-//     const dis = fieldsEffects('^table\\[(\\d+)\\].wholename', function* (
-//       wholename,
-//       tokens
-//     ) {
-//       const fieldIndex = Number(tokens[1]);
-//       yield autorun(() => {
-//         wholename.silentValue =
-//           value(`table[${fieldIndex}].firstname`) +
-//           ' ' +
-//           value(`table[${fieldIndex}].lastname`);
-//       });
-//     });
-//     yield () => {
-//       console.log('dis');
-//       dis();
-//     };
-//     // const entries = fieldsPattern('^table\\[(\\d+)\\].wholename');
-//     // yield reaction(
-//     //   () => entries.map(({ field }) => field.name),
-//     //   () => {
-//     //     const fieldIndex = Number(tokens[1]);
-//     //     autorun(() => {
-//     //       if (field) {
-//     //         field.silentValue = value(`table[${fieldIndex}].firstname`)
-//     //           ? `${value(`table[${fieldIndex}].firstname`) || ''} ${
-//     //               value(`table[${fieldIndex}].lastname`) || ''
-//     //             }`
-//     //           : undefined;
-//     //       }
-//     //     });
-//     //   }
-//     // );
-//     // for (const { field, tokens } of fieldsPattern(
-//     //   '^table\\[(\\d+)\\].wholename'
-//     // )) {
-//     //   const fieldIndex = Number(tokens[1]);
-//     //   yield autorun(() => {
-//     //     if (field) {
-//     //       field.silentValue = value(`table[${fieldIndex}].firstname`)
-//     //         ? `${value(`table[${fieldIndex}].firstname`) || ''} ${
-//     //             value(`table[${fieldIndex}].lastname`) || ''
-//     //           }`
-//     //         : undefined;
-//     //     }
-//     //   });
-//     // }
-//   });
-//   return <>{children}</>;
-// };
+const ReuseLogic: React.FC = ({ children }) => {
+  useSideEffects(function* ({ value, fieldsEffects }) {
+    yield fieldsEffects('^table\\[(\\d+)\\].wholename', function* (
+      wholename,
+      tokens
+    ) {
+      const fieldIndex = Number(tokens[1]);
+
+      yield reaction(
+        () => [
+          value(`table[${fieldIndex}].firstname`),
+          value(`table[${fieldIndex}].lastname`)
+        ],
+        ([first, last]) => {
+          wholename.silentValue = first + ' ' + last;
+        }
+      );
+    });
+  });
+  return <>{children}</>;
+};
 
 const rule = { type: 'boolean', errorMessage: '必填' };
 
@@ -187,7 +158,7 @@ const App: React.FC = () => {
           onFinishFailed={(errors) => {
             console.log('errors', errors);
           }}
-          subscribe={function* ({ field, value, fieldsEffects }, form) {
+          subscribe={function* ({ field, value }, form) {
             yield reaction(
               () => value('greeting'),
               async (greetingValue) => {
@@ -213,17 +184,6 @@ const App: React.FC = () => {
               },
               { fireImmediately: true }
             );
-
-            // yield fieldsEffects('.*', function* (field) {
-            //   field.setDisabled(true);
-            // });
-
-            // yield addMiddleware(form, (call, next) => {
-            //   if (call.type === 'action') {
-            //     console.log(call);
-            //   }
-            //   next(call);
-            // });
           }}
         >
           <Field
@@ -231,9 +191,12 @@ const App: React.FC = () => {
             name="greeting"
             initialValue="hello!"
             component="Input"
+            type="array"
             plain={false}
             componentProps={{ placeholder: '请随便输入' }}
-          />
+          >
+            suffix
+          </Field>
           <Field
             label="密码测试"
             name="password"
@@ -256,10 +219,23 @@ const App: React.FC = () => {
             }}
           />
           <Field
-            label="距离"
-            name="distance"
-            component="InputNumber"
-            // addonAfter="米"
+            label="TextArea"
+            name="textarea"
+            initialValue="hello!"
+            component="TextArea"
+            componentProps={{ placeholder: '请随便输入' }}
+          />
+          <Field label="距离" name="distance" component="InputNumber">
+            <span style={{ marginLeft: '.2rem' }}>meters</span>
+          </Field>
+          <Field
+            label="DatePicker"
+            name="date"
+            component="DatePicker"
+            componentProps={{
+              showTime: true,
+              format: 'dddd, MMMM Do YYYY, h:mm:ss a'
+            }}
           />
           <DynamicPropsLogic name="isFurry">
             {(field) => (
@@ -270,7 +246,7 @@ const App: React.FC = () => {
                 componentProps={{
                   children: field && (field.value ? '是小动物' : '不是小动物')
                 }}
-                rule={rule}
+                rule={{ ...rule }}
               />
             )}
           </DynamicPropsLogic>
@@ -286,16 +262,6 @@ const App: React.FC = () => {
             component="RadioGroup"
             enum={options}
           />
-          {/*
-
-
-          <Field
-            label="喜欢的水果单选"
-            name="favsingleFood"
-            component="RadioGroup"
-            componentProps={{ options: plainOptions }}
-          />
-
           <Field
             label="人选"
             name="person"
@@ -317,26 +283,22 @@ const App: React.FC = () => {
             name="personmulti"
             component="MultipleSelect"
             initialValue={['will']}
-            componentProps={{
-              options: [
-                { value: 'lucy', label: '露西' },
-                { value: 'will', label: '威尔' },
-                { value: 'you-know-who', label: '神秘人', disabled: true }
-              ]
-            }}
+            enum={[
+              { value: 'lucy', label: '露西' },
+              { value: 'will', label: '威尔' },
+              { value: 'you-know-who', label: '神秘人', disabled: true }
+            ]}
           />
           <Field
             label="标签"
             name="tags"
             component="TagSelect"
             initialValue={['ggb']}
-            componentProps={{
-              options: [
-                { value: 'lucy', label: '露西' },
-                { value: 'will', label: '威尔' },
-                { value: 'you-know-who', label: '神秘人' }
-              ]
-            }}
+            enum={[
+              { value: 'lucy', label: '露西' },
+              { value: 'will', label: '威尔' },
+              { value: 'you-know-who', label: '神秘人' }
+            ]}
           />
           <Field
             label="上传"
@@ -345,53 +307,70 @@ const App: React.FC = () => {
             componentProps={{
               action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
               listType: 'picture-card',
-              // listType: 'picture',
               children: uploadButton
             }}
           />
-
           <ReuseLogic>
             <Field
               label="表格"
               name="table"
               type="array"
               component="TableArray"
+              componentProps={{
+                size: 'small',
+                enhanceColumns,
+                itemFields: [
+                  {
+                    name: 'firstname',
+                    label: '前名字',
+                    component: 'Input',
+                    rule: {
+                      type: 'string',
+                      minLength: 1,
+                      errorMessage: '该字段非空'
+                    },
+                    componentProps: { placeholder: '请输入FirstName' }
+                  },
+                  {
+                    name: 'lastname',
+                    label: '后名字',
+                    component: 'Input',
+                    rule: {
+                      type: 'string',
+                      errorMessage: '该字段非空'
+                    },
+                    componentProps: { placeholder: '请输入LastName' }
+                  },
+                  {
+                    name: 'wholename',
+                    label: '全名字',
+                    component: 'Input',
+                    rule: {
+                      type: 'string',
+                      errorMessage: '该字段非空'
+                    },
+                    componentProps: { placeholder: '自动计算', disabled: true }
+                  }
+                ]
+              }}
             >
-              <Field
-                label="前名字"
-                name="firstname"
-                component="Input"
-                rule={{
-                  type: 'string',
-                  minLength: 1,
-                  errorMessage: '该字段非空'
-                }}
-                componentProps={{ placeholder: '请输入FirstName' }}
-              />
-              <Field
-                label="后名字"
-                name="lastname"
-                component="Input"
-                rule={{
-                  type: 'string',
-                  minLength: 1,
-                  errorMessage: '该字段非空'
-                }}
-                componentProps={{ placeholder: '请输入LastName' }}
-              />
-              <Field
-                label="全名字"
-                name="wholename"
-                component="Input"
-                rule={{
-                  type: 'string',
-                  minLength: 1,
-                  errorMessage: '该字段非空'
-                }}
-                componentProps={{ placeholder: '自动计算', disabled: true }}
-              />
+              <Observer>
+                {() => (
+                  <>
+                    {!form.plain && (
+                      <Button
+                        onClick={() => {
+                          form.resolve('table')?.push();
+                        }}
+                      >
+                        添加一个
+                      </Button>
+                    )}
+                  </>
+                )}
+              </Observer>
             </Field>
-          </ReuseLogic> */}
+          </ReuseLogic>
           <Field label="panel">
             <Button type="primary" htmlType="submit">
               Submit

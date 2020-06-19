@@ -1,20 +1,23 @@
+import React from 'react';
 import { connect, remainOwnEventHandler } from '@formular/react';
-import Select, { SelectProps } from 'antd/lib/select';
+import AntdSelect, { SelectProps } from 'antd/lib/select';
 
-export const XSelect = connect<SelectProps<string | number>>({
+export const Select = connect<SelectProps<string | number>>({
   getValueFromEvent: (val) => val,
-  renderTextContent({ field }) {
+  renderTextContent({
+    meta: { field },
+    renderConfig: { emptyContent, PreviewComponent = 'span' }
+  }) {
+    let text: string | undefined = undefined;
     if (Array.isArray(field.enum)) {
-      const targetOption = field.enum.find(
-        ({ label, value }) => typeof label === 'string' && value === field.value
-      );
-      if (targetOption) {
-        return targetOption.label;
-      }
+      text = field.enum
+        .filter(({ value }) => field.value === value)
+        .map(({ label }) => label)
+        .pop();
     }
-    return field.value;
+    return <PreviewComponent>{text ?? emptyContent}</PreviewComponent>;
   },
-  getDerivedPropsFromFieldMeta(componentProps, { field }) {
+  getDerivedPropsFromFieldMeta({ meta: { field }, componentProps }) {
     const computedProps = {
       onSearch: remainOwnEventHandler(componentProps.onSearch, (val: any) => {
         field.hotState.search = val;
@@ -27,7 +30,9 @@ export const XSelect = connect<SelectProps<string | number>>({
       ...componentProps,
       ...computedProps,
       mode: undefined,
-      options: field.enum
+      options: field.enum,
+      disabled: field.disabled ?? componentProps.disabled,
+      loading: field.loading ?? componentProps.loading
     };
   }
-})(Select);
+})(AntdSelect);

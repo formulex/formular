@@ -1,6 +1,6 @@
 import { useFieldContext } from '../contexts';
 import { useEffect, useRef, useState, useLayoutEffect } from 'react';
-import type { FieldInstance, FormInstance } from '@formular/core';
+import { FieldInstance, FormInstance, shallowEqual } from '@formular/core';
 import { isFieldInstance } from '@formular/core';
 import { reaction } from 'mobx';
 import { FieldMetaProps } from '../hoc';
@@ -80,26 +80,32 @@ export function useField(
     }
   }, [initialValue]);
 
+  const ruleRef = useRef<any>();
   useEffect(() => {
     let unapply = noop;
     if (
       isFieldInstance(fieldRef.current) &&
       typeof rule === 'object' &&
-      rule !== null
+      rule !== null &&
+      !shallowEqual(rule, ruleRef.current)
     ) {
       unapply = fieldRef.current.validation.applyRule(rule);
+      ruleRef.current = rule;
     }
     return unapply;
   }, [rule]);
 
+  const asyncRuleRef = useRef<any>();
   useEffect(() => {
     let unapply = noop;
     if (
       isFieldInstance(fieldRef.current) &&
       typeof asyncRule === 'object' &&
-      asyncRule !== null
+      asyncRule !== null &&
+      !shallowEqual(asyncRule, asyncRuleRef.current)
     ) {
       unapply = fieldRef.current.validation.applyAsyncRule(asyncRule);
+      asyncRuleRef.current = rule;
     }
     return unapply;
   }, [asyncRule]);
@@ -129,11 +135,19 @@ export function useField(
   }, [loading]);
 
   useLayoutEffect(() => {
-    if (isFieldInstance(fieldRef.current)) {
+    if (
+      isFieldInstance(fieldRef.current) &&
+      !shallowEqual(triggers, fieldRef.current?.validation.triggers)
+    ) {
       fieldRef.current?.validation.setTriggers(triggers);
+    }
+  }, [triggers]);
+
+  useLayoutEffect(() => {
+    if (isFieldInstance(fieldRef.current)) {
       fieldRef.current?.validation.setDebounce(debounce);
     }
-  }, [triggers, debounce]);
+  }, [debounce]);
 
   return [fieldRef.current, form];
 }

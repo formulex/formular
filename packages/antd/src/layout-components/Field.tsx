@@ -22,12 +22,14 @@ const NamedField = asFormField<FormItemProps>({
     if (field.show) {
       delete extraStyle.display;
     }
-    const children = React.createElement(
-      Component as React.ComponentType<any>,
-      { ...componentProps, $meta: meta },
-      type === 'array'
-        ? fieldComponentProps.children ?? (componentProps as any)?.children
-        : (componentProps as any)?.children ?? fieldComponentProps.children
+
+    const children = (
+      <>
+        <Component {...componentProps} $meta={meta}>
+          {(componentProps as any)?.children}
+        </Component>
+        {fieldComponentProps.children}
+      </>
     );
 
     const common = {

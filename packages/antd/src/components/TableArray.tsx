@@ -1,85 +1,65 @@
 import React from 'react';
-import { RenderComponentProps } from '../layout-components';
-import { Table } from 'antd';
+import { Field } from '../layout-components';
 import { invariant } from '@formular/core';
-import { Observer, observer } from 'mobx-react';
-import type { ColumnType, TableProps } from 'antd/lib/table';
+import { Observer } from 'mobx-react';
+import AntdTable, { ColumnType, TableProps } from 'antd/lib/table';
+import { connect, FieldArrayMeta, FieldEntryProps } from '@formular/react';
+import { FormItemProps } from 'antd/lib/form/FormItem';
 
-export interface TableArrayProps extends TableProps<any> {
-  renderAfter?: (
-    props: RenderComponentProps<TableArrayProps>
-  ) => React.ReactNode;
+const rowKey = ({ index }: { index: number }) => index!;
+
+export interface XTableProps
+  extends TableProps<{ name: string; index: number }> {
+  itemFields?: Array<FieldEntryProps<FormItemProps, any> & { width?: any }>;
   enhanceColumns?: (
     columns: ColumnType<any>[],
-    props: RenderComponentProps<TableArrayProps>
+    source: { componentProps: XTableProps; meta: FieldArrayMeta }
   ) => ColumnType<any>[];
 }
 
-const rowKey = (_: any, index?: number) => index!;
-
-export const TableArray: React.FC<RenderComponentProps<
-  TableArrayProps
->> = observer((props) => {
-  const {
-    $meta,
-    mapPropsToShow,
-    children,
-    renderAfter,
-    enhanceColumns,
-    ...antdProps
-  } = props;
-  invariant(
-    $meta.type === 'array',
-    `TableArray must be used with type="array" in component "${$meta.field.name}"`
-  );
-  const columns =
-    React.Children.map(children, (child) => {
-      if (!React.isValidElement(child)) {
-        return null;
-      }
-      const {
-        props: { name, label }
-      } = child;
+export const TableArray = connect<XTableProps>({
+  getDerivedPropsFromFieldMeta({ componentProps, meta }) {
+    const { field, type } = meta;
+    invariant(
+      type === 'array',
+      `TableArray must be used with type="array" in component "${field.name}"`
+    );
+    const { fields } = meta as FieldArrayMeta;
+    const dataSource = fields.map((name, index) => ({ name, index }));
+    const columns = (componentProps.itemFields ?? []).map((props) => {
+      const { name, label, width } = props;
       return {
         key: name,
         title: label,
         dataIndex: name,
-        width: child.props?.componentProps?.['data-width'],
-        render: (_, { _index }, index) => {
-          const fieldName = `${$meta.field.name}[${_index ?? index}].${
-            child.props.name
-          }`;
+        width,
+        render: (_: any, source: any) => {
           return (
             <Observer>
-              {() =>
-                React.cloneElement(child, {
-                  ...child.props,
-                  name: fieldName,
-                  label: undefined,
-                  plain: $meta.field.plain
-                })
-              }
+              {() => (
+                <Field
+                  {...props}
+                  name={`${source.name}.${name}`}
+                  label={undefined}
+                  plain={field.plain}
+                />
+              )}
             </Observer>
           );
         }
-      } as ColumnType<any>;
-    })?.filter((_) => _) ?? [];
+      };
+    });
 
-  const baseDataSource = Array.isArray($meta.field.value)
-    ? $meta.field.value
-    : [];
-  const dataSource = baseDataSource.map((obj: any, index) => {
-    return { _index: index };
-  });
-  return (
-    <>
-      <Table
-        {...antdProps}
-        dataSource={dataSource}
-        rowKey={rowKey}
-        columns={enhanceColumns?.(columns, props) ?? columns}
-      />
-      {renderAfter?.(props)}
-    </>
-  );
-});
+    return {
+      ...componentProps,
+      columns:
+        componentProps?.enhanceColumns?.(columns, {
+          componentProps,
+          meta: meta as FieldArrayMeta
+        }) ?? columns,
+      dataSource,
+      loading: field.loading ?? componentProps.loading,
+      rowKey
+    };
+  }
+})(AntdTable);

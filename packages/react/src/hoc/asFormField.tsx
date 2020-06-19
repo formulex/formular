@@ -1,5 +1,4 @@
 import React from 'react';
-import { observer } from 'mobx-react';
 import { useField } from '../hooks';
 import {
   FieldRegisterConfig,
@@ -10,6 +9,7 @@ import {
 } from '@formular/core';
 import type { ConnectedComponentProps } from './connect';
 import { useRegistryContext } from '../contexts';
+import { observer } from 'mobx-react';
 
 export interface FieldSingleMeta {
   field: FieldInstance;

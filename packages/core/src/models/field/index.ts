@@ -212,7 +212,7 @@ export function createField({
     _fallbackInitialValue,
     type,
     _show: true,
-    _disabled: false,
+    _disabled: undefined,
     _loading: undefined,
     active: false,
     _ignored: false,

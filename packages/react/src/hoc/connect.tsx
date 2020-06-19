@@ -46,8 +46,8 @@ export function connect<P extends { [key: string]: any }>({
   getValueProps = (value) => value,
   getDerivedPropsFromFieldMeta = ({ componentProps, meta: { field } }) => ({
     ...componentProps,
-    disabled: field.disabled,
-    loading: field.loading
+    disabled: field.disabled ?? componentProps.disabled,
+    loading: field.loading ?? componentProps.loading
   }),
   renderTextContent
 }: TransformOptions<P> = {}) {
