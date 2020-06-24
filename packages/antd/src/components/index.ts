@@ -8,6 +8,5 @@ export * from './RadioGroup';
 export * from './Select';
 export * from './MultipleSelect';
 export * from './TagSelect';
-export * from './DatePickter';
 export * from './Upload';
 export * from './TableArray';

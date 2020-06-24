@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
@@ -15,14 +15,15 @@ import {
   useForm,
   RenderConfigProvider
 } from '@formular/react';
-import { FieldInstance, runWithResolvers } from '@formular/core';
+import { FieldInstance, getIn } from '@formular/core';
 import RJV from 'react-json-view';
 import { XTableProps } from '../../src/components';
 import { ColumnType } from 'antd/lib/table';
+import { DatePicker } from '../../src/components/DatePickterMoment';
 
 const enhanceColumns: XTableProps['enhanceColumns'] = (
   columns: ColumnType<any>[],
-  { meta: { field, form, fields } }
+  { meta: { field, form } }
 ) => {
   return !field.plain
     ? columns.concat([
@@ -41,19 +42,17 @@ const enhanceColumns: XTableProps['enhanceColumns'] = (
                 </Button>
                 <Button
                   onClick={() => {
-                    field.push();
-                    const prePath = field.name;
-                    setTimeout(() => {
-                      runWithResolvers(form, ({ field, value }) => {
-                        columns.forEach(({ key }) => {
-                          field(
-                            `${prePath}[${fields.length}].${key}`
-                          )!.setValueSilently(
-                            value(`${prePath}[${index}].${key}`)
-                          );
-                        });
-                      });
-                    });
+                    console.log(
+                      Array.from(form.fields.entries()).map(([key, field]) =>
+                        console.log(key, field.value)
+                      )
+                    );
+                    console.log(
+                      'push',
+                      `${field.name}[${index}]`,
+                      getIn(field.value, `[${index}]`)
+                    );
+                    field.push(form.resolve(`${field.name}[${index}]`)?.value);
                   }}
                 >
                   复制并新增到尾端
@@ -67,21 +66,8 @@ const enhanceColumns: XTableProps['enhanceColumns'] = (
 };
 
 Registry.registerGlobalFields({
-  ...components
-  // TableArray: (props: any) => {
-  //   const renderAfter = useCallback(({ $meta: { field } }) => {
-  //     return field.editable ? (
-  //       <Button onClick={() => field.push()}>添加一个</Button>
-  //     ) : null;
-  //   }, []);
-
-  //   return (
-  //     <components.TableArray
-  //       {...props}
-  //       renderAfter={renderAfter}
-  //       enhanceColumns={enhanceColumns}
-  //     />
-  //   );
+  ...components,
+  DatePicker
 });
 
 const uploadButton = (
@@ -145,6 +131,13 @@ const rule = { type: 'boolean', errorMessage: '必填' };
 
 const App: React.FC = () => {
   const [form] = useForm();
+  useEffect(
+    () =>
+      autorun(() => {
+        console.log(form.resolve('table')!.value);
+      }),
+    []
+  );
   return (
     <>
       <RenderConfigProvider value={{ emptyContent: '<empty>' }}>
@@ -316,6 +309,11 @@ const App: React.FC = () => {
               name="table"
               type="array"
               component="TableArray"
+              initialValue={[
+                { firstname: 'ggb', lastname: 'ggb', wholename: 'happy' }
+                // null,
+                // null
+              ]}
               componentProps={{
                 size: 'small',
                 enhanceColumns,
@@ -388,6 +386,9 @@ const App: React.FC = () => {
               Toggle Plain
             </Button>
           </Field>
+          <Card style={{ marginTop: '1rem' }}>
+            <Observer>{() => <RJV src={form.values} />}</Observer>
+          </Card>
           <Card style={{ marginTop: '1rem' }}>
             <Observer>{() => <RJV src={form.values} />}</Observer>
           </Card>

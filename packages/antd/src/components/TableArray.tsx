@@ -58,6 +58,7 @@ export const TableArray = connect<XTableProps>({
           meta: meta as FieldArrayMeta
         }) ?? columns,
       dataSource,
+      pagination: false,
       loading: field.loading ?? componentProps.loading,
       rowKey
     };

@@ -112,15 +112,17 @@ export const Form = types
       self.setFallbackInitialValues(values);
       self.fields.forEach((field) => {
         field.setFallbackInitialValue(getIn(values, field.name));
-        if (filter(field)) {
-          setTimeout(() => {
-            transaction(() => {
+      });
+      setTimeout(() => {
+        transaction(() => {
+          self.fields.forEach((field) => {
+            if (filter(field)) {
               field.setValueSilently(field.initialValue);
               field.resetFlags();
               field.validation.resetValidationFlags();
-            });
+            }
           });
-        }
+        });
       });
     },
     subscribe(setup: SubscribeSetup): () => void {
@@ -134,12 +136,16 @@ export const Form = types
         for (const disposerOrNull of gen) {
           if (typeof disposerOrNull === 'function') {
             disposers.push(disposerOrNull);
+          } else if (
+            typeof (disposerOrNull as any)?.unsubscribe === 'function'
+          ) {
+            disposers.push((disposerOrNull as any).unsubscribe);
           }
         }
       }
       return () => {
         for (const disposer of disposers) {
-          disposer();
+          disposer?.();
         }
       };
     },

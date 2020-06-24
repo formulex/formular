@@ -1,9 +1,10 @@
-import AntdDatePicker, { DatePickerProps } from 'antd/lib/date-picker';
+import generate, { PickerProps } from 'antd/lib/date-picker/generatePicker';
 import { connect } from '@formular/react';
-import moment from 'moment';
 import React from 'react';
+import config from 'rc-picker/lib/generate/moment';
+import moment from 'moment';
 
-export const DatePicker = connect<DatePickerProps>({
+export const DatePicker = connect<PickerProps<moment.Moment>>({
   getValueFromEvent(val) {
     return val?.format() ?? val?.toString();
   },
@@ -18,8 +19,9 @@ export const DatePicker = connect<DatePickerProps>({
     const formatStr = Array.isArray(format) ? format[0] : format;
     return (
       <PreviewComponent>
-        {(field.value && moment(field.value).format(formatStr)) ?? emptyContent}
+        {(field.value && moment(field.value)?.format(formatStr)) ??
+          emptyContent}
       </PreviewComponent>
     );
   }
-})(AntdDatePicker);
+})(generate<moment.Moment>(config));
