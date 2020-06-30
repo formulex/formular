@@ -1,7 +1,13 @@
 import { getType, Instance, types, flow, detach } from 'mobx-state-tree';
 import { createField, FieldInstance } from '../';
-import { autorun, IReactionDisposer, runInAction, transaction } from 'mobx';
-import { setIn, getIn } from '../../utils';
+import {
+  autorun,
+  IReactionDisposer,
+  transaction,
+  observable,
+  toJS
+} from 'mobx';
+import { setIn, getIn, changeValue } from '../../utils';
 import { getResolvers, SubscribeSetup } from '../../sideEffect';
 import type { FormFeature } from '../../features';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
@@ -10,45 +16,50 @@ import { createAjv } from '../../features/validation';
 import ajvErrors from 'ajv-errors';
 import { Ajv } from 'ajv';
 import { FeatureCollection } from './inner-features';
-
-const FormLifecycleHooks = types
-  .model('FormLifecycleHooks', {})
-  .actions(() => ({
-    didRegisterField(_name: string, _field: FieldInstance) {},
-    didUnregisterField(_name: string) {}
-  }));
+import set from 'lodash.set';
 
 export const Form = types
   .compose(
-    FormLifecycleHooks,
     FeatureCollection,
     types.model({
-      _fallbackInitialValues: types.frozen(),
       fields: types.map(types.late((): FieldDesignInterface => Field)),
       validating: types.boolean,
-      everValitated: types.boolean
+      everValitated: types.boolean,
+      // Immutable 🧊 Form InitialValues Source
+      immInitialValues: types.frozen()
     })
   )
-
-  .views((self) => ({
-    get values(): { [key: string]: any } {
-      let result: { [key: string]: any } = {};
-      for (const [key, field] of self.fields.entries()) {
-        if (field.ignored === false) {
-          result = { ...setIn(result, key, field.value) };
-        }
-      }
-      return result;
-    },
-    get initialValues(): { [key: string]: any } {
-      let result: { [key: string]: any } = {};
-      for (const [key, field] of self.fields.entries()) {
-        result = { ...setIn(result, key, field.initialValue) };
-      }
-      return result;
-    },
+  .volatile((self) => ({
+    // Reactive ✨ Form Values Source
+    xValues: observable(
+      self.immInitialValues ? { ...self.immInitialValues } : {},
+      {},
+      { name: '✨ Form Values Source' }
+    ),
     resolve(name: string): FieldInstance | undefined {
       return self.fields.get(name);
+    }
+  }))
+  .views((self) => ({
+    get values(): { [key: string]: any } {
+      return toJS(self.xValues);
+    },
+    get initialValues(): { [key: string]: any } {
+      return { ...self.immInitialValues };
+    }
+  }))
+  .actions((self) => ({
+    change(name: string, value: any): void {
+      if (getIn(self.values, name) !== value) {
+        changeValue(self.xValues, name, value);
+        self.resolve(name)?.markModified(true);
+      }
+    },
+    blur(name: string): void {
+      self.resolve(name)?.blur();
+    },
+    focus(name: string): void {
+      self.resolve(name)?.focus();
     }
   }))
   .actions((self) => ({
@@ -59,49 +70,49 @@ export const Form = types
       self.fields.delete(name);
     },
     renameField(name: string, to: string) {
-      const target = self.fields.get(name);
+      const target = self.resolve(name);
       if (target) {
         const field = detach(target);
         field.__rename(to);
         self.fields.set(to, field);
       }
-    },
-    setFallbackInitialValues(initialVal: any) {
-      self._fallbackInitialValues = initialVal;
     }
   }))
   .actions((self) => ({
     registerField(
       name: string,
       effect?: (field: FieldInstance) => void,
-      { initialValue, type }: FieldRegisterConfig = {}
+      { initialValue }: FieldRegisterConfig = {}
     ): () => void {
-      if (!self.fields.get(name)) {
-        const field = createField({
+      let field = self.fields.get(name);
+      if (!field) {
+        field = createField({
           name,
-          initialValue,
-          type
+          initialValue
         });
-        self.addField(name, field);
+        self.fields.set(name, field);
       }
-      const field = self.fields.get(name)!;
-      setTimeout(() => {
-        runInAction('innerSetValue', () => {
-          if (field.initialValue !== undefined) {
-            field.setValueSilently(field.initialValue);
-          }
-        });
-      });
+      if (
+        initialValue !== undefined &&
+        getIn(self.values, name) === undefined
+        // only initialize if we don't yet have any value for this field
+      ) {
+        self.immInitialValues = setIn(
+          self.immInitialValues,
+          name,
+          initialValue
+        );
+
+        set(self.xValues, name, initialValue);
+      }
 
       let disposer: null | IReactionDisposer = null;
       if (typeof effect === 'function') {
-        disposer = autorun(() => effect(field), { name: `register:${name}` });
+        disposer = autorun(() => effect(field!), { name: `register:${name}` });
       }
-      self.didRegisterField(name, field);
       return () => {
         disposer?.();
-        self.removeField(name);
-        self.didUnregisterField(name);
+        self.fields.delete(name);
       };
     },
     initialize(
@@ -109,7 +120,7 @@ export const Form = types
       filter: (field: FieldInstance) => boolean
     ) {
       const values = typeof data === 'function' ? data(self.values) : data;
-      self.setFallbackInitialValues(values);
+      self.immInitialValues = { ...values };
       self.fields.forEach((field) => {
         field.setFallbackInitialValue(getIn(values, field.name));
       });
@@ -279,7 +290,7 @@ export function createForm<V = any>({
   ajvErrors(ajv);
   const form = Form.create(
     {
-      _fallbackInitialValues: initialValues ? { ...initialValues } : {},
+      immInitialValues: initialValues && { ...initialValues },
       validating: false,
       everValitated: false,
       _plain: false

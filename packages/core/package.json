@@ -29,6 +29,8 @@
     "ajv-errors": "^1.0.1",
     "ajv-i18n": "^3.5.0",
     "lodash.template": "^4.5.0",
+    "lodash.set": "^4.3.2",
+    "lodash.unset": "^4.5.2",
     "p-any": "^3.0.0",
     "shallowequal": "^1.1.0",
     "tiny-invariant": "^1.1.0"
