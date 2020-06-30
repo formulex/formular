@@ -25,6 +25,9 @@ export const FeatureStateFlags = types
         self.active = true;
       }
     },
+    markModified(val: boolean) {
+      self.modified = val;
+    },
     resetFlags() {
       self._everBlured = false;
       self._everFocused = false;
