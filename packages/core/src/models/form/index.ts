@@ -1,22 +1,14 @@
-import { getType, Instance, types, flow, detach } from 'mobx-state-tree';
+import { getType, Instance, types, flow, clone } from 'mobx-state-tree';
 import { createField, FieldInstance } from '../';
-import {
-  autorun,
-  IReactionDisposer,
-  transaction,
-  observable,
-  toJS
-} from 'mobx';
+import { transaction, observable, toJS } from 'mobx';
 import { setIn, getIn, changeValue } from '../../utils';
-import { getResolvers, SubscribeSetup } from '../../sideEffect';
-import type { FormFeature } from '../../features';
+import { getResolvers, SubscribeSetup, SubscribeArgs } from '../../sideEffect';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
 import type { CreateValidationFeatureOptions } from '../../features/validation';
 import { createAjv } from '../../features/validation';
 import ajvErrors from 'ajv-errors';
 import { Ajv } from 'ajv';
 import { FeatureCollection } from './inner-features';
-import set from 'lodash.set';
 
 export const Form = types
   .compose(
@@ -32,9 +24,7 @@ export const Form = types
   .volatile((self) => ({
     // Reactive ✨ Form Values Source
     xValues: observable(
-      self.immInitialValues ? { ...self.immInitialValues } : {},
-      {},
-      { name: '✨ Form Values Source' }
+      self.immInitialValues ? { ...self.immInitialValues } : {}
     ),
     resolve(name: string): FieldInstance | undefined {
       return self.fields.get(name);
@@ -55,6 +45,11 @@ export const Form = types
         self.resolve(name)?.markModified(true);
       }
     },
+    changeSiliently(name: string, value: any): void {
+      if (getIn(self.values, name) !== value) {
+        changeValue(self.xValues, name, value);
+      }
+    },
     blur(name: string): void {
       self.resolve(name)?.blur();
     },
@@ -63,116 +58,129 @@ export const Form = types
     }
   }))
   .actions((self) => ({
-    addField(name: string, field: FieldInstance) {
-      self.fields.set(name, field);
+    renameField(name: string, to: string) {
+      const field = self.resolve(name);
+      if (field) {
+        const cloned = clone(field);
+        cloned.__rename(to);
+        self.fields.set(to, cloned);
+        self.fields.delete(name);
+
+        const value = getIn(self.values, name);
+        self.changeSiliently(name, undefined);
+        self.changeSiliently(to, value);
+      }
     },
     removeField(name: string) {
       self.fields.delete(name);
-    },
-    renameField(name: string, to: string) {
-      const target = self.resolve(name);
-      if (target) {
-        const field = detach(target);
-        field.__rename(to);
-        self.fields.set(to, field);
-      }
     }
   }))
-  .actions((self) => ({
-    registerField(
-      name: string,
-      effect?: (field: FieldInstance) => void,
-      { initialValue }: FieldRegisterConfig = {}
-    ): () => void {
-      let field = self.fields.get(name);
-      if (!field) {
-        field = createField({
-          name,
-          initialValue
-        });
-        self.fields.set(name, field);
-      }
-      if (
-        initialValue !== undefined &&
-        getIn(self.values, name) === undefined
-        // only initialize if we don't yet have any value for this field
-      ) {
-        self.immInitialValues = setIn(
-          self.immInitialValues,
-          name,
-          initialValue
-        );
+  .actions((self) => {
+    function getSetupRunner<Args>(args: Args) {
+      return function subscribe(setup: SubscribeSetup<Args>): () => void {
+        const disposers: (() => void)[] = [];
+        if (typeof setup === 'function') {
+          const gen = setup(args);
 
-        set(self.xValues, name, initialValue);
-      }
-
-      let disposer: null | IReactionDisposer = null;
-      if (typeof effect === 'function') {
-        disposer = autorun(() => effect(field!), { name: `register:${name}` });
-      }
-      return () => {
-        disposer?.();
-        self.fields.delete(name);
+          if (typeof gen === 'function') {
+            // gen is with type () => void
+            disposers.push(gen);
+          } else if (gen === undefined || gen === null) {
+            // ignore
+          } else {
+            // gen is generator
+            for (const disposerOrNull of gen) {
+              if (typeof disposerOrNull === 'function') {
+                disposers.push(disposerOrNull);
+              } else if (
+                typeof (disposerOrNull as any)?.unsubscribe === 'function'
+              ) {
+                disposers.push((disposerOrNull as any).unsubscribe);
+              }
+            }
+          }
+        }
+        return () => {
+          for (const disposer of disposers) {
+            disposer?.();
+          }
+        };
       };
-    },
-    initialize(
-      data: object | ((values: object) => object),
-      filter: (field: FieldInstance) => boolean
-    ) {
-      const values = typeof data === 'function' ? data(self.values) : data;
-      self.immInitialValues = { ...values };
-      self.fields.forEach((field) => {
-        field.setFallbackInitialValue(getIn(values, field.name));
-      });
-      setTimeout(() => {
+    }
+    return {
+      registerField(
+        name: string,
+        effect?: (field: FieldInstance) => () => void,
+        { initialValue }: FieldRegisterConfig = {}
+      ): () => void {
+        let field = self.fields.get(name);
+        if (!field) {
+          field = createField({
+            name,
+            initialValue
+          });
+          self.fields.set(name, field);
+        }
+        if (
+          initialValue !== undefined &&
+          getIn(self.values, name) === undefined
+          // only initialize if we don't yet have any value for this field
+        ) {
+          self.immInitialValues = setIn(
+            self.immInitialValues,
+            name,
+            initialValue
+          );
+
+          self.changeSiliently(name, initialValue);
+        }
+
+        let disposer: null | (() => void) = null;
+        if (typeof effect === 'function') {
+          disposer = getSetupRunner<FieldInstance>(field!)(effect);
+        }
+        return () => {
+          disposer?.();
+          self.removeField(name);
+        };
+      },
+      initialize(
+        data: object | ((values: object) => object),
+        filter: (field: FieldInstance) => boolean
+      ) {
+        const values = typeof data === 'function' ? data(self.values) : data;
+        self.immInitialValues = { ...values };
+        self.xValues = observable({ ...values });
         transaction(() => {
           self.fields.forEach((field) => {
             if (filter(field)) {
-              field.setValueSilently(field.initialValue);
+              self.changeSiliently(field.name, field.initialValue);
               field.resetFlags();
               field.validation.resetValidationFlags();
             }
           });
         });
-      });
-    },
-    subscribe(setup: SubscribeSetup): () => void {
-      const disposers: (() => void)[] = [];
-      if (typeof setup === 'function') {
-        const gen = setup(
-          getResolvers(self as FormInstance),
-          self as FormInstance
-        );
-
-        for (const disposerOrNull of gen) {
-          if (typeof disposerOrNull === 'function') {
-            disposers.push(disposerOrNull);
-          } else if (
-            typeof (disposerOrNull as any)?.unsubscribe === 'function'
-          ) {
-            disposers.push((disposerOrNull as any).unsubscribe);
-          }
-        }
+      },
+      subscribe(setup: SubscribeSetup<SubscribeArgs>): any {
+        return getSetupRunner<SubscribeArgs>({
+          ...getResolvers(self as FormInstance),
+          form: self as FormInstance
+        })(setup);
       }
-      return () => {
-        for (const disposer of disposers) {
-          disposer?.();
-        }
-      };
-    },
-    use(...decorators: FormFeature[]): () => void {
-      const undecorators: ReturnType<FormFeature>[] = [];
-      for (const decorator of decorators) {
-        const undecorate = decorator(self as FormInstance);
-        undecorators.push(undecorate);
-      }
-      return () => {
-        for (const undecorate of undecorators) {
-          undecorate?.();
-        }
-      };
-    }
-  }))
+      // use(...decorators: FormFeature[]): () => void {
+      //   const undecorators: ReturnType<FormFeature>[] = [];
+      //   for (const decorator of decorators) {
+      //     const undecorate = decorator(self as FormInstance);
+      //     undecorators.push(undecorate);
+      //   }
+      //   return () => {
+      //     for (const undecorate of undecorators) {
+      //       undecorate?.();
+      //     }
+      //   };
+      // }
+    };
+  })
   .actions((self) => ({
     reset(initialValues: any = self.initialValues) {
       self.initialize(initialValues || {}, () => true);
@@ -253,11 +261,6 @@ export const Form = types
       }
     })
   }))
-  .actions((self) => ({
-    runInAction(debugName: string, action: (this: typeof self) => any) {
-      action.call(self);
-    }
-  }))
   .named('Form');
 
 type FormDesignType = typeof Form;
@@ -270,8 +273,6 @@ export interface FormValidateCallOptions {
 }
 
 export interface FormConfig<V> extends CreateValidationFeatureOptions {
-  onFinish?: (values: V) => any;
-  onFinishFailed?: (errors: Array<{ name: string; messages: string[] }>) => any;
   initialValues?: V;
 }
 
@@ -285,12 +286,12 @@ export function isFormInstance(o: any): o is FormInstance {
 
 export function createForm<V = any>({
   initialValues
-}: Pick<FormConfig<V>, 'initialValues'>): FormInstance {
+}: Pick<FormConfig<V>, 'initialValues'> = {}): FormInstance {
   const ajv = createAjv();
   ajvErrors(ajv);
   const form = Form.create(
     {
-      immInitialValues: initialValues && { ...initialValues },
+      immInitialValues: initialValues ? { ...initialValues } : {},
       validating: false,
       everValitated: false,
       _plain: false

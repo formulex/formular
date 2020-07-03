@@ -5,7 +5,7 @@ import {
   types,
   castToSnapshot
 } from 'mobx-state-tree';
-import { escapeRegexTokens, getIn } from '../../utils';
+import { getIn } from '../../utils';
 import { Form } from '../form';
 import { createFieldValidation } from '../../features/validation/model';
 import {
@@ -42,6 +42,9 @@ export const Field = types
   .actions((self) => ({
     __rename(name: string) {
       self.name = name;
+    },
+    change(val: any) {
+      getParentOfType(self, Form).change(self.name, val);
     }
   }))
   .views((self) => {
@@ -142,6 +145,7 @@ export interface FieldDesignInterface extends FieldDesignType {}
 
 export interface FieldConfig {
   name: string;
+  initialValue?: any;
 }
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
