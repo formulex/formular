@@ -28,7 +28,11 @@ export const Form = types
     ),
     resolve(name: string): FieldInstance | undefined {
       return self.fields.get(name);
-    }
+    },
+    fieldsEffects: observable.map<string, (field: FieldInstance) => () => void>(
+      {}
+    ),
+    fieldsDisposers: observable.map<string, () => void>({})
   }))
   .views((self) => ({
     get values(): { [key: string]: any } {
@@ -58,19 +62,6 @@ export const Form = types
     }
   }))
   .actions((self) => ({
-    renameField(name: string, to: string) {
-      const field = self.resolve(name);
-      if (field) {
-        const cloned = clone(field);
-        cloned.__rename(to);
-        self.fields.set(to, cloned);
-        self.fields.delete(name);
-
-        const value = getIn(self.values, name);
-        self.changeSiliently(name, undefined);
-        self.changeSiliently(to, value);
-      }
-    },
     removeField(name: string) {
       self.fields.delete(name);
     }
@@ -108,6 +99,35 @@ export const Form = types
       };
     }
     return {
+      renameField(name: string, to: string) {
+        const field = self.resolve(name);
+        if (field) {
+          const cloned = clone(field);
+          cloned.__rename(to);
+          self.fields.set(to, cloned);
+          self.fields.delete(name);
+          const effect = self.fieldsEffects.get(name);
+          if (effect) {
+            self.fieldsEffects.set(to, effect);
+            self.fieldsEffects.delete(name);
+          }
+
+          const disposer = self.fieldsDisposers.get(name);
+          const newEffect = self.fieldsEffects.get(to);
+          if (typeof disposer === 'function' && newEffect) {
+            disposer();
+            self.fieldsDisposers.set(
+              to,
+              getSetupRunner<FieldInstance>(cloned!)(newEffect)
+            );
+            self.fieldsDisposers.delete(name);
+          }
+
+          const value = getIn(self.values, name);
+          self.changeSiliently(name, undefined);
+          self.changeSiliently(to, value);
+        }
+      },
       registerField(
         name: string,
         effect?: (field: FieldInstance) => () => void,
@@ -135,18 +155,21 @@ export const Form = types
           self.changeSiliently(name, initialValue);
         }
 
-        let disposer: null | (() => void) = null;
         if (typeof effect === 'function') {
-          disposer = getSetupRunner<FieldInstance>(field!)(effect);
+          self.fieldsEffects.set(name, effect);
+          const disposer = getSetupRunner<FieldInstance>(field!)(effect);
+          self.fieldsDisposers.set(name, disposer);
         }
         return () => {
-          disposer?.();
+          self.fieldsDisposers.get(name)?.();
+          self.fieldsDisposers.delete(name);
+          self.fieldsEffects.delete(name);
           self.removeField(name);
         };
       },
       initialize(
         data: object | ((values: object) => object),
-        filter: (field: FieldInstance) => boolean
+        filter: (field: FieldInstance) => boolean = () => true
       ) {
         const values = typeof data === 'function' ? data(self.values) : data;
         self.immInitialValues = { ...values };
