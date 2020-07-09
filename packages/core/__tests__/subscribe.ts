@@ -1,9 +1,6 @@
 import { createForm } from '@formular/core';
 import { reaction } from 'mobx';
 
-const sleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
-
 describe('subscribe', () => {
   const prepareFormSubscriber = (
     fieldName: string,
