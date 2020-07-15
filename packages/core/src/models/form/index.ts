@@ -140,7 +140,9 @@ export const Form = types
           initialValue,
           validateFirst,
           validateTrigger,
-          rule
+          rule,
+          messageVariables,
+          validateMessages
         }: FieldRegisterConfig = {}
       ): () => void {
         let field = self.fields.get(name);
@@ -149,7 +151,9 @@ export const Form = types
             name,
             validateFirst,
             validateTrigger,
-            rule
+            rule,
+            messageVariables,
+            validateMessages
           });
           self.fields.set(name, field);
         }

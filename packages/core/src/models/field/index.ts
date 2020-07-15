@@ -162,7 +162,9 @@ export function createField({
   name,
   validateFirst,
   validateTrigger,
-  rule
+  rule,
+  messageVariables,
+  validateMessages
 }: FieldConfig): FieldInstance {
   return Field.create({
     name,
@@ -175,7 +177,13 @@ export function createField({
     _ignored: false,
     modified: false,
     _plain: undefined,
-    validation: createValidation({ validateFirst, validateTrigger, rule }),
+    validation: createValidation({
+      validateFirst,
+      validateTrigger,
+      rule,
+      messageVariables,
+      validateMessages
+    }),
     _frozenState: {}
   });
 }

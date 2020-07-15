@@ -63,7 +63,7 @@ const Validation = types
   }))
   .actions((self) => ({
     setErrors(errors: string[]) {
-      self.errors = cast(errors);
+      self.errors.replace(errors);
     },
     setValidating(val: boolean) {
       self.validating = val;
@@ -140,17 +140,21 @@ export interface CreateValidationOptions {
   validateFirst?: boolean;
   validateTrigger?: string | string[];
   rule?: RuleObject | RuleObject[];
+  messageVariables?: any;
+  validateMessages?: ValidateMessages;
 }
 
 export function createValidation({
   validateFirst,
   validateTrigger,
-  rule
+  rule,
+  messageVariables,
+  validateMessages
 }: CreateValidationOptions = {}): ValidationInstance {
   const instance = Validation.create({
     errors: [],
-    _messageVariables: undefined,
-    _validateMessages: undefined,
+    _messageVariables: messageVariables ?? undefined,
+    _validateMessages: validateMessages ?? undefined,
     validateFirst: validateFirst ?? false,
     validating: false,
     validateTrigger: validateTrigger ?? ['change']
@@ -192,29 +196,30 @@ export const FeatureValidation = types
             self.validation.validateTrigger,
             'blur'
           );
+
           if (
             validateOnChange &&
             call.type === 'action' &&
             call.name === 'change' &&
             call.context === self
           ) {
+            next(call);
             self.validation.validateRules({
               triggerName: 'change'
             });
-          }
-
-          if (
+          } else if (
             validateOnBlur &&
             call.type === 'action' &&
             call.name === 'blur' &&
             call.context === self
           ) {
+            next(call);
             self.validation.validateRules({
               triggerName: 'blur'
             });
+          } else {
+            next(call);
           }
-
-          return next(call);
         });
       },
       beforeDestroy() {
