@@ -3,7 +3,7 @@ export * from './disabled';
 export * from './loading';
 export * from './state-flags';
 export * from './enum';
-export * from './validation';
 export * from './state-frozen';
 export * from './state-hot';
 export * from './collection';
+export * from './validation';

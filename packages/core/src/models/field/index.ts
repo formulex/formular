@@ -7,7 +7,6 @@ import {
 } from 'mobx-state-tree';
 import { getIn } from '../../utils';
 import { Form } from '../form';
-import { createFieldValidation } from '../../features/validation/model';
 import {
   FeatureShow,
   FeatureDisabled,
@@ -17,7 +16,9 @@ import {
   FeatureValidation,
   FeatureFrozenState,
   FeatureHotState,
-  FeatureCollection
+  FeatureCollection,
+  createValidation,
+  CreateValidationOptions
 } from './inner-features';
 
 const Features = types.compose(
@@ -143,12 +144,13 @@ export const Field = types
 type FieldDesignType = typeof Field;
 export interface FieldDesignInterface extends FieldDesignType {}
 
-export interface FieldConfig {
+export interface FieldConfig extends CreateValidationOptions {
   name: string;
-  initialValue?: any;
 }
 
-export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {}
+export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {
+  initialValue?: any;
+}
 
 export interface FieldInstance extends Instance<FieldDesignInterface> {}
 
@@ -156,7 +158,12 @@ export function isFieldInstance(o: any): o is FieldInstance {
   return getType(o) === Field;
 }
 
-export function createField({ name }: FieldConfig): FieldInstance {
+export function createField({
+  name,
+  validateFirst,
+  validateTrigger,
+  rule
+}: FieldConfig): FieldInstance {
   return Field.create({
     name,
     _everBlured: false,
@@ -168,7 +175,7 @@ export function createField({ name }: FieldConfig): FieldInstance {
     _ignored: false,
     modified: false,
     _plain: undefined,
-    validation: castToSnapshot(createFieldValidation()),
+    validation: createValidation({ validateFirst, validateTrigger, rule }),
     _frozenState: {}
   });
 }

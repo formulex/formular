@@ -18,7 +18,11 @@ export const Form = types
       validating: types.boolean,
       everValitated: types.boolean,
       // Immutable 🧊 Form InitialValues Source
-      immInitialValues: types.frozen()
+      immInitialValues: types.frozen(),
+
+      // extra vars when generate error string
+      _messageVariables: types.maybe(types.frozen()),
+      _validateMessages: types.maybe(types.frozen())
     })
   )
   .volatile((self) => ({
@@ -103,6 +107,7 @@ export const Form = types
         const field = self.resolve(name);
         if (field) {
           const cloned = clone(field);
+          cloned.validation.setRules([...field.validation.rules]);
           cloned.__rename(to);
           self.fields.set(to, cloned);
           self.fields.delete(name);
@@ -131,13 +136,20 @@ export const Form = types
       registerField(
         name: string,
         effect?: (field: FieldInstance) => () => void,
-        { initialValue }: FieldRegisterConfig = {}
+        {
+          initialValue,
+          validateFirst,
+          validateTrigger,
+          rule
+        }: FieldRegisterConfig = {}
       ): () => void {
         let field = self.fields.get(name);
         if (!field) {
           field = createField({
             name,
-            initialValue
+            validateFirst,
+            validateTrigger,
+            rule
           });
           self.fields.set(name, field);
         }
@@ -160,6 +172,9 @@ export const Form = types
           const disposer = getSetupRunner<FieldInstance>(field!)(effect);
           self.fieldsDisposers.set(name, disposer);
         }
+
+        field.validation.validateRules();
+
         return () => {
           self.fieldsDisposers.get(name)?.();
           self.fieldsDisposers.delete(name);
@@ -220,69 +235,69 @@ export const Form = types
         Array.isArray(names) ? names.includes(field.name) : true
       );
       self.everValitated = false;
-    },
-    validateFields: flow(function* validate({
-      abortEarly = false
-    }: FormValidateCallOptions = {}) {
-      if (!self.everValitated) {
-        self.everValitated = true;
-      }
-      if (self.validating) {
-        return;
-      }
-      const syncErrors: Array<{ name: string; messages: string[] }> = [];
-      for (const field of self.fields.values()) {
-        if (field.ignored === false) {
-          yield field.validation.validate({
-            sync: true,
-            async: false,
-            noPending: true
-          });
-          if (field.validation.status === 'INVALID') {
-            syncErrors.push({
-              name: field.name,
-              messages: [...field.validation.syncMessages]
-            });
-            if (abortEarly) {
-              return syncErrors;
-            }
-          }
-        }
-      }
-      if (syncErrors.length) {
-        return syncErrors;
-      }
-      const asyncErrors: Array<{ name: string; messages: string[] }> = [];
-      self.validating = true;
-      const errors = yield Promise.all(
-        [...self.fields.values()].map((field) =>
-          field.validation
-            .validate({ sync: false, async: true, noPending: false })
-            .then(() => {
-              if (field.validation.status === 'INVALID') {
-                asyncErrors.push({
-                  name: field.name,
-                  messages: [...field.validation.asyncMessages]
-                });
-                if (abortEarly) {
-                  return Promise.reject(asyncErrors);
-                }
-              }
-            })
-        )
-      ).then(
-        () => null,
-        (errors: Array<{ name: string; messages: string[] }>) => errors
-      );
-      if (Array.isArray(errors)) {
-        self.validating = false;
-        return errors;
-      }
-      self.validating = false;
-      if (asyncErrors.length) {
-        return asyncErrors;
-      }
-    })
+    }
+    // validateFields: flow(function* validate({
+    //   abortEarly = false
+    // }: FormValidateCallOptions = {}) {
+    //   if (!self.everValitated) {
+    //     self.everValitated = true;
+    //   }
+    //   if (self.validating) {
+    //     return;
+    //   }
+    //   const syncErrors: Array<{ name: string; messages: string[] }> = [];
+    //   for (const field of self.fields.values()) {
+    //     if (field.ignored === false) {
+    //       yield field.validation.validate({
+    //         sync: true,
+    //         async: false,
+    //         noPending: true
+    //       });
+    //       if (field.validation.status === 'INVALID') {
+    //         syncErrors.push({
+    //           name: field.name,
+    //           messages: [...field.validation.syncMessages]
+    //         });
+    //         if (abortEarly) {
+    //           return syncErrors;
+    //         }
+    //       }
+    //     }
+    //   }
+    //   if (syncErrors.length) {
+    //     return syncErrors;
+    //   }
+    //   const asyncErrors: Array<{ name: string; messages: string[] }> = [];
+    //   self.validating = true;
+    //   const errors = yield Promise.all(
+    //     [...self.fields.values()].map((field) =>
+    //       field.validation
+    //         .validate({ sync: false, async: true, noPending: false })
+    //         .then(() => {
+    //           if (field.validation.status === 'INVALID') {
+    //             asyncErrors.push({
+    //               name: field.name,
+    //               messages: [...field.validation.asyncMessages]
+    //             });
+    //             if (abortEarly) {
+    //               return Promise.reject(asyncErrors);
+    //             }
+    //           }
+    //         })
+    //     )
+    //   ).then(
+    //     () => null,
+    //     (errors: Array<{ name: string; messages: string[] }>) => errors
+    //   );
+    //   if (Array.isArray(errors)) {
+    //     self.validating = false;
+    //     return errors;
+    //   }
+    //   self.validating = false;
+    //   if (asyncErrors.length) {
+    //     return asyncErrors;
+    //   }
+    // })
   }))
   .named('Form');
 
@@ -317,7 +332,9 @@ export function createForm<V = any>({
       immInitialValues: initialValues ? { ...initialValues } : {},
       validating: false,
       everValitated: false,
-      _plain: false
+      _plain: false,
+      _messageVariables: undefined,
+      _validateMessages: undefined
     },
     { ajv }
   );
