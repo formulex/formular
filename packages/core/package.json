@@ -23,11 +23,8 @@
     "mobx-state-tree": "3.x"
   },
   "dependencies": {
-    "@babel/runtime": "^7.9.6",
+    "@babel/runtime": "^7.10.5",
     "@types/shallowequal": "^1.1.1",
-    "ajv": "^6.12.2",
-    "ajv-errors": "^1.0.1",
-    "ajv-i18n": "^3.5.0",
     "async-validator": "^3.3.0",
     "lodash": "^4.17.19",
     "p-any": "^3.0.0",
