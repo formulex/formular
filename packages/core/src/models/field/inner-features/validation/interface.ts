@@ -1,6 +1,20 @@
 import type { ValidateOption } from 'async-validator';
 
 export type StoreValue = any;
+export interface Store {
+  [name: string]: StoreValue;
+}
+
+export interface FieldError {
+  name: string;
+  errors: string[];
+}
+
+export interface ValidateErrorEntity {
+  values: Store;
+  errorFields: { name: string; errors: string[] }[];
+  outOfDate: boolean;
+}
 
 export type RuleType =
   | 'string'

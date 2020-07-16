@@ -1,10 +1,19 @@
-import { getType, Instance, types, flow, clone } from 'mobx-state-tree';
+import { getType, Instance, types, clone } from 'mobx-state-tree';
 import { createField, FieldInstance } from '../';
 import { transaction, observable, toJS } from 'mobx';
 import { setIn, getIn, changeValue } from '../../utils';
 import { getResolvers, SubscribeSetup, SubscribeArgs } from '../../sideEffect';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
 import { FeatureCollection, FeaturePerishable } from './inner-features';
+import {
+  ValidateOptions,
+  FieldError,
+  Store,
+  ValidateErrorEntity
+} from '../field/inner-features/validation/interface';
+import { defaultValidateMessages } from '../field/inner-features/validation/messages';
+import { allPromiseFinish } from './asyncUtil';
+import { set } from 'lodash';
 
 export const Form = types
   .compose(
@@ -219,27 +228,116 @@ export const Form = types
           ...getResolvers(self as FormInstance),
           form: self as FormInstance
         })(setup);
+      },
+      getFieldsValue(path?: string[]) {
+        let result = {};
+        const isArray = Array.isArray(path);
+        for (const [name, field] of self.fields.entries()) {
+          if ((isArray && path?.includes(name)) || path === undefined) {
+            set(result, name, field.value);
+          }
+        }
+        return { ...result };
       }
     };
   })
-  .actions((self) => ({
-    reset(initialValues: any = self.initialValues) {
-      self.initialize(initialValues || {}, () => true);
-      self.everValitated = false;
-    },
-    resetFields(names?: string[]) {
-      self.initialize(self.initialValues || {}, (field) =>
-        Array.isArray(names) ? names.includes(field.name) : true
-      );
-      self.everValitated = false;
-    },
-    forceResetFields(names?: string[]) {
-      self.initialize({}, (field) =>
-        Array.isArray(names) ? names.includes(field.name) : true
-      );
-      self.everValitated = false;
-    }
-  }))
+  .actions((self) => {
+    let lastValidatePromise: Promise<FieldError[]> | null = null;
+    return {
+      reset(initialValues: any = self.initialValues) {
+        self.initialize(initialValues || {}, () => true);
+        self.everValitated = false;
+      },
+      resetFields(names?: string[]) {
+        self.initialize(self.initialValues || {}, (field) =>
+          Array.isArray(names) ? names.includes(field.name) : true
+        );
+        self.everValitated = false;
+      },
+      forceResetFields(names?: string[]) {
+        self.initialize({}, (field) =>
+          Array.isArray(names) ? names.includes(field.name) : true
+        );
+        self.everValitated = false;
+      },
+      validateFields(nameList?: string[], options?: ValidateOptions) {
+        const provideNameList = !!nameList;
+        const namePathList: string[] | undefined = provideNameList
+          ? nameList
+          : [];
+
+        // Collect result in promise list
+        const promiseList: Promise<{
+          name: string;
+          errors: string[];
+        }>[] = [];
+
+        for (const [name, field] of self.fields.entries()) {
+          if (!provideNameList) {
+            namePathList?.push(field.name);
+          }
+
+          // Skip if without rule
+          if (!field.validation.rules || !field.validation.rules.length) {
+            continue;
+          }
+
+          // Add field validate rule in to promise list
+          if (!provideNameList || namePathList?.includes(field.name)) {
+            const promise = field.validation.validateRules({
+              validateMessages: {
+                ...defaultValidateMessages,
+                ...self._validateMessages
+              },
+              ...options
+            });
+
+            // Wrap promise with field
+            promiseList.push(
+              promise
+                .then(() => ({ name: field.name, errors: [] }))
+                .catch((errors) =>
+                  Promise.reject({
+                    name: field.name,
+                    errors
+                  })
+                )
+            );
+          }
+        }
+
+        const summaryPromise = allPromiseFinish(promiseList);
+        lastValidatePromise = summaryPromise;
+
+        const returnPromise: Promise<
+          Store | ValidateErrorEntity | string[]
+        > = summaryPromise
+          .then(
+            (): Promise<Store | string[]> => {
+              if (lastValidatePromise === summaryPromise) {
+                return Promise.resolve(self.getFieldsValue(namePathList));
+              }
+              return Promise.reject<string[]>([]);
+            }
+          )
+          .catch((results: { name: string; errors: string[] }[]) => {
+            const errorList = results.filter(
+              (result) => result && result.errors.length
+            );
+            return Promise.reject({
+              values: self.getFieldsValue(namePathList),
+              errorFields: errorList,
+              outOfDate: lastValidatePromise !== summaryPromise
+            });
+          });
+
+        // Do not throw in console
+        returnPromise.catch<ValidateErrorEntity>((e) => e);
+
+        return returnPromise as Promise<Store>;
+      }
+    };
+  })
   .named('Form');
 
 type FormDesignType = typeof Form;
