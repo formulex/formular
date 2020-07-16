@@ -9,7 +9,8 @@ import {
 import type {
   ValidateOptions,
   RuleObject,
-  ValidateMessages
+  ValidateMessages,
+  FieldStatus
 } from './interface';
 import { toArray } from './utils';
 import { validateRules } from './validating';
@@ -17,6 +18,7 @@ import { Field } from '../..';
 import { Form } from '../../../form';
 import { merge, cloneDeep, isPlainObject } from 'lodash';
 import { defaultValidateMessages } from './messages';
+import { transaction } from 'mobx';
 
 const Validation = types
   .model('Validation', {
@@ -59,6 +61,18 @@ const Validation = types
           )) ??
         cloneDeep(defaultValidateMessages)
       );
+    },
+    get status(): FieldStatus {
+      if (getParentOfType(self, Field).ignored) {
+        return 'IGNORED';
+      }
+      if (self.validating) {
+        return 'PENDING';
+      }
+      if (self.errors.length) {
+        return 'INVALID';
+      }
+      return 'VALID';
     }
   }))
   .actions((self) => ({
@@ -125,8 +139,10 @@ const Validation = types
         .catch((e) => e)
         .then((errors: string[] = []) => {
           if (isAlive(self) && self.validating) {
-            self.setValidating(false);
-            self.setErrors(errors);
+            transaction(() => {
+              self.setValidating(false);
+              self.setErrors(errors);
+            });
           }
         });
 

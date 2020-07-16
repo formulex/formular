@@ -1,10 +1,4 @@
-import {
-  getParentOfType,
-  getType,
-  Instance,
-  types,
-  castToSnapshot
-} from 'mobx-state-tree';
+import { getParentOfType, getType, Instance, types } from 'mobx-state-tree';
 import { getIn } from '../../utils';
 import { Form } from '../form';
 import {
@@ -150,6 +144,7 @@ export interface FieldConfig extends CreateValidationOptions {
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {
   initialValue?: any;
+  perishable?: boolean;
 }
 
 export interface FieldInstance extends Instance<FieldDesignInterface> {}
