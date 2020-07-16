@@ -38,6 +38,9 @@ export const Field = types
     __rename(name: string) {
       self.name = name;
     },
+    __changeBeat() {
+      // noop
+    },
     change(val: any) {
       getParentOfType(self, Form).change(self.name, val);
     }

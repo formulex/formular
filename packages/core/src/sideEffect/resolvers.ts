@@ -26,25 +26,7 @@ export function getResolvers(form: FormInstance): Resolvers {
     if (!field) {
       return undefined;
     }
-    if (Array.isArray(field.value)) {
-      const pattern = new RegExp(`^${escapeRegexTokens(name)}\\[\\d+].*`);
-      const first = new RegExp(`^${escapeRegexTokens(name)}`);
-      let result = [...field.value];
-      for (const [key, targetField] of Array.from(form.fields.entries())) {
-        if (pattern.test(key)) {
-          result = [
-            ...(setIn(
-              result,
-              key.replace(first, ''),
-              targetField.value
-            ) as any[])
-          ];
-        }
-      }
-      return (result as any) as V;
-    } else {
-      return field.value;
-    }
+    return field.value;
   }
 
   function fieldsEffects(

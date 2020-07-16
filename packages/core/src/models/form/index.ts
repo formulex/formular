@@ -4,11 +4,11 @@ import { transaction, observable, toJS } from 'mobx';
 import { setIn, getIn, changeValue } from '../../utils';
 import { getResolvers, SubscribeSetup, SubscribeArgs } from '../../sideEffect';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
-import type { CreateValidationFeatureOptions } from '../../features/validation';
 import { createAjv } from '../../features/validation';
 import ajvErrors from 'ajv-errors';
 import { Ajv } from 'ajv';
 import { FeatureCollection, FeaturePerishable } from './inner-features';
+import { set } from 'lodash';
 
 export const Form = types
   .compose(
@@ -45,6 +45,13 @@ export const Form = types
     },
     get initialValues(): { [key: string]: any } {
       return { ...self.immInitialValues };
+    },
+    get errors() {
+      const result: { [key: string]: string[] } = {};
+      for (const [name, field] of self.fields.entries()) {
+        result[name] = field.validation.errors;
+      }
+      return result;
     }
   }))
   .actions((self) => ({
@@ -52,6 +59,7 @@ export const Form = types
       if (getIn(self.values, name) !== value) {
         changeValue(self.xValues, name, value);
         self.resolve(name)?.markModified(true);
+        self.resolve(name)?.__changeBeat();
       }
     },
     changeSiliently(name: string, value: any): void {
@@ -216,18 +224,6 @@ export const Form = types
           form: self as FormInstance
         })(setup);
       }
-      // use(...decorators: FormFeature[]): () => void {
-      //   const undecorators: ReturnType<FormFeature>[] = [];
-      //   for (const decorator of decorators) {
-      //     const undecorate = decorator(self as FormInstance);
-      //     undecorators.push(undecorate);
-      //   }
-      //   return () => {
-      //     for (const undecorate of undecorators) {
-      //       undecorate?.();
-      //     }
-      //   };
-      // }
     };
   })
   .actions((self) => ({
@@ -247,68 +243,6 @@ export const Form = types
       );
       self.everValitated = false;
     }
-    // validateFields: flow(function* validate({
-    //   abortEarly = false
-    // }: FormValidateCallOptions = {}) {
-    //   if (!self.everValitated) {
-    //     self.everValitated = true;
-    //   }
-    //   if (self.validating) {
-    //     return;
-    //   }
-    //   const syncErrors: Array<{ name: string; messages: string[] }> = [];
-    //   for (const field of self.fields.values()) {
-    //     if (field.ignored === false) {
-    //       yield field.validation.validate({
-    //         sync: true,
-    //         async: false,
-    //         noPending: true
-    //       });
-    //       if (field.validation.status === 'INVALID') {
-    //         syncErrors.push({
-    //           name: field.name,
-    //           messages: [...field.validation.syncMessages]
-    //         });
-    //         if (abortEarly) {
-    //           return syncErrors;
-    //         }
-    //       }
-    //     }
-    //   }
-    //   if (syncErrors.length) {
-    //     return syncErrors;
-    //   }
-    //   const asyncErrors: Array<{ name: string; messages: string[] }> = [];
-    //   self.validating = true;
-    //   const errors = yield Promise.all(
-    //     [...self.fields.values()].map((field) =>
-    //       field.validation
-    //         .validate({ sync: false, async: true, noPending: false })
-    //         .then(() => {
-    //           if (field.validation.status === 'INVALID') {
-    //             asyncErrors.push({
-    //               name: field.name,
-    //               messages: [...field.validation.asyncMessages]
-    //             });
-    //             if (abortEarly) {
-    //               return Promise.reject(asyncErrors);
-    //             }
-    //           }
-    //         })
-    //     )
-    //   ).then(
-    //     () => null,
-    //     (errors: Array<{ name: string; messages: string[] }>) => errors
-    //   );
-    //   if (Array.isArray(errors)) {
-    //     self.validating = false;
-    //     return errors;
-    //   }
-    //   self.validating = false;
-    //   if (asyncErrors.length) {
-    //     return asyncErrors;
-    //   }
-    // })
   }))
   .named('Form');
 
