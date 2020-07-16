@@ -1,5 +1,6 @@
 import { createForm } from '@formular/core';
 import { reaction } from 'mobx';
+import { cloneDeep } from 'lodash';
 
 describe('field-subscribe', () => {
   const prepareFieldSubscribers = (
@@ -402,5 +403,119 @@ describe('field-subscribe', () => {
     // no need to notify form or field
     expect(spy).toHaveBeenCalledTimes(2);
     expect(field).toHaveBeenCalledTimes(2);
+  });
+
+  it('should destroy field value on unregister when perishable is true', () => {
+    const form = createForm({
+      perishable: true
+    });
+    const spy = jest.fn();
+    form.subscribe(({ form }) =>
+      reaction(
+        () => form.values,
+        () => spy(form),
+        { fireImmediately: true }
+      )
+    );
+    const field = jest.fn();
+    const unregister = form.registerField('foo', (f) =>
+      reaction(
+        () => f.value,
+        () => field(f),
+        { fireImmediately: true }
+      )
+    );
+
+    // no values yet
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0].values).toEqual({});
+    expect(field).toHaveBeenCalledTimes(1);
+    expect(field.mock.calls[0][0].value).toBeUndefined();
+
+    // change value
+    form.change('foo', 'bar');
+
+    // value changed
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls[1][0].values).toEqual({ foo: 'bar' });
+    expect(field).toHaveBeenCalledTimes(2);
+    expect(field.mock.calls[1][0].value).toBe('bar');
+
+    // unregister should not remove value
+    unregister();
+
+    // form notified of change of values
+    expect(spy).toHaveBeenCalledTimes(3);
+    expect(spy.mock.calls[2][0].values).toEqual({});
+    expect(field).toHaveBeenCalledTimes(2);
+  });
+
+  it('should destroy array field values on unregister when perishable is true', () => {
+    const form = createForm({
+      perishable: true
+    });
+    const spy = jest.fn();
+    form.subscribe(({ form }) =>
+      reaction(
+        () => form.values,
+        (values) => spy({ values: cloneDeep(values) }),
+        { fireImmediately: true }
+      )
+    );
+    const wolf = jest.fn();
+    const dog = jest.fn();
+
+    const unregisterWolf = form.registerField('foo[0].wolf', (field) =>
+      reaction(
+        () => field.value,
+        () => wolf(field),
+        { fireImmediately: true }
+      )
+    );
+    const unregisterDog = form.registerField('foo[0].dog', (field) =>
+      reaction(
+        () => field.value,
+        () => dog(field),
+        { fireImmediately: true }
+      )
+    );
+
+    // no values yet
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0].values).toEqual({});
+    expect(wolf).toHaveBeenCalledTimes(1);
+    expect(wolf.mock.calls[0][0].value).toBeUndefined();
+    expect(dog).toHaveBeenCalledTimes(1);
+    expect(dog.mock.calls[0][0].value).toBeUndefined();
+
+    // change values
+    form.change('foo[0].wolf', 'VoidWolf');
+    form.change('foo[0].dog', 'Odie');
+
+    // value changed
+    expect(spy).toHaveBeenCalledTimes(3);
+    expect(spy.mock.calls[1][0].values).toEqual({
+      foo: [{ wolf: 'VoidWolf' }]
+    });
+    expect(spy.mock.calls[2][0].values).toEqual({
+      foo: [{ wolf: 'VoidWolf', dog: 'Odie' }]
+    });
+    expect(wolf).toHaveBeenCalledTimes(2);
+    expect(wolf.mock.calls[1][0].value).toBe('VoidWolf');
+    expect(dog).toHaveBeenCalledTimes(2);
+    expect(dog.mock.calls[1][0].value).toBe('Odie');
+
+    // unregister should not remove value
+    unregisterWolf();
+    unregisterDog();
+
+    // form notified of change of values
+    expect(spy).toHaveBeenCalledTimes(5);
+    expect(spy.mock.calls[3][0].values).toEqual({ foo: [{ dog: 'Odie' }] });
+    expect(spy.mock.calls[4][0].values).toEqual({
+      foo: [{}]
+    });
+    expect(wolf).toHaveBeenCalledTimes(2);
+    expect(dog).toHaveBeenCalledTimes(2);
   });
 });

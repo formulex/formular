@@ -8,11 +8,12 @@ import type { CreateValidationFeatureOptions } from '../../features/validation';
 import { createAjv } from '../../features/validation';
 import ajvErrors from 'ajv-errors';
 import { Ajv } from 'ajv';
-import { FeatureCollection } from './inner-features';
+import { FeatureCollection, FeaturePerishable } from './inner-features';
 
 export const Form = types
   .compose(
     FeatureCollection,
+    FeaturePerishable,
     types.model({
       fields: types.map(types.late((): FieldDesignInterface => Field)),
       validating: types.boolean,
@@ -142,7 +143,8 @@ export const Form = types
           validateTrigger,
           rule,
           messageVariables,
-          validateMessages
+          validateMessages,
+          perishable
         }: FieldRegisterConfig = {}
       ): () => void {
         let field = self.fields.get(name);
@@ -180,10 +182,15 @@ export const Form = types
         field.validation.validateRules();
 
         return () => {
-          self.fieldsDisposers.get(name)?.();
-          self.fieldsDisposers.delete(name);
-          self.fieldsEffects.delete(name);
-          self.removeField(name);
+          transaction(() => {
+            self.fieldsDisposers.get(name)?.();
+            self.fieldsDisposers.delete(name);
+            self.fieldsEffects.delete(name);
+            self.removeField(name);
+            if (perishable ?? self.perishable) {
+              self.change(name, undefined);
+            }
+          });
         };
       },
       initialize(
@@ -314,8 +321,9 @@ export interface FormValidateCallOptions {
   abortEarly?: boolean;
 }
 
-export interface FormConfig<V> extends CreateValidationFeatureOptions {
+export interface FormConfig<V> {
   initialValues?: V;
+  perishable?: boolean;
 }
 
 export interface FormEnvironment {
@@ -327,8 +335,9 @@ export function isFormInstance(o: any): o is FormInstance {
 }
 
 export function createForm<V = any>({
-  initialValues
-}: Pick<FormConfig<V>, 'initialValues'> = {}): FormInstance {
+  initialValues,
+  perishable
+}: FormConfig<V> = {}): FormInstance {
   const ajv = createAjv();
   ajvErrors(ajv);
   const form = Form.create(
@@ -338,7 +347,8 @@ export function createForm<V = any>({
       everValitated: false,
       _plain: false,
       _messageVariables: undefined,
-      _validateMessages: undefined
+      _validateMessages: undefined,
+      _perishable: perishable ?? false
     },
     { ajv }
   );

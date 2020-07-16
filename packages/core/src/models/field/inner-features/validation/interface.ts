@@ -19,6 +19,8 @@ export type RuleType =
 
 type Validator = (rule: RuleObject, value: StoreValue) => Promise<void>;
 
+export type FieldStatus = 'IGNORED' | 'PENDING' | 'VALID' | 'INVALID';
+
 export interface BaseRule {
   enum?: StoreValue[];
   len?: number;
