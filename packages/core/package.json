@@ -29,9 +29,7 @@
     "ajv-errors": "^1.0.1",
     "ajv-i18n": "^3.5.0",
     "async-validator": "^3.3.0",
-    "lodash.set": "^4.3.2",
-    "lodash.template": "^4.5.0",
-    "lodash.unset": "^4.5.2",
+    "lodash": "^4.17.19",
     "p-any": "^3.0.0",
     "shallowequal": "^1.1.0",
     "tiny-invariant": "^1.1.0"
@@ -48,8 +46,6 @@
     "access": "public",
     "registry": "http://registry.npmjs.org"
   },
-  "devDependencies": {
-    "@types/lodash.template": "^4.4.6"
-  },
+  "devDependencies": {},
   "gitHead": "df7579353451512b69e363802470f9695584e0e0"
 }
