@@ -1,5 +1,4 @@
-import set from 'lodash.set';
-import unset from 'lodash.unset';
+import { set, unset } from 'lodash';
 
 export function changeValue(target: any, name: string, value: any): void {
   if (value === undefined) {
