@@ -4,11 +4,7 @@ import { transaction, observable, toJS } from 'mobx';
 import { setIn, getIn, changeValue } from '../../utils';
 import { getResolvers, SubscribeSetup, SubscribeArgs } from '../../sideEffect';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
-import { createAjv } from '../../features/validation';
-import ajvErrors from 'ajv-errors';
-import { Ajv } from 'ajv';
 import { FeatureCollection, FeaturePerishable } from './inner-features';
-import { set } from 'lodash';
 
 export const Form = types
   .compose(
@@ -260,10 +256,6 @@ export interface FormConfig<V> {
   perishable?: boolean;
 }
 
-export interface FormEnvironment {
-  ajv: Ajv;
-}
-
 export function isFormInstance(o: any): o is FormInstance {
   return getType(o) === Form;
 }
@@ -272,20 +264,15 @@ export function createForm<V = any>({
   initialValues,
   perishable
 }: FormConfig<V> = {}): FormInstance {
-  const ajv = createAjv();
-  ajvErrors(ajv);
-  const form = Form.create(
-    {
-      immInitialValues: initialValues ? { ...initialValues } : {},
-      validating: false,
-      everValitated: false,
-      _plain: false,
-      _messageVariables: undefined,
-      _validateMessages: undefined,
-      _perishable: perishable ?? false
-    },
-    { ajv }
-  );
+  const form = Form.create({
+    immInitialValues: initialValues ? { ...initialValues } : {},
+    validating: false,
+    everValitated: false,
+    _plain: false,
+    _messageVariables: undefined,
+    _validateMessages: undefined,
+    _perishable: perishable ?? false
+  });
 
   return form;
 }
