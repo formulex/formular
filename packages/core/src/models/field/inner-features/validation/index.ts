@@ -23,7 +23,8 @@ import { transaction } from 'mobx';
 const Validation = types
   .model('Validation', {
     // all validation errors
-    errors: types.array(types.string),
+    ownErrors: types.array(types.string),
+    effectErrors: types.array(types.string),
 
     // extra vars when generate error string
     _messageVariables: types.maybe(types.frozen()),
@@ -40,6 +41,11 @@ const Validation = types
   })
   .volatile(() => ({
     rules: [] as RuleObject[]
+  }))
+  .views((self) => ({
+    get errors() {
+      return [...self.ownErrors, ...self.effectErrors];
+    }
   }))
   .views((self) => ({
     get messageVariables(): any {
@@ -76,8 +82,11 @@ const Validation = types
     }
   }))
   .actions((self) => ({
-    setErrors(errors: string[]) {
-      self.errors.replace(errors);
+    setOwnErrors(errors: string[]) {
+      self.ownErrors.replace(errors);
+    },
+    setEffectErrors(errors: string[]) {
+      self.effectErrors.replace(errors);
     },
     setValidating(val: boolean) {
       self.validating = val;
@@ -102,7 +111,8 @@ const Validation = types
       self.validateTrigger = cast(triggers);
     },
     resetValidationFlags() {
-      self.errors.clear();
+      self.ownErrors.clear();
+      self.effectErrors.clear();
     }
   }))
   .actions((self) => ({
@@ -133,7 +143,7 @@ const Validation = types
         self.messageVariables
       );
       self.setValidating(true);
-      self.setErrors([]);
+      self.setOwnErrors([]);
 
       promise
         .catch((e) => e)
@@ -141,7 +151,7 @@ const Validation = types
           if (isAlive(self) && self.validating) {
             transaction(() => {
               self.setValidating(false);
-              self.setErrors(errors);
+              self.setOwnErrors(errors);
             });
           }
         });
@@ -168,7 +178,8 @@ export function createValidation({
   validateMessages
 }: CreateValidationOptions = {}): ValidationInstance {
   const instance = Validation.create({
-    errors: [],
+    ownErrors: [],
+    effectErrors: [],
     _messageVariables: messageVariables ?? undefined,
     _validateMessages: validateMessages ?? undefined,
     validateFirst: validateFirst ?? false,
@@ -216,7 +227,7 @@ export const FeatureValidation = types
           if (
             validateOnChange &&
             call.type === 'action' &&
-            call.name === 'change' &&
+            call.name === '__changeBeat' &&
             call.context === self
           ) {
             next(call);
