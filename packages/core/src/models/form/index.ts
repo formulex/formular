@@ -228,38 +228,24 @@ export const Form = types
           ...getResolvers(self as FormInstance),
           form: self as FormInstance
         })(setup);
-      },
-      getFieldsValue(path?: string[]) {
-        let result = {};
-        const isArray = Array.isArray(path);
-        for (const [name, field] of self.fields.entries()) {
-          if ((isArray && path?.includes(name)) || path === undefined) {
-            set(result, name, field.value);
-          }
-        }
-        return { ...result };
       }
     };
   })
-  .actions((self) => {
+  .volatile((self) => ({
+    getFieldsValue(path?: string[]) {
+      let result = {};
+      const isArray = Array.isArray(path);
+      for (const [name, field] of self.fields.entries()) {
+        if ((isArray && path?.includes(name)) || path === undefined) {
+          set(result, name, field.value);
+        }
+      }
+      return { ...result };
+    }
+  }))
+  .volatile((self) => {
     let lastValidatePromise: Promise<FieldError[]> | null = null;
     return {
-      reset(initialValues: any = self.initialValues) {
-        self.initialize(initialValues || {}, () => true);
-        self.everValitated = false;
-      },
-      resetFields(names?: string[]) {
-        self.initialize(self.initialValues || {}, (field) =>
-          Array.isArray(names) ? names.includes(field.name) : true
-        );
-        self.everValitated = false;
-      },
-      forceResetFields(names?: string[]) {
-        self.initialize({}, (field) =>
-          Array.isArray(names) ? names.includes(field.name) : true
-        );
-        self.everValitated = false;
-      },
       validateFields(nameList?: string[], options?: ValidateOptions) {
         const provideNameList = !!nameList;
         const namePathList: string[] | undefined = provideNameList
@@ -272,7 +258,7 @@ export const Form = types
           errors: string[];
         }>[] = [];
 
-        for (const [name, field] of self.fields.entries()) {
+        for (const [_, field] of self.fields.entries()) {
           if (!provideNameList) {
             namePathList?.push(field.name);
           }
@@ -338,6 +324,41 @@ export const Form = types
       }
     };
   })
+  .volatile((self) => ({
+    submit(onFinish?: OnFinish, onFinishFailed?: OnFinishFailed) {
+      return self
+        .validateFields()
+        .then((values) => {
+          try {
+            onFinish?.(values);
+          } catch (err) {
+            // Should print error if user `onFinish` callback failed
+            console.error(err);
+          }
+        })
+        .catch((e) => {
+          onFinishFailed?.(e);
+        });
+    }
+  }))
+  .actions((self) => ({
+    reset(initialValues: any = self.initialValues) {
+      self.initialize(initialValues || {}, () => true);
+      self.everValitated = false;
+    },
+    resetFields(names?: string[]) {
+      self.initialize(self.initialValues || {}, (field) =>
+        Array.isArray(names) ? names.includes(field.name) : true
+      );
+      self.everValitated = false;
+    },
+    forceResetFields(names?: string[]) {
+      self.initialize({}, (field) =>
+        Array.isArray(names) ? names.includes(field.name) : true
+      );
+      self.everValitated = false;
+    }
+  }))
   .named('Form');
 
 type FormDesignType = typeof Form;
@@ -356,6 +377,14 @@ export interface FormConfig<V> {
 
 export function isFormInstance(o: any): o is FormInstance {
   return getType(o) === Form;
+}
+
+export interface OnFinish {
+  (values: any): void;
+}
+
+export interface OnFinishFailed {
+  (errorInfo: ValidateErrorEntity): void;
 }
 
 export function createForm<V = any>({
