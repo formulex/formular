@@ -12,7 +12,7 @@
   "author": "HeskeyBaozi <hezhiyu233@foxmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "parcel examples/rsuite/index.html",
+    "start": "cd examples/new-rsuite && parcel index.html",
     "lint": "eslint --ext .ts,.tsx src",
     "build": "npm run build:es && npm run build:lib",
     "build:es": "rimraf es && cross-env ESMODULE=1 babel src --out-dir es --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir es",
@@ -43,5 +43,8 @@
     "access": "public",
     "registry": "http://registry.npmjs.org"
   },
-  "gitHead": "df7579353451512b69e363802470f9695584e0e0"
+  "gitHead": "df7579353451512b69e363802470f9695584e0e0",
+  "devDependencies": {
+    "@babel/core": "^7.11.1"
+  }
 }
