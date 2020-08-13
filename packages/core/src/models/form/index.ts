@@ -9,7 +9,8 @@ import {
   ValidateOptions,
   FieldError,
   Store,
-  ValidateErrorEntity
+  ValidateErrorEntity,
+  ValidateMessages
 } from '../field/inner-features/validation/interface';
 import { defaultValidateMessages } from '../field/inner-features/validation/messages';
 import { allPromiseFinish } from './asyncUtil';
@@ -373,6 +374,9 @@ export interface FormValidateCallOptions {
 export interface FormConfig<V> {
   initialValues?: V;
   perishable?: boolean;
+  plain?: boolean;
+  messageVariables?: Record<string, any>;
+  validateMessages?: ValidateMessages;
 }
 
 export function isFormInstance(o: any): o is FormInstance {
@@ -389,15 +393,18 @@ export interface OnFinishFailed {
 
 export function createForm<V = any>({
   initialValues,
-  perishable
+  perishable,
+  plain,
+  messageVariables,
+  validateMessages
 }: FormConfig<V> = {}): FormInstance {
   const form = Form.create({
     immInitialValues: initialValues ? { ...initialValues } : {},
     validating: false,
     everValitated: false,
-    _plain: false,
-    _messageVariables: undefined,
-    _validateMessages: undefined,
+    _plain: plain ?? false,
+    _messageVariables: messageVariables ?? undefined,
+    _validateMessages: validateMessages ?? undefined,
     _perishable: perishable ?? false
   });
 
