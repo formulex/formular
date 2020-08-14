@@ -22,6 +22,7 @@
   "dependencies": {
     "@babel/runtime": "^7.11.2",
     "@formular/core": "^0.0.11",
+    "hoist-non-react-statics": "^3.3.2",
     "lodash.debounce": "^4.0.8",
     "lodash.memoize": "^4.1.2"
   },
@@ -43,5 +44,8 @@
     "access": "public",
     "registry": "http://registry.npmjs.org"
   },
-  "gitHead": "df7579353451512b69e363802470f9695584e0e0"
+  "gitHead": "df7579353451512b69e363802470f9695584e0e0",
+  "devDependencies": {
+    "less": "^3.12.2"
+  }
 }
