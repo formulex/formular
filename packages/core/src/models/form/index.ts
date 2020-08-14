@@ -32,6 +32,14 @@ export const Form = types
       _validateMessages: types.maybe(types.frozen())
     })
   )
+  .actions((self) => ({
+    setMessageVariables(val: any) {
+      self._messageVariables = val;
+    },
+    setValidateMessages(val: any) {
+      self._validateMessages = val;
+    }
+  }))
   .volatile((self) => ({
     // Reactive ✨ Form Values Source
     xValues: observable(
@@ -158,7 +166,11 @@ export const Form = types
           rule,
           messageVariables,
           validateMessages,
-          perishable
+          perishable,
+          plain,
+          show,
+          disabled,
+          ignored
         }: FieldRegisterConfig = {}
       ): () => void {
         let field = self.fields.get(name);
@@ -169,7 +181,11 @@ export const Form = types
             validateTrigger,
             rule,
             messageVariables,
-            validateMessages
+            validateMessages,
+            plain,
+            show,
+            disabled,
+            ignored
           });
           self.fields.set(name, field);
         }

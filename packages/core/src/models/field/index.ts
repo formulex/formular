@@ -143,6 +143,12 @@ export interface FieldDesignInterface extends FieldDesignType {}
 
 export interface FieldConfig extends CreateValidationOptions {
   name: string;
+
+  // set props
+  show?: boolean;
+  disabled?: boolean;
+  ignored?: boolean;
+  plain?: boolean;
 }
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {
@@ -162,19 +168,23 @@ export function createField({
   validateTrigger,
   rule,
   messageVariables,
-  validateMessages
+  validateMessages,
+  show,
+  disabled,
+  ignored,
+  plain
 }: FieldConfig): FieldInstance {
   return Field.create({
     name,
     _everBlured: false,
     _everFocused: false,
-    _show: true,
-    _disabled: undefined,
+    _show: show ?? true,
+    _disabled: disabled ?? undefined,
     _loading: undefined,
     active: false,
-    _ignored: false,
+    _ignored: ignored ?? false,
     modified: false,
-    _plain: undefined,
+    _plain: plain ?? undefined,
     validation: createValidation({
       validateFirst,
       validateTrigger,

@@ -23,10 +23,10 @@
     "mobx-state-tree": "3.x"
   },
   "dependencies": {
-    "@babel/runtime": "^7.10.5",
+    "@babel/runtime": "^7.11.2",
     "@types/shallowequal": "^1.1.1",
-    "async-validator": "^3.3.0",
-    "lodash": "^4.17.19",
+    "async-validator": "^3.4.0",
+    "lodash": "^4.17.20",
     "p-any": "^3.0.0",
     "shallowequal": "^1.1.0",
     "tiny-invariant": "^1.1.0"
