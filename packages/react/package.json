@@ -12,7 +12,7 @@
   "author": "HeskeyBaozi <hezhiyu233@foxmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "cd examples/new-rsuite && parcel index.html",
+    "start": "cd examples/antd && parcel index.html",
     "lint": "eslint --ext .ts,.tsx src",
     "build": "npm run build:es && npm run build:lib",
     "build:es": "rimraf es && cross-env ESMODULE=1 babel src --out-dir es --extensions '.ts,.tsx' && tsc --emitDeclarationOnly --outDir es",
