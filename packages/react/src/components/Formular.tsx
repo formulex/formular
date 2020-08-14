@@ -9,6 +9,9 @@ import type {
 import { useConstant, useWhenValueChanges } from '../use';
 import { FormInstanceContext } from '../context/FormInstanceContext';
 import { PlainConfigContext, PlainConfig } from '../context/PlainConfigContext';
+import type { RegistryEntry } from '../registry';
+import { useRegistry } from '../hook/useRegistry';
+import { RegistryContext } from '../context/RegistryContext';
 
 export interface FormularRenderProps {
   form: FormInstance;
@@ -19,7 +22,10 @@ export interface RenderChildren {
   (renderProps: FormularRenderProps): React.ReactNode;
 }
 
-export interface FormularProps<V> extends FormConfig<V>, PlainConfig {
+export interface FormularProps<V>
+  extends FormConfig<V>,
+    PlainConfig,
+    RegistryEntry {
   form?: FormInstance;
   children?: React.ReactNode | RenderChildren;
   onFinish?: OnFinish;
@@ -42,7 +48,8 @@ export const Formular = React.forwardRef<FormInstance, FormularProps<any>>(
       plain,
       messageVariables,
       validateMessages,
-      emptyContent
+      emptyContent,
+      fields
     },
     ref
   ) => {
@@ -113,14 +120,18 @@ export const Formular = React.forwardRef<FormInstance, FormularProps<any>>(
       [emptyContent]
     );
 
+    const [registry] = useRegistry({ fields });
+
     return (
       <FormInstanceContext.Provider value={form}>
         <PlainConfigContext.Provider value={plainConfig}>
-          <>
-            {isRenderFunction(children)
-              ? children({ form, handleSubmit })
-              : children}
-          </>
+          <RegistryContext.Provider value={registry}>
+            <>
+              {isRenderFunction(children)
+                ? children({ form, handleSubmit })
+                : children}
+            </>
+          </RegistryContext.Provider>
         </PlainConfigContext.Provider>
       </FormInstanceContext.Provider>
     );

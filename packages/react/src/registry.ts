@@ -1,23 +1,12 @@
 import React from 'react';
 
-export interface RegistryEntry<XFormProps = any> {
-  formComponent?: string | React.JSXElementConstructor<XFormProps>;
+export interface RegistryEntry {
   fields?: {
     [key: string]: React.ComponentType<any>;
   };
 }
 
 export class Registry implements RegistryEntry {
-  formComponent: string | React.JSXElementConstructor<any>;
-  registerLocalFormComponent(component: React.ComponentType<any>) {
-    if (component) {
-      this.formComponent = component;
-    }
-  }
-  unregisterLocalFormComponent() {
-    this.formComponent = Registry.global_formComponent;
-  }
-
   fields: {
     [key: string]: React.ComponentType<any>;
   };
@@ -54,17 +43,6 @@ export class Registry implements RegistryEntry {
     }
   }
 
-  private static global_formComponent:
-    | string
-    | React.JSXElementConstructor<any> = 'form';
-  public static registerGlobalFormComponent<P>(
-    component: React.ComponentType<P>
-  ) {
-    if (component) {
-      Registry.global_formComponent = component;
-    }
-  }
-
   private static global_fields: {
     [key: string]: React.ComponentType<any>;
   } = {};
@@ -94,7 +72,6 @@ export class Registry implements RegistryEntry {
   }
 
   constructor() {
-    this.formComponent = Registry.global_formComponent;
     this.fields = Registry.global_fields;
   }
 }
