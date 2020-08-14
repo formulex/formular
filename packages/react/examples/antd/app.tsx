@@ -1,5 +1,9 @@
 import React from 'react';
-import { Formular, FieldWrapper } from '../../src/components';
+import {
+  Formular,
+  FieldWrapper,
+  AtomFieldRenderer
+} from '../../src/components';
 import { Form, Button, Switch, Card, Input } from 'antd';
 import 'antd/dist/antd.css';
 import './app.less';
@@ -7,6 +11,13 @@ import { Observer } from 'mobx-react';
 import type { FormInstance } from '@formular/core';
 import { asAtomField } from '../../src/components/asAtomField';
 import { InputProps } from 'antd/lib/input';
+import { Registry } from '../../src/registry';
+
+const FInput = asAtomField<InputProps>()(Input);
+
+Registry.registerGlobalFields({
+  FInput
+});
 
 export const component: React.FC<any> = ({
   handleSubmit,
@@ -15,6 +26,7 @@ export const component: React.FC<any> = ({
 }) => {
   return <form {...rest} onSubmit={handleSubmit ?? onSubmit} />;
 };
+component.displayName = 'AntdFormCompatWrapper';
 
 const validateMapper: { [key: string]: any } = {
   PENDING: 'validating',
@@ -22,8 +34,6 @@ const validateMapper: { [key: string]: any } = {
   INVALID: 'error',
   IGNORED: 'default'
 };
-
-const FInput = asAtomField<InputProps>()(Input);
 
 export const App: React.FC = () => {
   const [plain, setPlain] = React.useState(false);
@@ -67,7 +77,8 @@ export const App: React.FC = () => {
                   initialValue="ggb"
                   rule={{ required: true, message: '该项目必填' }}
                 >
-                  {({ field, form }) => {
+                  {(source) => {
+                    const { field, form } = source;
                     return (
                       <Form.Item
                         label="HelloLabel"
@@ -82,7 +93,14 @@ export const App: React.FC = () => {
                           field.validation.errors.join(', ')
                         }
                       >
-                        <FInput $source={{ field, form }} />
+                        <AtomFieldRenderer
+                          component={FInput}
+                          componentProps={{
+                            placeholder: 'Hello',
+                            allowClear: true
+                          }}
+                          $source={source}
+                        />
                       </Form.Item>
                     );
                   }}

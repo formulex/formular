@@ -77,3 +77,5 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
 
   return null;
 };
+
+FieldWrapper.displayName = 'FieldWrapper';
