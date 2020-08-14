@@ -4,6 +4,9 @@ import { Form, Button, Switch, Card, Input } from 'antd';
 import 'antd/dist/antd.css';
 import './app.less';
 import { Observer } from 'mobx-react';
+import type { FormInstance } from '@formular/core';
+import { asAtomField } from '../../src/components/asAtomField';
+import { InputProps } from 'antd/lib/input';
 
 export const component: React.FC<any> = ({
   handleSubmit,
@@ -20,98 +23,99 @@ const validateMapper: { [key: string]: any } = {
   IGNORED: 'default'
 };
 
+const FInput = asAtomField<InputProps>()(Input);
+
 export const App: React.FC = () => {
   const [plain, setPlain] = React.useState(false);
   const [perishable, setPerishable] = React.useState(false);
+  const formRef = React.useRef<FormInstance>(null);
+  const [, forceUpdate] = React.useState();
+  React.useEffect(() => {
+    if (formRef.current) {
+      forceUpdate({});
+    }
+  }, [formRef.current]);
   return (
-    <Card
-      title={
-        <div className="header-container">
-          <span>
-            plain <Switch checked={plain} onChange={setPlain} />
-          </span>
-          <span>
-            perishable <Switch checked={perishable} onChange={setPerishable} />
-          </span>
-        </div>
-      }
-    >
-      <Formular
-        plain={plain}
-        perishable={perishable}
-        // initialValues={{ hello: 123 }}
-        onFinish={(values) => {
-          console.log('finished', values);
-        }}
+    <>
+      <Card
+        title={
+          <div className="header-container">
+            <span>
+              plain <Switch checked={plain} onChange={setPlain} />
+            </span>
+            <span>
+              perishable
+              <Switch checked={perishable} onChange={setPerishable} />
+            </span>
+          </div>
+        }
       >
-        {({ handleSubmit, form }) => (
-          <>
-            <Form component={component} {...{ handleSubmit }}>
-              <FieldWrapper
-                name="hello"
-                initialValue="ggb"
-                rule={{ required: true, message: '该项目必填' }}
-              >
-                {({ field, form }) => {
-                  return (
-                    <Form.Item
-                      label="HelloLabel"
-                      validateStatus={
-                        ((field.visited || form.everValitated) &&
-                          validateMapper[field.validation.status]) ||
-                        undefined
-                      }
-                      help={
-                        (field.visited || form.everValitated) &&
-                        !field.ignored &&
-                        field.validation.errors.join(', ')
-                      }
-                    >
-                      {field.plain ? (
-                        <span>{field.value}</span>
-                      ) : (
-                        <Input
-                          onFocus={() => field.focus()}
-                          onBlur={() => field.blur()}
-                          value={field.value}
-                          onChange={(e) =>
-                            field.change(
-                              e.target.value === '' ? undefined : e.target.value
-                            )
-                          }
-                        />
-                      )}
-                    </Form.Item>
-                  );
-                }}
-              </FieldWrapper>
-              <Button htmlType="submit" type="primary">
-                Submit
-              </Button>
-              <Button
-                htmlType="reset"
-                onClick={() => {
-                  form.resetFields();
-                }}
-              >
-                Reset
-              </Button>
-            </Form>
+        <Formular
+          ref={formRef}
+          plain={plain}
+          perishable={perishable}
+          // initialValues={{ hello: 123 }}
+          onFinish={(values) => {
+            console.log('finished', values);
+          }}
+        >
+          {({ handleSubmit, form }) => (
+            <>
+              <Form component={component} {...{ handleSubmit }}>
+                <FieldWrapper
+                  name="hello"
+                  initialValue="ggb"
+                  rule={{ required: true, message: '该项目必填' }}
+                >
+                  {({ field, form }) => {
+                    return (
+                      <Form.Item
+                        label="HelloLabel"
+                        validateStatus={
+                          ((field.visited || form.everValitated) &&
+                            validateMapper[field.validation.status]) ||
+                          undefined
+                        }
+                        help={
+                          (field.visited || form.everValitated) &&
+                          !field.ignored &&
+                          field.validation.errors.join(', ')
+                        }
+                      >
+                        <FInput $source={{ field, form }} />
+                      </Form.Item>
+                    );
+                  }}
+                </FieldWrapper>
+                <Button htmlType="submit" type="primary">
+                  Submit
+                </Button>
+                <Button
+                  htmlType="reset"
+                  onClick={() => {
+                    form.resetFields();
+                  }}
+                >
+                  Reset
+                </Button>
+              </Form>
+            </>
+          )}
+        </Formular>
+      </Card>
+      <Card title="values">
+        <Observer>
+          {() => <pre>{JSON.stringify(formRef.current?.values, null, 2)}</pre>}
+        </Observer>
+      </Card>
 
-            <Card title="values">
-              <Observer>
-                {() => <pre>{JSON.stringify(form.values, null, 2)}</pre>}
-              </Observer>
-            </Card>
-
-            <Card title="initialValues">
-              <Observer>
-                {() => <pre>{JSON.stringify(form.initialValues, null, 2)}</pre>}
-              </Observer>
-            </Card>
-          </>
-        )}
-      </Formular>
-    </Card>
+      <Card title="initialValues">
+        <Observer>
+          {() => (
+            <pre>{JSON.stringify(formRef.current?.initialValues, null, 2)}</pre>
+          )}
+        </Observer>
+      </Card>
+    </>
   );
 };
