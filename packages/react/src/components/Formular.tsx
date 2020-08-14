@@ -1,5 +1,5 @@
 import React from 'react';
-import { createForm } from '@formular/core';
+import { createForm, shallowEqual } from '@formular/core';
 import type {
   FormInstance,
   FormConfig,
@@ -7,6 +7,7 @@ import type {
   OnFinishFailed
 } from '@formular/core';
 import { useConstant, useWhenValueChanges } from '../use';
+import { FormInstanceContext } from '../context/FormInstanceContext';
 
 export interface FormularRenderProps {
   form: FormInstance;
@@ -27,8 +28,6 @@ export interface FormularProps<V> extends FormConfig<V> {
 function isRenderFunction(children: any): children is RenderChildren {
   return typeof children === 'function';
 }
-
-export const FormularContext = React.createContext<FormInstance | null>(null);
 
 export const Formular: React.FC<FormularProps<any>> = ({
   form: alternateFormInstance,
@@ -54,11 +53,36 @@ export const Formular: React.FC<FormularProps<any>> = ({
   );
 
   useWhenValueChanges(plain, () => {
-    if (plain !== undefined) {
-      console.log('set plain', plain);
-      form.setPlain(plain);
-    }
+    form.setPlain(Boolean(plain));
   });
+
+  useWhenValueChanges(perishable, () => {
+    form.setPerishable(Boolean(perishable));
+  });
+
+  useWhenValueChanges(
+    initialValues,
+    () => {
+      form.initialize(initialValues);
+    },
+    shallowEqual
+  );
+
+  useWhenValueChanges(
+    messageVariables,
+    () => {
+      form.setMessageVariables(messageVariables);
+    },
+    shallowEqual
+  );
+
+  useWhenValueChanges(
+    validateMessages,
+    () => {
+      form.setValidateMessages(validateMessages);
+    },
+    shallowEqual
+  );
 
   const handleSubmit: React.FormEventHandler<any> = (event) => {
     if (event) {
@@ -75,13 +99,13 @@ export const Formular: React.FC<FormularProps<any>> = ({
   };
 
   return (
-    <FormularContext.Provider value={form}>
+    <FormInstanceContext.Provider value={form}>
       <>
         {isRenderFunction(children)
           ? children({ form, handleSubmit })
           : children}
       </>
-    </FormularContext.Provider>
+    </FormInstanceContext.Provider>
   );
 };
 
