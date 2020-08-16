@@ -1,5 +1,10 @@
 import React, { useImperativeHandle, useMemo } from 'react';
-import { createForm, shallowEqual } from '@formular/core';
+import {
+  createForm,
+  shallowEqual,
+  SubscribeSetup,
+  SubscribeArgs
+} from '@formular/core';
 import type {
   FormInstance,
   FormConfig,
@@ -12,6 +17,7 @@ import { PlainConfigContext, PlainConfig } from '../context/PlainConfigContext';
 import type { RegistryEntry } from '../registry';
 import { useRegistry } from '../hook/useRegistry';
 import { RegistryContext } from '../context/RegistryContext';
+import { useInnerFieldEffects } from '../hook/useFieldEffects';
 
 export interface FormularRenderProps {
   form: FormInstance;
@@ -30,6 +36,7 @@ export interface FormularProps<V>
   children?: React.ReactNode | RenderChildren;
   onFinish?: OnFinish;
   onFinishFailed?: OnFinishFailed;
+  effects?: SubscribeSetup<SubscribeArgs>;
 }
 
 function isRenderFunction(children: any): children is RenderChildren {
@@ -49,7 +56,8 @@ export const Formular = React.forwardRef<FormInstance, FormularProps<any>>(
       messageVariables,
       validateMessages,
       emptyContent,
-      fields
+      fields,
+      effects
     },
     ref
   ) => {
@@ -121,6 +129,8 @@ export const Formular = React.forwardRef<FormInstance, FormularProps<any>>(
     );
 
     const [registry] = useRegistry({ fields });
+
+    useInnerFieldEffects(form, effects);
 
     return (
       <FormInstanceContext.Provider value={form}>
