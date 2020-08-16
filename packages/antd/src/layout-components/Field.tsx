@@ -7,7 +7,6 @@ import {
   AtomFieldRenderer
 } from '@formular/react';
 import type { FormItemProps } from 'antd/lib/form';
-import { trace } from 'mobx';
 
 const validateMapper: { [key: string]: any } = {
   PENDING: 'validating',
@@ -43,7 +42,6 @@ export function Field<CP extends Record<string, any>>({
   children,
   ...rest
 }: React.PropsWithChildren<FormularAntdFieldProps<CP>>): React.ReactElement {
-  console.log('[Field]', name, 'render');
   if (typeof name === 'string' && name && component) {
     return (
       <FieldWrapper
@@ -65,8 +63,6 @@ export function Field<CP extends Record<string, any>>({
       >
         {($source) => {
           const { field, form } = $source;
-          console.log('[Field]', name, 'inner render');
-          trace();
           return (
             <AntdForm.Item
               {...rest}

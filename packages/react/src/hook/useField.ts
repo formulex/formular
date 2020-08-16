@@ -2,7 +2,6 @@ import React from 'react';
 import { useFormInstance } from './useFormInstance';
 import type { FieldProps } from '../components/FieldWrapper';
 import { FieldInstance, FormInstance, shallowEqual } from '@formular/core';
-import { useWhenValueChanges } from '../use';
 
 export function useField({
   name,
@@ -29,7 +28,6 @@ export function useField({
         name,
         (field) => {
           fieldRef.current = field;
-          console.log('register enums', name, enums);
           forceUpdate({});
           return () => {
             fieldRef.current = undefined;
@@ -52,8 +50,6 @@ export function useField({
       ),
     [name, initialValue]
   );
-
-  console.log('enums', enums);
 
   // useWhenValueChanges(
   //   enums,
