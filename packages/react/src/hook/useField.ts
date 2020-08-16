@@ -15,7 +15,8 @@ export function useField({
   plain,
   show,
   disabled,
-  ignored
+  ignored,
+  enum: enums
 }: FieldProps): [FieldInstance | undefined, FormInstance] {
   const form = useFormInstance('useField');
   const fieldRef = React.useRef<FieldInstance>();
@@ -43,7 +44,8 @@ export function useField({
           plain,
           show,
           disabled,
-          ignored
+          ignored,
+          enum: enums
         }
       ),
     [name, initialValue]

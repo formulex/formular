@@ -41,6 +41,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
   ignored,
   plain,
   children,
+  enum: enums,
   ...rest
 }) => {
   if (!name) {
@@ -60,7 +61,8 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
     show,
     disabled,
     ignored,
-    plain
+    plain,
+    enum: enums
   });
 
   if (!fieldInstance) {

@@ -8,8 +8,6 @@ export function useWhenValueChanges<V>(
   const previous = useRef(value);
   useEffect(() => {
     if (!isEqual(value, previous.current)) {
-      console.log('[useWhenValueChanges]  before:', previous.current);
-      console.log('[useWhenValueChanges] current:', value);
       callback();
       previous.current = value;
     }

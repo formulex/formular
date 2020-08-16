@@ -11,8 +11,4 @@ const sleep = async (ms: number) => {
 
 describe('form', () => {
   afterEach(cleanup);
-
-  it('should work', () => {
-    console.log(<div x-form={123}>hello</div>);
-  });
 });

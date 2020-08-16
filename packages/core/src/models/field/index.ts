@@ -149,6 +149,7 @@ export interface FieldConfig extends CreateValidationOptions {
   disabled?: boolean;
   ignored?: boolean;
   plain?: boolean;
+  enum?: Record<string, any>[];
 }
 
 export interface FieldRegisterConfig extends Omit<FieldConfig, 'name'> {
@@ -172,7 +173,8 @@ export function createField({
   show,
   disabled,
   ignored,
-  plain
+  plain,
+  enum: enums
 }: FieldConfig): FieldInstance {
   return Field.create({
     name,
@@ -192,6 +194,7 @@ export function createField({
       messageVariables,
       validateMessages
     }),
-    _frozenState: {}
+    _frozenState: {},
+    _enum: enums ?? []
   });
 }
