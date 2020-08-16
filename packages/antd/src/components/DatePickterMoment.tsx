@@ -1,27 +1,26 @@
 import generate, { PickerProps } from 'antd/lib/date-picker/generatePicker';
-import { connect } from '@formular/react';
+import { asAtomField } from '@formular/react';
 import React from 'react';
 import config from 'rc-picker/lib/generate/moment';
 import moment from 'moment';
 
-export const DatePicker = connect<PickerProps<moment.Moment>>({
-  getValueFromEvent(val) {
-    return val?.format() ?? val?.toString();
-  },
-  getValueProps(valStr) {
-    return valStr && moment(valStr);
-  },
-  renderTextContent({
-    meta: { field },
-    renderConfig: { emptyContent, PreviewComponent = 'span' },
-    componentProps: { format = 'YYYY-MM-DD HH:mm:ss' }
-  }) {
+export const DatePicker = asAtomField<PickerProps<moment.Moment>>(
+  undefined,
+  ({ field }, { finalEmptyContent }, { format = 'YYYY-MM-DD HH:mm:ss' }) => {
     const formatStr = Array.isArray(format) ? format[0] : format;
     return (
-      <PreviewComponent>
+      <span>
         {(field.value && moment(field.value)?.format(formatStr)) ??
-          emptyContent}
-      </PreviewComponent>
+          finalEmptyContent}
+      </span>
     );
+  },
+  {
+    retrieveValueFromEvent(val) {
+      return val?.format() ?? val?.toString();
+    },
+    getValueProps(valStr) {
+      return valStr && moment(valStr);
+    }
   }
-})(generate<moment.Moment>(config));
+)(generate<moment.Moment>(config));

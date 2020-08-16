@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
@@ -9,65 +9,63 @@ import { Observer, useLocalStore } from 'mobx-react';
 import { Card } from 'antd';
 import * as components from '../../src/components';
 import { PlusOutlined } from '@ant-design/icons';
-import {
-  useSideEffects,
-  Registry,
-  useForm,
-  RenderConfigProvider
-} from '@formular/react';
-import { FieldInstance, getIn } from '@formular/core';
+import { useFieldEffects, Registry, PlainConfigContext } from '@formular/react';
+import { FieldInstance, getIn, createForm } from '@formular/core';
 import RJV from 'react-json-view';
-import { XTableProps } from '../../src/components';
-import { ColumnType } from 'antd/lib/table';
-import { DatePicker } from '../../src/components/DatePickterMoment';
+if (process.env.NODE_ENV === 'development') {
+  const whyDidYouRender = require('@welldone-software/why-did-you-render');
+  whyDidYouRender(React, {});
+}
+// import { XTableProps } from '../../src/components';
+// import { ColumnType } from 'antd/lib/table';
+// import { DatePicker } from '../../src/components/DatePickterMoment';
 
-const enhanceColumns: XTableProps['enhanceColumns'] = (
-  columns: ColumnType<any>[],
-  { meta: { field, form } }
-) => {
-  return !field.plain
-    ? columns.concat([
-        {
-          key: 'action',
-          title: '操作',
-          render: (_, __, index) => {
-            return (
-              <Button.Group style={{ marginBottom: '24px' }}>
-                <Button
-                  onClick={() => {
-                    field.remove(index);
-                  }}
-                >
-                  删除
-                </Button>
-                <Button
-                  onClick={() => {
-                    console.log(
-                      Array.from(form.fields.entries()).map(([key, field]) =>
-                        console.log(key, field.value)
-                      )
-                    );
-                    console.log(
-                      'push',
-                      `${field.name}[${index}]`,
-                      getIn(field.value, `[${index}]`)
-                    );
-                    field.push(form.resolve(`${field.name}[${index}]`)?.value);
-                  }}
-                >
-                  复制并新增到尾端
-                </Button>
-              </Button.Group>
-            );
-          }
-        }
-      ])
-    : columns;
-};
+// const enhanceColumns: XTableProps['enhanceColumns'] = (
+//   columns: ColumnType<any>[],
+//   { meta: { field, form } }
+// ) => {
+//   return !field.plain
+//     ? columns.concat([
+//         {
+//           key: 'action',
+//           title: '操作',
+//           render: (_, __, index) => {
+//             return (
+//               <Button.Group style={{ marginBottom: '24px' }}>
+//                 <Button
+//                   onClick={() => {
+//                     field.remove(index);
+//                   }}
+//                 >
+//                   删除
+//                 </Button>
+//                 <Button
+//                   onClick={() => {
+//                     console.log(
+//                       Array.from(form.fields.entries()).map(([key, field]) =>
+//                         console.log(key, field.value)
+//                       )
+//                     );
+//                     console.log(
+//                       'push',
+//                       `${field.name}[${index}]`,
+//                       getIn(field.value, `[${index}]`)
+//                     );
+//                     field.push(form.resolve(`${field.name}[${index}]`)?.value);
+//                   }}
+//                 >
+//                   复制并新增到尾端
+//                 </Button>
+//               </Button.Group>
+//             );
+//           }
+//         }
+//       ])
+//     : columns;
+// };
 
 Registry.registerGlobalFields({
-  ...components,
-  DatePicker
+  ...components
 });
 
 const uploadButton = (
@@ -82,6 +80,13 @@ const options = [
   { value: 'Kelao', label: '克劳🐺' },
   { value: 'Shuqi', label: '书齐🐱' }
 ];
+
+const maplestoryOptions = [
+  { value: 'lucy', label: '露西' },
+  { value: 'will', label: '威尔' },
+  { value: 'you-know-who', label: '神秘人', disabled: true }
+];
+
 const formItemLayout = {
   labelCol: { span: 6 },
   wrapperCol: { span: 14 }
@@ -97,7 +102,7 @@ const DynamicPropsLogic: React.FC<{
       store.fieldx = val;
     }
   }));
-  useSideEffects(function* ({ field }) {
+  useFieldEffects(function* ({ field }) {
     yield autorun(() => {
       store.setFieldX(field(name));
     });
@@ -106,7 +111,7 @@ const DynamicPropsLogic: React.FC<{
 };
 
 const ReuseLogic: React.FC = ({ children }) => {
-  useSideEffects(function* ({ value, fieldsEffects }) {
+  useFieldEffects(function* ({ value, fieldsEffects }) {
     yield fieldsEffects('^table\\[(\\d+)\\].wholename', function* (
       wholename,
       tokens
@@ -119,7 +124,7 @@ const ReuseLogic: React.FC = ({ children }) => {
           value(`table[${fieldIndex}].lastname`)
         ],
         ([first, last]) => {
-          wholename.silentValue = first + ' ' + last;
+          wholename.change(first + ' ' + last);
         }
       );
     });
@@ -127,20 +132,28 @@ const ReuseLogic: React.FC = ({ children }) => {
   return <>{children}</>;
 };
 
-const rule = { type: 'boolean', errorMessage: '必填' };
+const rule = { required: true, message: '必填' };
 
 const App: React.FC = () => {
-  const [form] = useForm();
+  const form = useMemo(() => createForm(), []);
   useEffect(
     () =>
       autorun(() => {
-        console.log(form.resolve('table')!.value);
+        console.log(form.resolve('table')?.value);
+        if (form.resolve('favAnimal')) {
+          console.log('1', form.resolve('favAnimal')!.value);
+          console.log('2', form.values.favAnimal);
+          console.log(
+            '3',
+            form.resolve('favAnimal')!.value === form.values.favAnimal
+          );
+        }
       }),
     []
   );
   return (
     <>
-      <RenderConfigProvider value={{ emptyContent: '<empty>' }}>
+      <PlainConfigContext.Provider value={{ emptyContent: '<empty>' }}>
         <Form
           className="App"
           form={form}
@@ -151,32 +164,32 @@ const App: React.FC = () => {
           onFinishFailed={(errors) => {
             console.log('errors', errors);
           }}
-          subscribe={function* ({ field, value }, form) {
+          effects={function* ({ field, value, form }) {
             yield reaction(
               () => value('greeting'),
               async (greetingValue) => {
                 await new Promise((r) => setTimeout(r, 1000));
-                field('greetingAsync')!.value = greetingValue;
+                field('greetingAsync')!.change(greetingValue);
               }
             );
 
-            yield reaction(
-              () => value<boolean>('isFurry'),
-              (isFurry) => {
-                field('favAnimal')!.show = field(
-                  'bestFavAnimal'
-                )!.show = Boolean(isFurry);
+            // yield reaction(
+            //   () => value<boolean>('isFurry'),
+            //   (isFurry) => {
+            //     field('favAnimal')!.show = field(
+            //       'bestFavAnimal'
+            //     )!.show = Boolean(isFurry);
 
-                field('favAnimal')!.ignored = field(
-                  'bestFavAnimal'
-                )!.ignored = !isFurry;
+            //     field('favAnimal')!.ignored = field(
+            //       'bestFavAnimal'
+            //     )!.ignored = !isFurry;
 
-                if (!isFurry) {
-                  form.resetFields(['favAnimal', 'bestFavAnimal']);
-                }
-              },
-              { fireImmediately: true }
-            );
+            //     if (!isFurry) {
+            //       form.resetFields(['favAnimal', 'bestFavAnimal']);
+            //     }
+            //   },
+            //   { fireImmediately: true }
+            // );
           }}
         >
           <Field
@@ -184,7 +197,6 @@ const App: React.FC = () => {
             name="greeting"
             initialValue="hello!"
             component="Input"
-            type="array"
             plain={false}
             componentProps={{ placeholder: '请随便输入' }}
           >
@@ -203,8 +215,8 @@ const App: React.FC = () => {
             component="Input"
             rule={{
               type: 'string',
-              minLength: 5,
-              errorMessage: 'The length is at least 5'
+              min: 5,
+              message: 'The length is at least 5'
             }}
             componentProps={{
               style: { width: '360px' },
@@ -230,19 +242,15 @@ const App: React.FC = () => {
               format: 'dddd, MMMM Do YYYY, h:mm:ss a'
             }}
           />
-          <DynamicPropsLogic name="isFurry">
-            {(field) => (
-              <Field
-                label="是小动物吗"
-                name="isFurry"
-                component="Checkbox"
-                componentProps={{
-                  children: field && (field.value ? '是小动物' : '不是小动物')
-                }}
-                rule={{ ...rule }}
-              />
-            )}
-          </DynamicPropsLogic>
+          <Field
+            label="是小动物吗"
+            name="isFurry"
+            component="Checkbox"
+            // componentProps={({ field }) => ({
+            //   children: field && (field.value ? '是小动物' : '不是小动物')
+            // })}
+            rule={{ ...rule }}
+          />
           <Field
             label="你喜欢的小动物"
             name="favAnimal"
@@ -260,11 +268,7 @@ const App: React.FC = () => {
             name="person"
             component="Select"
             initialValue="lucy"
-            enum={[
-              { value: 'lucy', label: '露西' },
-              { value: 'will', label: '威尔' },
-              { value: 'you-know-who', label: '神秘人', disabled: true }
-            ]}
+            enum={maplestoryOptions}
             componentProps={{
               showSearch: true,
               filterOption: (input: string, option: any) =>
@@ -276,11 +280,12 @@ const App: React.FC = () => {
             name="personmulti"
             component="MultipleSelect"
             initialValue={['will']}
-            enum={[
-              { value: 'lucy', label: '露西' },
-              { value: 'will', label: '威尔' },
-              { value: 'you-know-who', label: '神秘人', disabled: true }
-            ]}
+            enum={maplestoryOptions}
+            componentProps={{
+              onChange: (e: any) => {
+                console.log('listen e', e);
+              }
+            }}
           />
           <Field
             label="标签"
@@ -303,7 +308,7 @@ const App: React.FC = () => {
               children: uploadButton
             }}
           />
-          <ReuseLogic>
+          {/* <ReuseLogic>
             <Field
               label="表格"
               name="table"
@@ -368,7 +373,7 @@ const App: React.FC = () => {
                 )}
               </Observer>
             </Field>
-          </ReuseLogic>
+          </ReuseLogic> */}
           <Field label="panel">
             <Button type="primary" htmlType="submit">
               Submit
@@ -393,7 +398,7 @@ const App: React.FC = () => {
             <Observer>{() => <RJV src={form.values} />}</Observer>
           </Card>
         </Form>
-      </RenderConfigProvider>
+      </PlainConfigContext.Provider>
     </>
   );
 };

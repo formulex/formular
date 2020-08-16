@@ -1,9 +1,8 @@
 import AntdInputNumber, { InputNumberProps } from 'antd/lib/input-number';
-import { connect } from '@formular/react';
+import { asAtomField } from '@formular/react';
 
-export const InputNumber = connect<InputNumberProps>({
-  getValueFromEvent(val) {
+export const InputNumber = asAtomField<InputNumberProps>(undefined, {
+  retrieveValueFromEvent(val) {
     return val;
-  },
-  renderTextContent: true
+  }
 })(AntdInputNumber);

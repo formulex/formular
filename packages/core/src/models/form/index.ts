@@ -170,7 +170,8 @@ export const Form = types
           plain,
           show,
           disabled,
-          ignored
+          ignored,
+          enum: enums
         }: FieldRegisterConfig = {}
       ): () => void {
         let field = self.fields.get(name);
@@ -185,7 +186,8 @@ export const Form = types
             plain,
             show,
             disabled,
-            ignored
+            ignored,
+            enum: enums
           });
           self.fields.set(name, field);
         }

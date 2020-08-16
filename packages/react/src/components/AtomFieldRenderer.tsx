@@ -1,12 +1,12 @@
 import React from 'react';
 import { useRegistryContext } from '../hook/useRegistryContext';
-import { AtomFieldComponentProps } from './asAtomField';
+import type { AtomFieldComponentProps, Source } from './asAtomField';
 import { invariant } from '@formular/core';
 
 export interface AtomFieldRendererProps<CP extends Record<string, any>>
   extends AtomFieldComponentProps<{}> {
   component: string | React.ComponentType<AtomFieldComponentProps<CP>>;
-  componentProps?: CP;
+  componentProps?: CP | ((source: Source) => CP);
 }
 
 export function AtomFieldRenderer<CP extends Record<string, any>>({
@@ -23,6 +23,20 @@ export function AtomFieldRenderer<CP extends Record<string, any>>({
     typeof Component !== 'string',
     `Cannot find component "${component}". Do you register it correctly?`
   );
+
+  // return (
+  //   <Observer>
+  //     {() => {
+  //       const props = {
+  //         ...(typeof componentProps === 'function'
+  //           ? (componentProps as (source: Source) => CP)($source)
+  //           : componentProps),
+  //         $source
+  //       } as AtomFieldComponentProps<CP>;
+  //       return <Component {...props} />;
+  //     }}
+  //   </Observer>
+  // );
 
   const props = {
     ...componentProps,

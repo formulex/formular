@@ -1,87 +1,97 @@
 import React from 'react';
-import FormItem, { FormItemProps } from 'antd/lib/form/FormItem';
-import { asFormField, FieldEntryProps } from '@formular/react';
+import { Form as AntdForm } from 'antd';
+import {
+  FieldProps,
+  FieldWrapper,
+  AtomFieldRendererProps,
+  AtomFieldRenderer
+} from '@formular/react';
+import type { FormItemProps } from 'antd/lib/form';
+import { trace } from 'mobx';
 
 const validateMapper: { [key: string]: any } = {
   PENDING: 'validating',
   VALID: 'success',
   INVALID: 'error',
-  WARNING: 'warning',
   IGNORED: 'default'
 };
 
-const NamedField = asFormField<FormItemProps>({
-  getDerivedPropsFromFieldMeta({
-    fieldComponentProps,
-    componentProps,
-    meta,
-    Component
-  }) {
-    const { field, type, form } = meta;
-    const extraStyle = { display: 'none' };
-    if (field.show) {
-      delete extraStyle.display;
-    }
+interface FormularAntdFieldBaseProps<CP>
+  extends Partial<FieldProps>,
+    Partial<Omit<AtomFieldRendererProps<CP>, '$source'>> {}
 
-    const children = (
-      <>
-        <Component {...componentProps} $meta={meta}>
-          {(componentProps as any)?.children}
-        </Component>
-        {fieldComponentProps.children}
-      </>
-    );
+export interface FormularAntdFieldProps<CP>
+  extends FormularAntdFieldBaseProps<CP>,
+    Omit<FormItemProps, keyof FormularAntdFieldBaseProps<CP>> {}
 
-    const common = {
-      style: { ...fieldComponentProps.style, ...extraStyle },
-      children
-    };
-    if (type === 'array') {
-      return { ...fieldComponentProps, ...common };
-    }
-    return {
-      ...fieldComponentProps,
-      ...common,
-      validateStatus:
-        ((field.visited || form.everValitated) &&
-          validateMapper[field.validation.status]) ||
-        undefined,
-      help:
-        (field.visited || form.everValitated) &&
-        !field.ignored &&
-        field.validation.messages.join(', ')
-    };
-  }
-})<any>(FormItem);
-
-export function Field<CP>(props: Partial<FieldEntryProps<FormItemProps, CP>>) {
-  const {
-    name,
-    component,
-    componentProps,
-    initialValue,
-    fieldComponentProps,
-    type,
-    plain,
-    enum: enums,
-    rule,
-    asyncRule,
-    triggers,
-    debounce,
-    children,
-    style,
-    ...rest
-  } = props;
-  if (name && component) {
+export function Field<CP extends Record<string, any>>({
+  name,
+  initialValue,
+  perishable,
+  show,
+  disabled,
+  ignored,
+  plain,
+  enum: enums,
+  validateFirst,
+  validateTrigger,
+  rule,
+  messageVariables,
+  validateMessages,
+  component,
+  componentProps,
+  children,
+  ...rest
+}: React.PropsWithChildren<FormularAntdFieldProps<CP>>): React.ReactElement {
+  console.log('[Field]', name, 'render');
+  if (typeof name === 'string' && name && component) {
     return (
-      <NamedField {...props} {...{ name, component, componentProps }}>
-        {children}
-      </NamedField>
+      <FieldWrapper
+        {...{
+          name,
+          initialValue,
+          perishable,
+          show,
+          disabled,
+          ignored,
+          plain,
+          enum: enums,
+          validateFirst,
+          validateTrigger,
+          rule,
+          messageVariables,
+          validateMessages
+        }}
+      >
+        {($source) => {
+          const { field, form } = $source;
+          console.log('[Field]', name, 'inner render');
+          trace();
+          return (
+            <AntdForm.Item
+              {...rest}
+              validateStatus={
+                ((field.visited || form.everValitated) &&
+                  validateMapper[field.validation.status]) ||
+                undefined
+              }
+              help={
+                (field.visited || form.everValitated) &&
+                !field.ignored &&
+                field.validation.errors.join(', ')
+              }
+            >
+              <AtomFieldRenderer
+                component={component}
+                componentProps={componentProps}
+                $source={$source}
+              />
+            </AntdForm.Item>
+          );
+        }}
+      </FieldWrapper>
     );
   }
-  return (
-    <FormItem {...rest} {...fieldComponentProps}>
-      {children}
-    </FormItem>
-  );
+
+  return <AntdForm.Item {...rest}>{children}</AntdForm.Item>;
 }
