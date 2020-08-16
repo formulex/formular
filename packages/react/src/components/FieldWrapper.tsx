@@ -69,8 +69,6 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
     return null;
   }
 
-  console.log('enum log', name, fieldInstance.enum);
-
   if (isRenderFunction(children)) {
     return (
       <Observer>
