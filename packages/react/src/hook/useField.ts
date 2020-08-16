@@ -1,7 +1,8 @@
 import React from 'react';
 import { useFormInstance } from './useFormInstance';
 import type { FieldProps } from '../components/FieldWrapper';
-import type { FieldInstance, FormInstance } from '@formular/core';
+import { FieldInstance, FormInstance, shallowEqual } from '@formular/core';
+import { useWhenValueChanges } from '../use';
 
 export function useField({
   name,
@@ -28,6 +29,7 @@ export function useField({
         name,
         (field) => {
           fieldRef.current = field;
+          console.log('register enums', name, enums);
           forceUpdate({});
           return () => {
             fieldRef.current = undefined;
@@ -50,6 +52,16 @@ export function useField({
       ),
     [name, initialValue]
   );
+
+  console.log('enums', enums);
+
+  // useWhenValueChanges(
+  //   enums,
+  //   () => {
+  //     fieldRef.current?.setEnum(enums);
+  //   },
+  //   shallowEqual
+  // );
 
   return [fieldRef.current, form];
 }

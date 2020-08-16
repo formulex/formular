@@ -1,13 +1,16 @@
 import React from 'react';
 import AntdCheckboxGroup, { CheckboxGroupProps } from 'antd/lib/checkbox/Group';
-import { connect } from '@formular/react';
+import { asAtomField, shallowEqualComponentValue } from '@formular/react';
 
-export const CheckboxGroup = connect<CheckboxGroupProps>({
-  getValueFromEvent: (val) => val,
-  renderTextContent({
-    meta: { field },
-    renderConfig: { emptyContent, PreviewComponent = 'span' }
-  }) {
+export const CheckboxGroup = asAtomField<CheckboxGroupProps>(
+  ({ field }, componentProps) => {
+    return {
+      ...componentProps,
+      options: field.enum,
+      disabled: field.disabled ?? componentProps.disabled
+    };
+  },
+  ({ field }, { finalEmptyContent }) => {
     let text: string | undefined = undefined;
     if (Array.isArray(field.value) && Array.isArray(field.enum)) {
       text = field.enum
@@ -15,13 +18,7 @@ export const CheckboxGroup = connect<CheckboxGroupProps>({
         .map(({ label }) => label)
         .join(', ');
     }
-    return <PreviewComponent>{text ?? emptyContent}</PreviewComponent>;
+    return <span>{text ?? finalEmptyContent}</span>;
   },
-  getDerivedPropsFromFieldMeta({ componentProps, meta: { field } }) {
-    return {
-      ...componentProps,
-      options: field.enum,
-      disabled: field.disabled ?? componentProps.disabled
-    };
-  }
-})(AntdCheckboxGroup);
+  { retrieveValueFromEvent: (val) => val }
+)(React.memo(AntdCheckboxGroup as any, shallowEqualComponentValue));

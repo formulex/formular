@@ -1,18 +1,7 @@
 import AntdCheckbox, { CheckboxProps } from 'antd/lib/checkbox/Checkbox';
-import { connect } from '@formular/react';
-import React from 'react';
+import { asAtomField } from '@formular/react';
 
-export const Checkbox = connect<CheckboxProps>({
+export const Checkbox = asAtomField<CheckboxProps>(undefined, {
   valuePropName: 'checked',
-  getValueFromEvent: (e) => e.target.checked,
-  renderTextContent({
-    renderConfig: { emptyContent, PreviewComponent = 'span' },
-    componentProps
-  }) {
-    return (
-      <PreviewComponent>
-        {componentProps.children ?? emptyContent}
-      </PreviewComponent>
-    );
-  }
+  retrieveValueFromEvent: (e) => e.target.checked
 })(AntdCheckbox);

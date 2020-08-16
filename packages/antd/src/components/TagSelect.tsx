@@ -1,23 +1,9 @@
 import React from 'react';
 import AntdSelect, { SelectProps } from 'antd/lib/select';
-import { connect } from '@formular/react';
+import { asAtomField, shallowEqualComponentValue } from '@formular/react';
 
-export const TagSelect = connect<SelectProps<any>>({
-  getValueFromEvent: (val) => val,
-  renderTextContent({
-    meta: { field },
-    renderConfig: { emptyContent, PreviewComponent = 'span' }
-  }) {
-    let text: string | undefined = undefined;
-    if (Array.isArray(field.value) && Array.isArray(field.enum)) {
-      text = field.enum
-        .filter(({ value }) => field.value.includes(value))
-        .map(({ label }) => label)
-        .join(', ');
-    }
-    return <PreviewComponent>{text ?? emptyContent}</PreviewComponent>;
-  },
-  getDerivedPropsFromFieldMeta({ componentProps, meta: { field } }) {
+export const TagSelect = asAtomField<SelectProps<any>>(
+  ({ field }, componentProps) => {
     return {
       ...componentProps,
       mode: 'tags',
@@ -25,5 +11,16 @@ export const TagSelect = connect<SelectProps<any>>({
       disabled: field.disabled ?? componentProps.disabled,
       loading: field.loading ?? componentProps.loading
     };
-  }
-})(AntdSelect);
+  },
+  ({ field }, { finalEmptyContent }) => {
+    let text: string | undefined = undefined;
+    if (Array.isArray(field.value) && Array.isArray(field.enum)) {
+      text = field.enum
+        .filter(({ value }) => field.value.includes(value))
+        .map(({ label }) => label)
+        .join(', ');
+    }
+    return <span>{text ?? finalEmptyContent}</span>;
+  },
+  { retrieveValueFromEvent: (val) => val }
+)(React.memo(AntdSelect, shallowEqualComponentValue));

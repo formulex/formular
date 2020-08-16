@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FieldInstance, FormInstance } from '@formular/core';
 import { usePlainConfig } from '../hook/usePlainConfig';
 import { observer } from 'mobx-react';
+import { PlainConfig } from '../context/PlainConfigContext';
 
 export interface ProxyControlledPropsOptions {
   onChangeTrigger?: string;
@@ -29,7 +30,11 @@ export function defaultMapFieldToProps<P>(source: Source, ownProps: P): P {
 }
 
 export interface RenderPlainFn<P> {
-  (source: Source, ownProps: P): React.ReactNode;
+  (
+    source: Source,
+    extendedPlainConfig: PlainConfig & { finalEmptyContent?: string },
+    ownProps: P
+  ): React.ReactNode;
 }
 
 export interface AsAtomFieldHOC<P> {
@@ -61,20 +66,20 @@ export type AtomFieldHOC<P> = (
 
 export function asAtomField<P extends Record<string, any>>(): AtomFieldHOC<P>;
 export function asAtomField<P extends Record<string, any>>(
-  mapFieldToProps: MapFieldToProps<P>
+  mapFieldToProps?: MapFieldToProps<P>
 ): AtomFieldHOC<P>;
 export function asAtomField<P extends Record<string, any>>(
-  mapFieldToProps: MapFieldToProps<P>,
-  proxyControlledOptions: ProxyControlledPropsOptions
+  mapFieldToProps?: MapFieldToProps<P>,
+  proxyControlledOptions?: ProxyControlledPropsOptions
 ): AtomFieldHOC<P>;
 export function asAtomField<P extends Record<string, any>>(
-  mapFieldToProps: MapFieldToProps<P>,
-  renderPlain: RenderPlainFn<P>
+  mapFieldToProps?: MapFieldToProps<P>,
+  renderPlain?: RenderPlainFn<P>
 ): AtomFieldHOC<P>;
 export function asAtomField<P extends Record<string, any>>(
-  mapFieldToProps: MapFieldToProps<P>,
-  renderPlain: RenderPlainFn<P>,
-  proxyControlledOptions: ProxyControlledPropsOptions
+  mapFieldToProps?: MapFieldToProps<P>,
+  renderPlain?: RenderPlainFn<P>,
+  proxyControlledOptions?: ProxyControlledPropsOptions
 ): AtomFieldHOC<P>;
 export function asAtomField<P extends Record<string, any>>(
   mapFieldToProps?: MapFieldToProps<P>,
@@ -102,38 +107,58 @@ export function asAtomField<P extends Record<string, any>>(
     const DecoratedInnerComponent: React.FC<
       P & { forwardedRef: React.Ref<any> } & { $source: Source }
     > = ({ forwardedRef, $source, ...rest }) => {
-      const plainConfig = usePlainConfig();
+      //const plainConfig = usePlainConfig();
       const { field } = $source;
       const ownComponentProps = rest as P;
 
-      if (field.plain === true) {
-        const renderFn =
-          typeof renderPlainOrProxyControlledOptions === 'function'
-            ? renderPlainOrProxyControlledOptions
-            : ((({ field }) => {
-                const finalEmptyContent =
-                  typeof plainConfig.emptyContent === 'function'
-                    ? plainConfig.emptyContent($source, ownComponentProps)
-                    : plainConfig.emptyContent;
-                return <span>{field.value ?? finalEmptyContent}</span>;
-              }) as RenderPlainFn<P>);
-        return <>{renderFn($source, ownComponentProps)}</>;
-      }
+      // if (field.plain === true) {
+      //   const finalEmptyContent =
+      //     typeof plainConfig.emptyContent === 'function'
+      //       ? plainConfig.emptyContent($source, ownComponentProps)
+      //       : plainConfig.emptyContent;
+      //   const renderFn =
+      //     typeof renderPlainOrProxyControlledOptions === 'function'
+      //       ? renderPlainOrProxyControlledOptions
+      //       : ((({ field }) => {
+      //           return <span>{field.value ?? finalEmptyContent}</span>;
+      //         }) as RenderPlainFn<P>);
+      //   return (
+      //     <>
+      //       {renderFn(
+      //         $source,
+      //         { ...plainConfig, finalEmptyContent },
+      //         ownComponentProps
+      //       )}
+      //     </>
+      //   );
+      // }
+
+      const before = field.value;
+      const result = getValueProps(field.value);
 
       const proxyProps = {
-        [onChangeTrigger]: remainOwnEventHandler(
-          ownComponentProps[onChangeTrigger],
-          (...args: any[]) => {
-            field.change(retrieveValueFromEvent(...args));
-          }
+        [onChangeTrigger]: useCallback(
+          remainOwnEventHandler(
+            ownComponentProps[onChangeTrigger],
+            (...args: any[]) => {
+              field.change(retrieveValueFromEvent(...args));
+            }
+          ),
+          []
         ),
         [valuePropName]: getValueProps(field.value),
-        onFocus: remainOwnEventHandler(ownComponentProps.onFocus, () => {
-          field.focus();
-        }),
-        onBlur: remainOwnEventHandler(ownComponentProps.onBlur, () => {
-          field.blur();
-        })
+        onFocus: useCallback(
+          remainOwnEventHandler(ownComponentProps.onFocus, () => {
+            field.focus();
+          }),
+          []
+        ),
+        onBlur: useCallback(
+          remainOwnEventHandler(ownComponentProps.onBlur, () => {
+            field.blur();
+          }),
+          []
+        )
       };
 
       const derivedProps = fianlMapFieldToProps($source, ownComponentProps);

@@ -176,7 +176,7 @@ export function createField({
   plain,
   enum: enums
 }: FieldConfig): FieldInstance {
-  return Field.create({
+  const result = Field.create({
     name,
     _everBlured: false,
     _everFocused: false,
@@ -197,4 +197,6 @@ export function createField({
     _frozenState: {},
     _enum: enums ?? []
   });
+
+  return result;
 }
