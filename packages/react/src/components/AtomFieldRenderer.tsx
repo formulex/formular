@@ -2,6 +2,7 @@ import React from 'react';
 import { useRegistryContext } from '../hook/useRegistryContext';
 import type { AtomFieldComponentProps, Source } from './asAtomField';
 import { invariant } from '@formular/core';
+import { Observer } from 'mobx-react';
 
 export interface AtomFieldRendererProps<CP extends Record<string, any>>
   extends AtomFieldComponentProps<{}> {
@@ -24,23 +25,17 @@ export function AtomFieldRenderer<CP extends Record<string, any>>({
     `Cannot find component "${component}". Do you register it correctly?`
   );
 
-  // return (
-  //   <Observer>
-  //     {() => {
-  //       const props = {
-  //         ...(typeof componentProps === 'function'
-  //           ? (componentProps as (source: Source) => CP)($source)
-  //           : componentProps),
-  //         $source
-  //       } as AtomFieldComponentProps<CP>;
-  //       return <Component {...props} />;
-  //     }}
-  //   </Observer>
-  // );
-
-  const props = {
-    ...componentProps,
-    $source
-  } as AtomFieldComponentProps<CP>;
-  return <Component {...props} />;
+  return (
+    <Observer>
+      {() => {
+        const props = {
+          ...(typeof componentProps === 'function'
+            ? (componentProps as (source: Source) => CP)($source)
+            : componentProps),
+          $source
+        } as AtomFieldComponentProps<CP>;
+        return <Component {...props} />;
+      }}
+    </Observer>
+  );
 }

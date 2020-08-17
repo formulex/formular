@@ -132,22 +132,14 @@ const ReuseLogic: React.FC = ({ children }) => {
   return <>{children}</>;
 };
 
-const rule = { required: true, message: '必填' };
+const rule = { type: 'boolean', message: '必填' };
 
 const App: React.FC = () => {
   const form = useMemo(() => createForm(), []);
   useEffect(
     () =>
       autorun(() => {
-        console.log(form.resolve('table')?.value);
-        if (form.resolve('favAnimal')) {
-          console.log('1', form.resolve('favAnimal')!.value);
-          console.log('2', form.values.favAnimal);
-          console.log(
-            '3',
-            form.resolve('favAnimal')!.value === form.values.favAnimal
-          );
-        }
+        console.log('form', form.resolve('isFurry')?.value);
       }),
     []
   );
@@ -173,23 +165,23 @@ const App: React.FC = () => {
               }
             );
 
-            // yield reaction(
-            //   () => value<boolean>('isFurry'),
-            //   (isFurry) => {
-            //     field('favAnimal')!.show = field(
-            //       'bestFavAnimal'
-            //     )!.show = Boolean(isFurry);
+            yield reaction(
+              () => value<boolean>('isFurry'),
+              (isFurry) => {
+                field('favAnimal')!.show = field(
+                  'bestFavAnimal'
+                )!.show = Boolean(isFurry);
 
-            //     field('favAnimal')!.ignored = field(
-            //       'bestFavAnimal'
-            //     )!.ignored = !isFurry;
+                field('favAnimal')!.ignored = field(
+                  'bestFavAnimal'
+                )!.ignored = !isFurry;
 
-            //     if (!isFurry) {
-            //       form.resetFields(['favAnimal', 'bestFavAnimal']);
-            //     }
-            //   },
-            //   { fireImmediately: true }
-            // );
+                if (!isFurry) {
+                  form.resetFields(['favAnimal']);
+                }
+              },
+              { fireImmediately: true }
+            );
           }}
         >
           <Field
@@ -247,9 +239,12 @@ const App: React.FC = () => {
             name="isFurry"
             component="Checkbox"
             // componentProps={({ field }) => ({
-            //   children: field && (field.value ? '是小动物' : '不是小动物')
+            //   children: field && (field.value ? '是小动物' : '不是小动物'),
+            //   onChange: (e: any) => {
+            //     console.log('e value', e.target.checked);
+            //   }
             // })}
-            rule={{ ...rule }}
+            rule={rule}
           />
           <Field
             label="你喜欢的小动物"
@@ -395,7 +390,7 @@ const App: React.FC = () => {
             <Observer>{() => <RJV src={form.values} />}</Observer>
           </Card>
           <Card style={{ marginTop: '1rem' }}>
-            <Observer>{() => <RJV src={form.values} />}</Observer>
+            <Observer>{() => <RJV src={form.initialValues} />}</Observer>
           </Card>
         </Form>
       </PlainConfigContext.Provider>

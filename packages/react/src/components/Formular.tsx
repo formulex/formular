@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useMemo } from 'react';
+import React, { useImperativeHandle } from 'react';
 import {
   createForm,
   shallowEqual,
@@ -28,10 +28,7 @@ export interface RenderChildren {
   (renderProps: FormularRenderProps): React.ReactNode;
 }
 
-export interface FormularProps<V>
-  extends FormConfig<V>,
-    PlainConfig,
-    RegistryEntry {
+export interface FormularProps<V> extends FormConfig<V>, RegistryEntry {
   form?: FormInstance;
   children?: React.ReactNode | RenderChildren;
   onFinish?: OnFinish;
@@ -55,7 +52,6 @@ export const Formular = React.forwardRef<FormInstance, FormularProps<any>>(
       plain,
       messageVariables,
       validateMessages,
-      emptyContent,
       fields,
       effects
     },
@@ -121,28 +117,19 @@ export const Formular = React.forwardRef<FormInstance, FormularProps<any>>(
 
     useImperativeHandle(ref, () => form);
 
-    const plainConfig = useMemo(
-      () => ({
-        emptyContent: emptyContent ?? ''
-      }),
-      [emptyContent]
-    );
-
     const [registry] = useRegistry({ fields });
 
     useInnerFieldEffects(form, effects);
 
     return (
       <FormInstanceContext.Provider value={form}>
-        <PlainConfigContext.Provider value={plainConfig}>
-          <RegistryContext.Provider value={registry}>
-            <>
-              {isRenderFunction(children)
-                ? children({ form, handleSubmit })
-                : children}
-            </>
-          </RegistryContext.Provider>
-        </PlainConfigContext.Provider>
+        <RegistryContext.Provider value={registry}>
+          <>
+            {isRenderFunction(children)
+              ? children({ form, handleSubmit })
+              : children}
+          </>
+        </RegistryContext.Provider>
       </FormInstanceContext.Provider>
     );
   }

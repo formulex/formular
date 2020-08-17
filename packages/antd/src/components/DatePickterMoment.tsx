@@ -16,8 +16,8 @@ export const DatePicker = asAtomField<PickerProps<moment.Moment>>(
     );
   },
   {
-    retrieveValueFromEvent(val) {
-      return val?.format() ?? val?.toString();
+    mutateFromEvent(change, val) {
+      change(val?.format() ?? val?.toString());
     },
     getValueProps(valStr) {
       return valStr && moment(valStr);

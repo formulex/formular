@@ -2,6 +2,7 @@ import React from 'react';
 import { useFormInstance } from './useFormInstance';
 import type { FieldProps } from '../components/FieldWrapper';
 import { FieldInstance, FormInstance, shallowEqual } from '@formular/core';
+import { useWhenValueChanges } from '../use';
 
 export function useField({
   name,
@@ -51,13 +52,29 @@ export function useField({
     [name, initialValue]
   );
 
-  // useWhenValueChanges(
-  //   enums,
-  //   () => {
-  //     fieldRef.current?.setEnum(enums);
-  //   },
-  //   shallowEqual
-  // );
+  useWhenValueChanges(show, () => {
+    fieldRef.current?.setShow(show!);
+  });
+
+  useWhenValueChanges(disabled, () => {
+    fieldRef.current?.setDisabled(disabled!);
+  });
+
+  useWhenValueChanges(ignored, () => {
+    fieldRef.current?.setIgnored(ignored!);
+  });
+
+  useWhenValueChanges(plain, () => {
+    fieldRef.current?.setPlain(plain!);
+  });
+
+  useWhenValueChanges(
+    rule,
+    () => {
+      fieldRef.current?.validation.setRules(rule!);
+    },
+    shallowEqual
+  );
 
   return [fieldRef.current, form];
 }

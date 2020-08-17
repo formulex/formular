@@ -1,13 +1,15 @@
-import React, { useCallback } from 'react';
-import { FieldInstance, FormInstance } from '@formular/core';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FieldInstance, FormInstance, getIn } from '@formular/core';
 import { usePlainConfig } from '../hook/usePlainConfig';
-import { observer } from 'mobx-react';
+import { observer, useAsObservableSource } from 'mobx-react';
 import { PlainConfig } from '../context/PlainConfigContext';
+import type { ChangeFn } from '@formular/core/lib/models/field';
+import { autorun, reaction, toJS } from 'mobx';
 
 export interface ProxyControlledPropsOptions {
   onChangeTrigger?: string;
   valuePropName?: string;
-  retrieveValueFromEvent?: (...args: any[]) => any;
+  mutateFromEvent?: (change: ChangeFn, ...args: any[]) => any;
   getValueProps?: (value: any) => any;
 }
 
@@ -92,7 +94,9 @@ export function asAtomField<P extends Record<string, any>>(
   const {
     onChangeTrigger = 'onChange',
     valuePropName = 'value',
-    retrieveValueFromEvent = (e: any) => e.target.value,
+    mutateFromEvent = (change: ChangeFn, e: any) => {
+      change(e.target.value);
+    },
     getValueProps = (value: any) => value
   } =
     proxyControlledOptions ??
@@ -107,46 +111,21 @@ export function asAtomField<P extends Record<string, any>>(
     const DecoratedInnerComponent: React.FC<
       P & { forwardedRef: React.Ref<any> } & { $source: Source }
     > = ({ forwardedRef, $source, ...rest }) => {
-      //const plainConfig = usePlainConfig();
+      const plainConfig = usePlainConfig();
       const { field } = $source;
       const ownComponentProps = rest as P;
-
-      // if (field.plain === true) {
-      //   const finalEmptyContent =
-      //     typeof plainConfig.emptyContent === 'function'
-      //       ? plainConfig.emptyContent($source, ownComponentProps)
-      //       : plainConfig.emptyContent;
-      //   const renderFn =
-      //     typeof renderPlainOrProxyControlledOptions === 'function'
-      //       ? renderPlainOrProxyControlledOptions
-      //       : ((({ field }) => {
-      //           return <span>{field.value ?? finalEmptyContent}</span>;
-      //         }) as RenderPlainFn<P>);
-      //   return (
-      //     <>
-      //       {renderFn(
-      //         $source,
-      //         { ...plainConfig, finalEmptyContent },
-      //         ownComponentProps
-      //       )}
-      //     </>
-      //   );
-      // }
-
-      const before = field.value;
-      const result = getValueProps(field.value);
 
       const proxyProps = {
         [onChangeTrigger]: useCallback(
           remainOwnEventHandler(
             ownComponentProps[onChangeTrigger],
             (...args: any[]) => {
-              field.change(retrieveValueFromEvent(...args));
+              mutateFromEvent(field.change, ...args);
             }
           ),
           []
         ),
-        [valuePropName]: getValueProps(field.value),
+        [valuePropName]: toJS(getValueProps(field.value)),
         onFocus: useCallback(
           remainOwnEventHandler(ownComponentProps.onFocus, () => {
             field.focus();
@@ -160,6 +139,29 @@ export function asAtomField<P extends Record<string, any>>(
           []
         )
       };
+
+      if (field.plain === true) {
+        const finalEmptyContent =
+          typeof plainConfig.emptyContent === 'function'
+            ? plainConfig.emptyContent($source, ownComponentProps)
+            : plainConfig.emptyContent;
+
+        const renderFn =
+          typeof renderPlainOrProxyControlledOptions === 'function'
+            ? renderPlainOrProxyControlledOptions
+            : ((({ field }) => {
+                return <span>{field.value ?? finalEmptyContent}</span>;
+              }) as RenderPlainFn<P>);
+        return (
+          <>
+            {renderFn(
+              $source,
+              { ...plainConfig, finalEmptyContent },
+              ownComponentProps
+            )}
+          </>
+        );
+      }
 
       const derivedProps = fianlMapFieldToProps($source, ownComponentProps);
 

@@ -3,5 +3,7 @@ import { asAtomField } from '@formular/react';
 
 export const Checkbox = asAtomField<CheckboxProps>(undefined, {
   valuePropName: 'checked',
-  retrieveValueFromEvent: (e) => e.target.checked
+  mutateFromEvent(change, e) {
+    change(e.target.checked);
+  }
 })(AntdCheckbox);

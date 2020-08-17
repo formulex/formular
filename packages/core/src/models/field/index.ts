@@ -1,6 +1,6 @@
 import { getParentOfType, getType, Instance, types } from 'mobx-state-tree';
 import { getIn } from '../../utils';
-import { Form } from '../form';
+import { Form, MutationFn, ValueType } from '../form';
 import {
   FeatureShow,
   FeatureDisabled,
@@ -27,6 +27,10 @@ const Features = types.compose(
   FeatureCollection
 );
 
+export interface ChangeFn {
+  (value: MutationFn | ValueType): void;
+}
+
 export const Field = types
   .compose(
     Features,
@@ -41,101 +45,20 @@ export const Field = types
     __changeBeat() {
       // noop
     },
-    change(val: any) {
+    change(val: MutationFn | ValueType) {
       getParentOfType(self, Form).change(self.name, val);
     }
   }))
   .views((self) => {
     return {
       get value(): any {
-        return getIn(getParentOfType(self, Form).values, self.name);
+        return getIn(getParentOfType(self, Form).xValues, self.name);
       },
       get initialValue(): any {
-        return getIn(getParentOfType(self, Form).initialValues, self.name);
+        return getIn(getParentOfType(self, Form).immInitialValues, self.name);
       }
     };
   })
-  // .actions((self) => ({
-  //   toArray() {
-  //     self._value = [self.value];
-  //   },
-  //   push(val?: any) {
-  //     if (!Array.isArray(self.value)) {
-  //       throw new Error(
-  //         `Cannot use "push" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
-  //       );
-  //     }
-  //     self._value = [...self.value, val];
-  //   },
-  //   pop() {
-  //     if (!Array.isArray(self.value)) {
-  //       throw new Error(
-  //         `Cannot use "pop" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
-  //       );
-  //     }
-  //     if (!self.value.length) {
-  //       return [];
-  //     }
-  //     const removedIndex = self.value.length - 1;
-
-  //     const clone = [...self.value];
-  //     const result = clone.pop();
-
-  //     self._value = clone;
-  //     if (removedIndex) {
-  //       const pattern = new RegExp(
-  //         `^${escapeRegexTokens(self.name)}\\[${removedIndex}].*`
-  //       );
-  //       const form = getParentOfType(self, Form);
-  //       for (const key of form.fields.keys()) {
-  //         if (pattern.test(key)) {
-  //           form.removeField(key);
-  //         }
-  //       }
-  //     }
-
-  //     return result;
-  //   },
-  //   remove(index: number) {
-  //     if (!Array.isArray(self.value)) {
-  //       throw new Error(
-  //         `Cannot use "remove" action since the value of "${self.name}" is NOT an array. Try to use field(...).toArray() to convert.`
-  //       );
-  //     }
-  //     const clone = [...self.value];
-  //     const returnValue = clone[index];
-  //     clone.splice(index, 1);
-  //     self._value = clone;
-
-  //     const pattern = new RegExp(
-  //       `^${escapeRegexTokens(self.name)}\\[(\\d+)\\](.*)`
-  //     );
-  //     const form = getParentOfType(self, Form);
-  //     for (const key of [...form.fields.keys()]) {
-  //       const tokens = pattern.exec(key);
-  //       if (tokens) {
-  //         const fieldIndex = Number(tokens[1]);
-  //         if (fieldIndex === index) {
-  //           // delete any subfields for this array item
-  //           form.removeField(key);
-  //         } else if (fieldIndex > index) {
-  //           // shift all higher ones down
-  //           const decrementedKey = `${self.name}[${fieldIndex - 1}]${
-  //             tokens[2]
-  //           }`;
-  //           form.renameField(key, decrementedKey);
-  //         }
-  //       }
-  //     }
-
-  //     return returnValue;
-  //   }
-  // }))
-  // .actions((self) => ({
-  //   runInAction(debugName: string, action: (this: typeof self) => any) {
-  //     action.call(self);
-  //   }
-  // }))
   .named('Field');
 
 type FieldDesignType = typeof Field;
