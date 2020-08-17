@@ -82,6 +82,7 @@ export function Field<CP extends Record<string, any>>({
                 componentProps={componentProps}
                 $source={$source}
               />
+              {children}
             </AntdForm.Item>
           );
         }}

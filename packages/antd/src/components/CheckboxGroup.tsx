@@ -1,6 +1,7 @@
 import React from 'react';
 import AntdCheckboxGroup, { CheckboxGroupProps } from 'antd/lib/checkbox/Group';
 import { asAtomField, shallowEqualComponentValue } from '@formular/react';
+import { isObservableArray } from 'mobx';
 
 export const CheckboxGroup = asAtomField<CheckboxGroupProps>(
   ({ field }, componentProps) => {
@@ -11,14 +12,23 @@ export const CheckboxGroup = asAtomField<CheckboxGroupProps>(
     };
   },
   ({ field }, { finalEmptyContent }) => {
-    let text: string | undefined = undefined;
+    let textArray: string[] = [];
     if (Array.isArray(field.value) && Array.isArray(field.enum)) {
-      text = field.enum
+      textArray = [...field.enum]
         .filter(({ value }) => field.value.includes(value))
-        .map(({ label }) => label)
-        .join(', ');
+        .map(({ label }) => label);
     }
-    return <span>{text ?? finalEmptyContent}</span>;
+    return (
+      <span>{textArray.length ? textArray.join(', ') : finalEmptyContent}</span>
+    );
   },
-  { retrieveValueFromEvent: (val) => val }
+  {
+    mutateFromEvent(change, array) {
+      change((value) => {
+        if (isObservableArray(value)) {
+          value.replace(array);
+        }
+      });
+    }
+  }
 )(React.memo(AntdCheckboxGroup as any, shallowEqualComponentValue));

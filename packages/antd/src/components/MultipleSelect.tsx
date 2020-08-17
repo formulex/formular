@@ -1,6 +1,7 @@
 import React from 'react';
 import AntdSelect, { SelectProps } from 'antd/lib/select';
 import { asAtomField, shallowEqualComponentValue } from '@formular/react';
+import { isObservableArray } from 'mobx';
 
 export const MultipleSelect = asAtomField<SelectProps<any>>(
   ({ field }, componentProps) => {
@@ -13,16 +14,23 @@ export const MultipleSelect = asAtomField<SelectProps<any>>(
     };
   },
   ({ field }, { finalEmptyContent }) => {
-    let text: string | undefined = undefined;
+    let textArray: string[] = [];
     if (Array.isArray(field.value) && Array.isArray(field.enum)) {
-      text = field.enum
+      textArray = [...field.enum]
         .filter(({ value }) => field.value.includes(value))
-        .map(({ label }) => label)
-        .join(', ');
+        .map(({ label }) => label);
     }
-    return <span>{text ?? finalEmptyContent}</span>;
+    return (
+      <span>{textArray.length ? textArray.join(', ') : finalEmptyContent}</span>
+    );
   },
   {
-    retrieveValueFromEvent: (val) => val
+    mutateFromEvent(change, array) {
+      change((value) => {
+        if (isObservableArray(value)) {
+          value.replace(array);
+        }
+      });
+    }
   }
 )(React.memo(AntdSelect, shallowEqualComponentValue));

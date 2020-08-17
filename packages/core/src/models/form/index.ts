@@ -16,6 +16,11 @@ import { defaultValidateMessages } from '../field/inner-features/validation/mess
 import { allPromiseFinish } from './asyncUtil';
 import { set } from 'lodash';
 
+export type ValueType = string | number | undefined | null | object | any[];
+export interface MutationFn {
+  (value: any, values: any, name: string): void;
+}
+
 export const Form = types
   .compose(
     FeatureCollection,
@@ -69,16 +74,41 @@ export const Form = types
     }
   }))
   .actions((self) => ({
-    change(name: string, value: any): void {
-      if (getIn(self.values, name) !== value) {
-        changeValue(self.xValues, name, value);
-        self.resolve(name)?.markModified(true);
-        self.resolve(name)?.__changeBeat();
+    change(name: string, value: MutationFn | ValueType): void {
+      if (typeof value === 'function') {
+        const mutation = value;
+        const target = self.resolve(name);
+        if (target) {
+          transaction(() => {
+            mutation(getIn(self.xValues, name), self.xValues, name);
+          });
+          target.markModified(true);
+          target.__changeBeat();
+        }
+      } else {
+        if (getIn(self.values, name) !== value) {
+          changeValue(self.xValues, name, value);
+          const target = self.resolve(name);
+          if (target) {
+            target.markModified(true);
+            target.__changeBeat();
+          }
+        }
       }
     },
-    changeSiliently(name: string, value: any): void {
-      if (getIn(self.values, name) !== value) {
-        changeValue(self.xValues, name, value);
+    changeSiliently(name: string, value: MutationFn | ValueType): void {
+      if (typeof value === 'function') {
+        const mutation = value;
+        const target = self.resolve(name);
+        if (target) {
+          transaction(() => {
+            mutation(getIn(self.xValues, name), self.xValues, name);
+          });
+        }
+      } else {
+        if (getIn(self.values, name) !== value) {
+          changeValue(self.xValues, name, value);
+        }
       }
     },
     blur(name: string): void {

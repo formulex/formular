@@ -31,5 +31,9 @@ export const Select = asAtomField<SelectProps<string | number>>(
     }
     return <span>{text ?? finalEmptyContent}</span>;
   },
-  { retrieveValueFromEvent: (val) => val }
+  {
+    mutateFromEvent(change, val) {
+      change(val);
+    }
+  }
 )(AntdSelect);
