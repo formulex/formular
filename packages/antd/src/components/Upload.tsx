@@ -1,7 +1,7 @@
 import AntdUpload, { UploadProps } from 'antd/lib/upload';
 import { asAtomField } from '@formular/react';
 import React from 'react';
-import { shallowEqual } from '@formular/core';
+import { shallowEqual, changeValue } from '@formular/core';
 import { isObservableArray } from 'mobx';
 
 export const Upload = asAtomField<UploadProps>(
@@ -14,21 +14,13 @@ export const Upload = asAtomField<UploadProps>(
     valuePropName: 'fileList',
     mutateFromEvent(change, e) {
       const array = Array.isArray(e) ? e : e && e.fileList;
-      change((value) => {
+      change((value, values, name) => {
         if (isObservableArray(value)) {
           value.replace(array);
+        } else if (value === undefined && Array.isArray(array)) {
+          changeValue(values, name, array);
         }
       });
     }
   }
-)(
-  React.memo(
-    AntdUpload,
-    ({ fileList: aValue, ...aRest }, { fileList: bValue, ...bRest }) => {
-      return (
-        aValue?.map((e) => e.uid).join('-') ===
-          bValue?.map((e) => e.uid).join('-') && shallowEqual(aRest, bRest)
-      );
-    }
-  )
-);
+)(AntdUpload);

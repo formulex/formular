@@ -238,12 +238,9 @@ const App: React.FC = () => {
             label="是小动物吗"
             name="isFurry"
             component="Checkbox"
-            // componentProps={({ field }) => ({
-            //   children: field && (field.value ? '是小动物' : '不是小动物'),
-            //   onChange: (e: any) => {
-            //     console.log('e value', e.target.checked);
-            //   }
-            // })}
+            componentProps={({ field }) => ({
+              children: field && (field.value ? '是小动物' : '不是小动物')
+            })}
             rule={rule}
           />
           <Field
@@ -286,7 +283,7 @@ const App: React.FC = () => {
             label="标签"
             name="tags"
             component="TagSelect"
-            initialValue={['ggb']}
+            // initialValue={['ggb']}
             enum={[
               { value: 'lucy', label: '露西' },
               { value: 'will', label: '威尔' },

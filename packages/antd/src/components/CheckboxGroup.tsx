@@ -2,6 +2,7 @@ import React from 'react';
 import AntdCheckboxGroup, { CheckboxGroupProps } from 'antd/lib/checkbox/Group';
 import { asAtomField, shallowEqualComponentValue } from '@formular/react';
 import { isObservableArray } from 'mobx';
+import { changeValue } from '@formular/core';
 
 export const CheckboxGroup = asAtomField<CheckboxGroupProps>(
   ({ field }, componentProps) => {
@@ -24,11 +25,13 @@ export const CheckboxGroup = asAtomField<CheckboxGroupProps>(
   },
   {
     mutateFromEvent(change, array) {
-      change((value) => {
+      change((value, values, name) => {
         if (isObservableArray(value)) {
           value.replace(array);
+        } else if (value === undefined && Array.isArray(array)) {
+          changeValue(values, name, array);
         }
       });
     }
   }
-)(React.memo(AntdCheckboxGroup as any, shallowEqualComponentValue));
+)(AntdCheckboxGroup);
