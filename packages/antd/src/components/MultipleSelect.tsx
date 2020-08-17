@@ -1,7 +1,8 @@
 import React from 'react';
 import AntdSelect, { SelectProps } from 'antd/lib/select';
-import { asAtomField, shallowEqualComponentValue } from '@formular/react';
+import { asAtomField } from '@formular/react';
 import { isObservableArray } from 'mobx';
+import { changeValue } from '@formular/core';
 
 export const MultipleSelect = asAtomField<SelectProps<any>>(
   ({ field }, componentProps) => {
@@ -26,11 +27,13 @@ export const MultipleSelect = asAtomField<SelectProps<any>>(
   },
   {
     mutateFromEvent(change, array) {
-      change((value) => {
+      change((value, values, name) => {
         if (isObservableArray(value)) {
           value.replace(array);
+        } else if (value === undefined && Array.isArray(array)) {
+          changeValue(values, name, array);
         }
       });
     }
   }
-)(React.memo(AntdSelect, shallowEqualComponentValue));
+)(AntdSelect);
