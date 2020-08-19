@@ -255,22 +255,10 @@ export const Form = types
           });
         };
       },
-      initialize(
-        data: object | ((values: object) => object),
-        filter: (field: FieldInstance) => boolean = () => true
-      ) {
+      initialize(data: object | ((values: object) => object)) {
         const values = typeof data === 'function' ? data(self.values) : data;
         self.immInitialValues = { ...values };
         self.xValues = observable({ ...values });
-        transaction(() => {
-          self.fields.forEach((field) => {
-            if (filter(field)) {
-              self.changeSiliently(field.name, field.initialValue);
-              field.resetFlags();
-              field.validation.resetValidationFlags();
-            }
-          });
-        });
       },
       subscribe(setup: SubscribeSetup<SubscribeArgs>): any {
         return getSetupRunner<SubscribeArgs>({
@@ -391,20 +379,38 @@ export const Form = types
     }
   }))
   .actions((self) => ({
-    reset(initialValues: any = self.initialValues) {
-      self.initialize(initialValues || {}, () => true);
-      self.everValitated = false;
-    },
     resetFields(names?: string[]) {
-      self.initialize(self.initialValues || {}, (field) =>
-        Array.isArray(names) ? names.includes(field.name) : true
-      );
+      if (Array.isArray(names)) {
+        transaction(() => {
+          names.forEach((name) => {
+            const target = self.resolve(name);
+            if (target) {
+              self.changeSiliently(target.name, target.initialValue);
+              target.resetFlags();
+              target.validation.resetValidationFlags();
+            }
+          });
+        });
+      } else {
+        self.initialize(self.initialValues || {});
+      }
       self.everValitated = false;
     },
-    forceResetFields(names?: string[]) {
-      self.initialize({}, (field) =>
-        Array.isArray(names) ? names.includes(field.name) : true
-      );
+    clearFields(names?: string[]) {
+      if (Array.isArray(names)) {
+        transaction(() => {
+          names.forEach((name) => {
+            const target = self.resolve(name);
+            if (target) {
+              self.changeSiliently(target.name, undefined);
+              target.resetFlags();
+              target.validation.resetValidationFlags();
+            }
+          });
+        });
+      } else {
+        self.initialize({});
+      }
       self.everValitated = false;
     }
   }))

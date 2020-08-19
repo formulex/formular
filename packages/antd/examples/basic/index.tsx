@@ -12,6 +12,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { useFieldEffects, Registry, PlainConfigContext } from '@formular/react';
 import { FieldInstance, getIn, createForm } from '@formular/core';
 import RJV from 'react-json-view';
+import { BaseRule } from '@formular/core/lib/models/field/inner-features/validation/interface';
 if (process.env.NODE_ENV === 'development') {
   const whyDidYouRender = require('@welldone-software/why-did-you-render');
   whyDidYouRender(React, {});
@@ -132,7 +133,7 @@ const ReuseLogic: React.FC = ({ children }) => {
   return <>{children}</>;
 };
 
-const rule = { type: 'boolean', message: '必填' };
+const rule: BaseRule = { message: '必填', type: 'boolean' };
 
 const App: React.FC = () => {
   const form = useMemo(() => createForm(), []);
@@ -158,7 +159,7 @@ const App: React.FC = () => {
           }}
           effects={function* ({ field, value, form }) {
             yield reaction(
-              () => value('greeting'),
+              () => value<string>('greeting'),
               async (greetingValue) => {
                 await new Promise((r) => setTimeout(r, 1000));
                 field('greetingAsync')!.change(greetingValue);
@@ -177,7 +178,7 @@ const App: React.FC = () => {
                 )!.ignored = !isFurry;
 
                 if (!isFurry) {
-                  form.resetFields(['favAnimal']);
+                  form.resetFields(['favAnimal', 'bestFavAnimal']);
                 }
               },
               { fireImmediately: true }
