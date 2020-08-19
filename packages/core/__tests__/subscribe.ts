@@ -238,7 +238,7 @@ describe('subscribe', () => {
     const foo = jest.fn(({ value }) => {
       if (value === 42) {
         unregisterBar();
-        form.reset();
+        form.resetFields();
       }
     });
     const bar = jest.fn();
