@@ -40,6 +40,7 @@ export function Field<CP extends Record<string, any>>({
   component,
   componentProps,
   children,
+  style,
   ...rest
 }: React.PropsWithChildren<FormularAntdFieldProps<CP>>): React.ReactElement {
   if (typeof name === 'string' && name && component) {
@@ -63,8 +64,15 @@ export function Field<CP extends Record<string, any>>({
       >
         {($source) => {
           const { field, form } = $source;
+          const computedStyled = field.show
+            ? { ...style }
+            : {
+                display: 'none',
+                ...style
+              };
           return (
             <AntdForm.Item
+              style={computedStyled}
               {...rest}
               validateStatus={
                 ((field.visited || form.everValitated) &&
