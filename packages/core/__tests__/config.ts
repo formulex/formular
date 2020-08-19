@@ -22,7 +22,7 @@ describe('config', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].initialValue).toBe('bar');
 
-    form.reset();
+    form.resetFields();
 
     // same initial value, duh
     expect(spy).toHaveBeenCalledTimes(1);

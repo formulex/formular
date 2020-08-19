@@ -44,17 +44,17 @@ describe('field-subscribe', () => {
 
   it('should provide a list of registered fields', () => {
     const form = createForm();
-    form.registerField('foo', () => {}, {});
-    form.registerField('bar', () => {}, {});
-    form.registerField('baz', () => {}, {});
+    form.registerField('foo', () => () => {}, {});
+    form.registerField('bar', () => () => {}, {});
+    form.registerField('baz', () => () => {}, {});
     expect(Array.from(form.fields.keys())).toEqual(['foo', 'bar', 'baz']);
   });
 
   it('should provide a access to field state', () => {
     const form = createForm();
-    form.registerField('foo', () => {}, {});
-    form.registerField('bar', () => {}, {});
-    form.registerField('baz', () => {}, {});
+    form.registerField('foo', () => () => {}, {});
+    form.registerField('bar', () => () => {}, {});
+    form.registerField('baz', () => () => {}, {});
     expect(form.resolve('foo')).toBeDefined();
     expect(form.resolve('foo').name).toBe('foo');
     expect(form.resolve('notafield')).toBeUndefined();
@@ -115,7 +115,7 @@ describe('field-subscribe', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].initialValue).toBe('bar');
 
-    form.reset();
+    form.resetFields();
 
     // same initial value, duh
     expect(spy).toHaveBeenCalledTimes(1);
@@ -148,7 +148,7 @@ describe('field-subscribe', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].initialValue).toBe('bar');
 
-    form.reset();
+    form.resetFields();
 
     // same initial value, duh
     expect(spy).toHaveBeenCalledTimes(1);
@@ -177,7 +177,7 @@ describe('field-subscribe', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].initialValue).toBeUndefined();
 
-    form.reset();
+    form.resetFields();
 
     // same initial value, duh
     expect(spy).toHaveBeenCalledTimes(1);
@@ -206,12 +206,12 @@ describe('field-subscribe', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].initialValue).toBeUndefined();
 
-    form.reset();
+    form.resetFields();
 
     // same initial value, duh
     expect(spy).toHaveBeenCalledTimes(1);
 
-    form.reset({ foo: 'baz' });
+    form.initialize({ foo: 'baz' });
 
     // new initial value
     expect(spy).toHaveBeenCalledTimes(2);
