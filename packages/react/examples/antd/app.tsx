@@ -79,7 +79,6 @@ export const App: React.FC = () => {
         <Formular
           ref={formRef}
           plain={plain}
-          emptyContent="daddy"
           perishable={perishable}
           // initialValues={{ hello: 123 }}
           onFinish={(values) => {
