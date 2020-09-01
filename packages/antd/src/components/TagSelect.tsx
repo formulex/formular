@@ -1,9 +1,8 @@
 import React from 'react';
 import AntdSelect, { SelectProps } from 'antd/lib/select';
 import { asAtomField } from '@formular/react';
-import { isObservableArray } from 'mobx';
-import { observer } from 'mobx-react';
 import { changeValue } from '@formular/core';
+import { isObservableArray } from 'mobx';
 
 export const TagSelect = asAtomField<SelectProps<any>>(
   ({ field }, componentProps) => {

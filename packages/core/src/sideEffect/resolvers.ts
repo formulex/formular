@@ -1,5 +1,4 @@
 import { FormInstance, FieldInstance } from '../models';
-import { escapeRegexTokens, setIn } from '../utils';
 import type { PatternSubscribeSetup, PatternGroupSetup } from './types';
 import { autorun, untracked } from 'mobx';
 
