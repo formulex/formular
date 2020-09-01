@@ -64,3 +64,36 @@
 //     };
 //   }
 // })(AntdTable);
+
+import React from 'react';
+import type { FormularAntdFieldProps } from '../layout-components';
+import { asAtomField } from '@formular/react';
+import { Table } from 'antd';
+import { ColumnsType } from 'antd/lib/table';
+
+interface InnerTableArrayProps {
+  columnSchema?: Array<FormularAntdFieldProps<any> & { width?: any }>;
+}
+
+const InnerTableArray: React.FC<InnerTableArrayProps> = ({ columnSchema }) => {
+  const columns: ColumnsType = (Array.isArray(columnSchema)
+    ? columnSchema
+    : []
+  ).map(({ label, name, width }) => {
+    return {
+      title: label,
+      key: name,
+      width,
+      dataIndex: name
+    };
+  });
+  return <Table columns={columns} />;
+};
+
+export const TableArray = asAtomField<InnerTableArrayProps>(
+  ({ field }, componentProps) => {
+    return {
+      ...componentProps
+    };
+  }
+)(InnerTableArray);

@@ -79,14 +79,17 @@ export const App: React.FC = () => {
         <Formular
           ref={formRef}
           plain={plain}
+          emptyContent="daddy"
           perishable={perishable}
           // initialValues={{ hello: 123 }}
           onFinish={(values) => {
             console.log('finished', values);
+
+            formRef.current?.renameField('hello', 'daddy');
           }}
           effects={function* ({ field, value }) {
             yield autorun(() => {
-              if (field('world') && value('hello')) {
+              if (field('world')) {
                 field('world')!.change(value('hello'));
               }
             });
@@ -97,7 +100,7 @@ export const App: React.FC = () => {
               <Form component={component} {...{ handleSubmit }}>
                 {mount ? (
                   <FieldWrapper
-                    name="hello"
+                    name="AryYouFurry"
                     initialValue="ggb"
                     plain={tempPlain}
                     rule={{ required: true, message: '该项目必填' }}
