@@ -1,6 +1,6 @@
 {
   "name": "@formular/core",
-  "version": "0.0.11",
+  "version": "1.0.0-alpha.0",
   "sideEffects": false,
   "type": "module",
   "main": "lib/index.js",
@@ -43,6 +43,5 @@
     "access": "public",
     "registry": "http://registry.npmjs.org"
   },
-  "devDependencies": {},
   "gitHead": "df7579353451512b69e363802470f9695584e0e0"
 }
