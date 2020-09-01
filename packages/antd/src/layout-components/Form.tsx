@@ -25,7 +25,6 @@ export const Form = React.forwardRef<FormInstance, FormularAntdFormProps<any>>(
       plain,
       messageVariables,
       validateMessages,
-      emptyContent,
       fields,
       effects,
       ...rest
@@ -44,7 +43,6 @@ export const Form = React.forwardRef<FormInstance, FormularAntdFormProps<any>>(
           plain,
           messageVariables,
           validateMessages,
-          emptyContent,
           fields,
           effects
         }}

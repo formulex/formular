@@ -393,6 +393,10 @@ export const Form = types
         });
       } else {
         self.initialize(self.initialValues || {});
+        self.fields.forEach((target) => {
+          target.resetFlags();
+          target.validation.resetValidationFlags();
+        });
       }
       self.everValitated = false;
     },
@@ -410,6 +414,10 @@ export const Form = types
         });
       } else {
         self.initialize({});
+        self.fields.forEach((target) => {
+          target.resetFlags();
+          target.validation.resetValidationFlags();
+        });
       }
       self.everValitated = false;
     }
