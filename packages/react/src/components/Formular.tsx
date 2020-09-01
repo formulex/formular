@@ -13,7 +13,6 @@ import type {
 } from '@formular/core';
 import { useConstant, useWhenValueChanges } from '../use';
 import { FormInstanceContext } from '../context/FormInstanceContext';
-import { PlainConfigContext, PlainConfig } from '../context/PlainConfigContext';
 import type { RegistryEntry } from '../registry';
 import { useRegistry } from '../hook/useRegistry';
 import { RegistryContext } from '../context/RegistryContext';

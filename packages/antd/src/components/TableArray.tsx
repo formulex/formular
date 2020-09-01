@@ -91,7 +91,7 @@ const InnerTableArray: React.FC<InnerTableArrayProps> = ({ columnSchema }) => {
 };
 
 export const TableArray = asAtomField<InnerTableArrayProps>(
-  ({ field }, componentProps) => {
+  (_, componentProps) => {
     return {
       ...componentProps
     };

@@ -21,7 +21,7 @@ export function useField({
 }: FieldProps): [FieldInstance | undefined, FormInstance] {
   const form = useFormInstance('useField');
   const fieldRef = React.useRef<FieldInstance>();
-  const [, forceUpdate] = React.useState();
+  const [, forceUpdate] = React.useState({});
 
   React.useEffect(
     () =>

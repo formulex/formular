@@ -270,7 +270,7 @@ export const Form = types
   })
   .volatile((self) => ({
     getFieldsValue(path?: string[]) {
-      let result = {};
+      const result = {};
       const isArray = Array.isArray(path);
       for (const [name, field] of self.fields.entries()) {
         if ((isArray && path?.includes(name)) || path === undefined) {
@@ -295,7 +295,7 @@ export const Form = types
           errors: string[];
         }>[] = [];
 
-        for (const [_, field] of self.fields.entries()) {
+        for (const [, field] of self.fields.entries()) {
           if (!provideNameList) {
             namePathList?.push(field.name);
           }

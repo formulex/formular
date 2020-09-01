@@ -1,7 +1,6 @@
 import AntdUpload, { UploadProps } from 'antd/lib/upload';
 import { asAtomField } from '@formular/react';
-import React from 'react';
-import { shallowEqual, changeValue } from '@formular/core';
+import { changeValue } from '@formular/core';
 import { isObservableArray } from 'mobx';
 
 export const Upload = asAtomField<UploadProps>(

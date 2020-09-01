@@ -8,7 +8,9 @@ export const Select = asAtomField<SelectProps<string | number>>(
       onSearch: remainOwnEventHandler(componentProps.onSearch, (val: any) => {
         field.hotState.search = val;
       })
-    };
+    } as Partial<{
+      onSearch: (...args: any[]) => void;
+    }>;
     if (!componentProps.showSearch) {
       delete computedProps.onSearch;
     }

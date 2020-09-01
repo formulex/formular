@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FieldInstance, FormInstance, getIn } from '@formular/core';
+import React, { useCallback } from 'react';
+import { FieldInstance, FormInstance } from '@formular/core';
 import { usePlainConfig } from '../hook/usePlainConfig';
-import { observer, useAsObservableSource } from 'mobx-react';
+import { observer } from 'mobx-react';
 import { PlainConfig } from '../context/PlainConfigContext';
 import type { ChangeFn } from '@formular/core/lib/models/field';
-import { autorun, reaction, toJS } from 'mobx';
+import { toJS } from 'mobx';
 
 export interface ProxyControlledPropsOptions {
   onChangeTrigger?: string;

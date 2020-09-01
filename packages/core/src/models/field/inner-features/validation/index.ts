@@ -214,7 +214,7 @@ export const FeatureValidation = types
     }
     return {
       afterCreate() {
-        disposer = addMiddleware(self, (call, next, abort) => {
+        disposer = addMiddleware(self, (call, next) => {
           const validateOnChange = isOrHas(
             self.validation.validateTrigger,
             'change'

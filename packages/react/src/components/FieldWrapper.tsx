@@ -1,7 +1,9 @@
 import React from 'react';
 import type {
-  FieldRegisterConfig,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   FieldInstance,
+  FieldRegisterConfig,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   FormInstance
 } from '@formular/core';
 import { useField } from '../hook/useField';
@@ -42,7 +44,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
   plain,
   children,
   enum: enums,
-  ...rest
+  ..._rest
 }) => {
   if (!name) {
     throw new Error(

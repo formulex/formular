@@ -1,6 +1,6 @@
 import React from 'react';
 import AntdCheckboxGroup, { CheckboxGroupProps } from 'antd/lib/checkbox/Group';
-import { asAtomField, shallowEqualComponentValue } from '@formular/react';
+import { asAtomField } from '@formular/react';
 import { isObservableArray } from 'mobx';
 import { changeValue } from '@formular/core';
 
