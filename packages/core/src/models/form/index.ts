@@ -116,6 +116,9 @@ export const Form = types
     },
     focus(name: string): void {
       self.resolve(name)?.focus();
+    },
+    markValidated(validated: boolean) {
+      self.everValitated = validated;
     }
   }))
   .actions((self) => ({
@@ -284,6 +287,7 @@ export const Form = types
     let lastValidatePromise: Promise<FieldError[]> | null = null;
     return {
       validateFields(nameList?: string[], options?: ValidateOptions) {
+        self.markValidated(true);
         const provideNameList = !!nameList;
         const namePathList: string[] | undefined = provideNameList
           ? nameList
@@ -380,6 +384,7 @@ export const Form = types
   }))
   .actions((self) => ({
     resetFields(names?: string[]) {
+      self.markValidated(false);
       if (Array.isArray(names)) {
         transaction(() => {
           names.forEach((name) => {
@@ -401,6 +406,7 @@ export const Form = types
       self.everValitated = false;
     },
     clearFields(names?: string[]) {
+      self.markValidated(false);
       if (Array.isArray(names)) {
         transaction(() => {
           names.forEach((name) => {

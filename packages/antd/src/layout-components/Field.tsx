@@ -75,12 +75,12 @@ export function Field<CP extends Record<string, any>>({
               style={computedStyled}
               {...rest}
               validateStatus={
-                ((field.visited || form.everValitated) &&
+                ((field.touched || form.everValitated) &&
                   validateMapper[field.validation.status]) ||
                 undefined
               }
               help={
-                (field.visited || form.everValitated) &&
+                (field.touched || form.everValitated) &&
                 !field.ignored &&
                 field.validation.errors.join(', ')
               }

@@ -198,8 +198,8 @@ const App: React.FC = () => {
           <Field
             label="密码测试"
             name="password"
-            initialValue="hello!"
             component="Password"
+            rule={[{ required: true, message: '密码不能为空' }]}
             componentProps={{ placeholder: '请随便输入' }}
           />
           <Field
@@ -371,7 +371,12 @@ const App: React.FC = () => {
             <Button type="primary" htmlType="submit">
               Submit
             </Button>
-            <Button htmlType="reset" style={{ marginLeft: '1rem' }}>
+            <Button
+              onClick={() => {
+                form.resetFields();
+              }}
+              style={{ marginLeft: '1rem' }}
+            >
               Reset
             </Button>
 
