@@ -8,7 +8,7 @@ on:
 
 jobs:
   docs:
-    name: Document
+    name: Check
     runs-on: macOS-latest
     strategy:
       matrix:
@@ -41,14 +41,3 @@ jobs:
 
       - name: Building packages
         run: yarn run prenpm
-
-      - name: Building
-        run: yarn run site:build
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@3.5.3
-        with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: dist
-          CLEAN: true
