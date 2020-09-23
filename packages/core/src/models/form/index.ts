@@ -1,6 +1,6 @@
 import { getType, Instance, types, clone } from 'mobx-state-tree';
 import { createField, FieldInstance } from '../';
-import { transaction, observable, toJS } from 'mobx';
+import { transaction, observable, toJS, isObservable } from 'mobx';
 import { setIn, getIn, changeValue } from '../../utils';
 import { getResolvers, SubscribeSetup, SubscribeArgs } from '../../sideEffect';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
@@ -21,6 +21,22 @@ export interface MutationFn {
   (value: any, values: any, name: string): void;
 }
 
+export const AnyObservableType = types.custom<any, any>({
+  name: 'AnyObservableType',
+  fromSnapshot(snapshot) {
+    return observable(snapshot);
+  },
+  toSnapshot(target) {
+    return toJS(target);
+  },
+  isTargetType(target) {
+    return isObservable(target);
+  },
+  getValidationMessage() {
+    return '';
+  }
+});
+
 export const Form = types
   .compose(
     FeatureCollection,
@@ -34,7 +50,9 @@ export const Form = types
 
       // extra vars when generate error string
       _messageVariables: types.maybe(types.frozen()),
-      _validateMessages: types.maybe(types.frozen())
+      _validateMessages: types.maybe(types.frozen()),
+
+      xValues: AnyObservableType
     })
   )
   .actions((self) => ({
@@ -47,9 +65,9 @@ export const Form = types
   }))
   .volatile((self) => ({
     // Reactive ✨ Form Values Source
-    xValues: observable(
-      self.immInitialValues ? { ...self.immInitialValues } : {}
-    ),
+    // xValues: observable(
+    //   self.immInitialValues ? { ...self.immInitialValues } : {}
+    // ),
     resolve(name: string): FieldInstance | undefined {
       return self.fields.get(name);
     },
@@ -468,6 +486,7 @@ export function createForm<V = any>({
 }: FormConfig<V> = {}): FormInstance {
   const form = Form.create({
     immInitialValues: initialValues ? { ...initialValues } : {},
+    xValues: initialValues ? { ...initialValues } : {},
     validating: false,
     everValitated: false,
     _plain: plain ?? false,

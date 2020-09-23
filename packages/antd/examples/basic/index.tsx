@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
@@ -13,6 +13,7 @@ import { useFieldEffects, Registry, PlainConfigContext } from '@formular/react';
 import { FieldInstance, getIn, createForm } from '@formular/core';
 import RJV from 'react-json-view';
 import { BaseRule } from '@formular/core/lib/models/field/inner-features/validation/interface';
+import { applySnapshot, getSnapshot } from 'mobx-state-tree';
 if (process.env.NODE_ENV === 'development') {
   const whyDidYouRender = require('@welldone-software/why-did-you-render');
   whyDidYouRender(React, {});
@@ -144,6 +145,8 @@ const App: React.FC = () => {
       }),
     []
   );
+
+  const snapshotRef = useRef<any | null>(null);
   return (
     <>
       <PlainConfigContext.Provider value={{ emptyContent: '<empty>' }}>
@@ -387,6 +390,26 @@ const App: React.FC = () => {
               }}
             >
               Toggle Plain
+            </Button>
+
+            <Button
+              style={{ marginLeft: '1rem' }}
+              onClick={() => {
+                snapshotRef.current = getSnapshot(form);
+              }}
+            >
+              Save State
+            </Button>
+
+            <Button
+              style={{ marginLeft: '1rem' }}
+              onClick={() => {
+                if (snapshotRef.current) {
+                  applySnapshot(form, snapshotRef.current);
+                }
+              }}
+            >
+              Restore State
             </Button>
           </Field>
           <Card style={{ marginTop: '1rem' }}>
