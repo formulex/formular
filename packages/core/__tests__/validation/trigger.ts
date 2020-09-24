@@ -63,7 +63,7 @@ describe('validation.trigger', () => {
       },
       {
         foo: {
-          rule: { required: true },
+          rules: { required: true },
           messageVariables: { name: 'daddy' }
         }
       }
@@ -80,6 +80,7 @@ describe('validation.trigger', () => {
     expect(form.values).toStrictEqual({});
     expect(spy).toHaveBeenCalledTimes(2);
     expect(spy.mock.calls[1][0].validation.errors).toStrictEqual([
+      // eslint-disable-next-line quotes
       "'daddy' is required"
     ]);
 
@@ -115,6 +116,7 @@ describe('validation.trigger', () => {
     expect(form.values).toStrictEqual({});
     expect(spy).toHaveBeenCalledTimes(4);
     expect(spy.mock.calls[3][0].validation.errors).toStrictEqual([
+      // eslint-disable-next-line quotes
       "'daddy' is required"
     ]);
   });
@@ -129,7 +131,7 @@ describe('validation.trigger', () => {
       },
       {
         foo: {
-          rule: { required: true, message: 'Required' }
+          rules: { required: true, message: 'Required' }
         }
       }
     );
@@ -175,7 +177,7 @@ describe('validation.trigger', () => {
   });
 
   it('should validate on change when validateTrigger is change', async () => {
-    const validate = jest.fn(async (rule, value) => {
+    const validate = jest.fn(async (rules, value) => {
       if (!value) {
         throw new Error('必填');
       }
@@ -202,7 +204,7 @@ describe('validation.trigger', () => {
           r2();
         };
       },
-      { validateTrigger: 'change', rule: { validator: validate } }
+      { validateTrigger: 'change', rules: { validator: validate } }
     );
 
     expect(spy).toHaveBeenCalledTimes(1);
@@ -392,7 +394,7 @@ describe('validation.trigger', () => {
   });
 
   it('should validate on change when validateTrigger is blur', async () => {
-    const validate = jest.fn(async (rule, value) => {
+    const validate = jest.fn(async (rules, value) => {
       if (!value) {
         throw new Error('必填');
       }
@@ -419,7 +421,7 @@ describe('validation.trigger', () => {
           r2();
         };
       },
-      { validateTrigger: 'blur', rule: { validator: validate } }
+      { validateTrigger: 'blur', rules: { validator: validate } }
     );
 
     expect(spy).toHaveBeenCalledTimes(1);

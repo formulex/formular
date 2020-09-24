@@ -18,8 +18,8 @@ describe('validation.errors', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0][0].errors).toEqual({});
 
-    const unregister = form.registerField('username', () => {}, {
-      rule: {
+    const unregister = form.registerField('username', () => () => {}, {
+      rules: {
         validator: async (rule, value) => {
           if (!value) {
             throw new Error('Required');

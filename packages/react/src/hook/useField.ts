@@ -9,7 +9,7 @@ export function useField({
   initialValue,
   validateFirst,
   validateTrigger,
-  rule,
+  rules,
   messageVariables,
   validateMessages,
   perishable,
@@ -38,7 +38,7 @@ export function useField({
           initialValue,
           validateFirst,
           validateTrigger,
-          rule,
+          rules,
           messageVariables,
           validateMessages,
           perishable,
@@ -69,9 +69,9 @@ export function useField({
   });
 
   useWhenValueChanges(
-    rule,
+    rules,
     () => {
-      fieldRef.current?.validation.setRules(rule!);
+      fieldRef.current?.validation.setRules(rules!);
     },
     shallowEqual
   );

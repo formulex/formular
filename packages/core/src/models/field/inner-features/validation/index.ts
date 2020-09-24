@@ -165,7 +165,7 @@ export interface ValidationInstance extends Instance<typeof Validation> {}
 export interface CreateValidationOptions {
   validateFirst?: boolean;
   validateTrigger?: string | string[];
-  rule?: RuleObject | RuleObject[];
+  rules?: RuleObject | RuleObject[];
   messageVariables?: any;
   validateMessages?: ValidateMessages;
 }
@@ -173,7 +173,7 @@ export interface CreateValidationOptions {
 export function createValidation({
   validateFirst,
   validateTrigger,
-  rule,
+  rules,
   messageVariables,
   validateMessages
 }: CreateValidationOptions = {}): ValidationInstance {
@@ -187,8 +187,8 @@ export function createValidation({
     validateTrigger: validateTrigger ?? ['change']
   });
 
-  if (rule) {
-    instance.setRules(rule);
+  if (rules) {
+    instance.setRules(rules);
   }
 
   return instance;

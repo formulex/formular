@@ -1,6 +1,12 @@
 import { getType, Instance, types, clone } from 'mobx-state-tree';
 import { createField, FieldInstance } from '../';
-import { transaction, observable, toJS, isObservable } from 'mobx';
+import {
+  transaction,
+  observable,
+  toJS,
+  isObservable,
+  isObservableSet
+} from 'mobx';
 import { setIn, getIn, changeValue } from '../../utils';
 import { getResolvers, SubscribeSetup, SubscribeArgs } from '../../sideEffect';
 import { Field, FieldRegisterConfig, FieldDesignInterface } from '../field';
@@ -37,6 +43,22 @@ export const AnyObservableType = types.custom<any, any>({
   }
 });
 
+export const SetType = types.custom<string[], Set<string>>({
+  name: 'SetType',
+  fromSnapshot(snapshot) {
+    return observable.set(new Set(snapshot));
+  },
+  toSnapshot(value) {
+    return [...value];
+  },
+  isTargetType(target) {
+    return isObservableSet(target);
+  },
+  getValidationMessage() {
+    return '';
+  }
+});
+
 export const Form = types
   .compose(
     FeatureCollection,
@@ -44,7 +66,7 @@ export const Form = types
     types.model({
       fields: types.map(types.late((): FieldDesignInterface => Field)),
       validating: types.boolean,
-      everValitated: types.boolean,
+      everValitated: SetType,
       // Immutable 🧊 Form InitialValues Source
       immInitialValues: types.frozen(),
 
@@ -134,10 +156,10 @@ export const Form = types
     },
     focus(name: string): void {
       self.resolve(name)?.focus();
-    },
-    markValidated(validated: boolean) {
-      self.everValitated = validated;
     }
+    // markValidated(validated: boolean) {
+    //   self.everValitated = validated;
+    // }
   }))
   .actions((self) => ({
     removeField(name: string) {
@@ -214,7 +236,7 @@ export const Form = types
           initialValue,
           validateFirst,
           validateTrigger,
-          rule,
+          rules,
           messageVariables,
           validateMessages,
           perishable,
@@ -231,7 +253,7 @@ export const Form = types
             name,
             validateFirst,
             validateTrigger,
-            rule,
+            rules,
             messageVariables,
             validateMessages,
             plain,
@@ -305,7 +327,7 @@ export const Form = types
     let lastValidatePromise: Promise<FieldError[]> | null = null;
     return {
       validateFields(nameList?: string[], options?: ValidateOptions) {
-        self.markValidated(true);
+        // self.markValidated(true);
         const provideNameList = !!nameList;
         const namePathList: string[] | undefined = provideNameList
           ? nameList
@@ -323,8 +345,14 @@ export const Form = types
           }
 
           // Skip if without rule
-          if (!field.validation.rules || !field.validation.rules.length) {
+          if (
+            field.ignored ||
+            !field.validation.rules ||
+            !field.validation.rules.length
+          ) {
             continue;
+          } else {
+            self.everValitated.add(field.name);
           }
 
           // Add field validate rule in to promise list
@@ -402,10 +430,10 @@ export const Form = types
   }))
   .actions((self) => ({
     resetFields(names?: string[]) {
-      self.markValidated(false);
       if (Array.isArray(names)) {
         transaction(() => {
           names.forEach((name) => {
+            self.everValitated.delete(name);
             const target = self.resolve(name);
             if (target) {
               self.changeSiliently(target.name, target.initialValue);
@@ -415,19 +443,20 @@ export const Form = types
           });
         });
       } else {
+        self.everValitated.clear();
         self.initialize(self.initialValues || {});
         self.fields.forEach((target) => {
           target.resetFlags();
           target.validation.resetValidationFlags();
         });
       }
-      self.everValitated = false;
+      // self.everValitated = false;
     },
     clearFields(names?: string[]) {
-      self.markValidated(false);
       if (Array.isArray(names)) {
         transaction(() => {
           names.forEach((name) => {
+            self.everValitated.delete(name);
             const target = self.resolve(name);
             if (target) {
               self.changeSiliently(target.name, undefined);
@@ -437,13 +466,13 @@ export const Form = types
           });
         });
       } else {
+        self.everValitated.clear();
         self.initialize({});
         self.fields.forEach((target) => {
           target.resetFlags();
           target.validation.resetValidationFlags();
         });
       }
-      self.everValitated = false;
     }
   }))
   .named('Form');
@@ -488,7 +517,7 @@ export function createForm<V = any>({
     immInitialValues: initialValues ? { ...initialValues } : {},
     xValues: initialValues ? { ...initialValues } : {},
     validating: false,
-    everValitated: false,
+    everValitated: [],
     _plain: plain ?? false,
     _messageVariables: messageVariables ?? undefined,
     _validateMessages: validateMessages ?? undefined,

@@ -34,7 +34,7 @@ export function Field<CP extends Record<string, any>>({
   enum: enums,
   validateFirst,
   validateTrigger,
-  rule,
+  rules,
   messageVariables,
   validateMessages,
   component,
@@ -57,7 +57,7 @@ export function Field<CP extends Record<string, any>>({
           enum: enums,
           validateFirst,
           validateTrigger,
-          rule,
+          rules,
           messageVariables,
           validateMessages
         }}
@@ -70,17 +70,18 @@ export function Field<CP extends Record<string, any>>({
                 display: 'none',
                 ...style
               };
+
           return (
             <AntdForm.Item
               style={computedStyled}
               {...rest}
               validateStatus={
-                ((field.touched || form.everValitated) &&
+                ((field.touched || form.everValitated.has(field.name)) &&
                   validateMapper[field.validation.status]) ||
                 undefined
               }
               help={
-                (field.touched || form.everValitated) &&
+                (field.touched || form.everValitated.has(field.name)) &&
                 !field.ignored &&
                 field.validation.errors.join(', ')
               }

@@ -5,12 +5,12 @@ import 'antd/dist/antd.css';
 import './index.css';
 import { Form, Field } from '../../src';
 import { reaction, autorun } from 'mobx';
-import { Observer, useLocalStore } from 'mobx-react';
+import { Observer } from 'mobx-react';
 import { Card } from 'antd';
 import * as components from '../../src/components';
 import { PlusOutlined } from '@ant-design/icons';
-import { useFieldEffects, Registry, PlainConfigContext } from '@formular/react';
-import { FieldInstance, getIn, createForm } from '@formular/core';
+import { Registry, PlainConfigContext } from '@formular/react';
+import { createForm } from '@formular/core';
 import RJV from 'react-json-view';
 import { BaseRule } from '@formular/core/lib/models/field/inner-features/validation/interface';
 import { applySnapshot, getSnapshot } from 'mobx-state-tree';
@@ -94,47 +94,47 @@ const formItemLayout = {
   wrapperCol: { span: 14 }
 };
 
-const DynamicPropsLogic: React.FC<{
-  name: string;
-  children: (field?: FieldInstance) => React.ReactNode;
-}> = ({ children, name }) => {
-  const store = useLocalStore(() => ({
-    fieldx: undefined as undefined | FieldInstance,
-    setFieldX: (val?: FieldInstance) => {
-      store.fieldx = val;
-    }
-  }));
-  useFieldEffects(function* ({ field }) {
-    yield autorun(() => {
-      store.setFieldX(field(name));
-    });
-  });
-  return <Observer>{() => <>{children(store.fieldx)}</>}</Observer>;
-};
+// const DynamicPropsLogic: React.FC<{
+//   name: string;
+//   children: (field?: FieldInstance) => React.ReactNode;
+// }> = ({ children, name }) => {
+//   const store = useLocalStore(() => ({
+//     fieldx: undefined as undefined | FieldInstance,
+//     setFieldX: (val?: FieldInstance) => {
+//       store.fieldx = val;
+//     }
+//   }));
+//   useFieldEffects(function* ({ field }) {
+//     yield autorun(() => {
+//       store.setFieldX(field(name));
+//     });
+//   });
+//   return <Observer>{() => <>{children(store.fieldx)}</>}</Observer>;
+// };
 
-const ReuseLogic: React.FC = ({ children }) => {
-  useFieldEffects(function* ({ value, fieldsEffects }) {
-    yield fieldsEffects('^table\\[(\\d+)\\].wholename', function* (
-      wholename,
-      tokens
-    ) {
-      const fieldIndex = Number(tokens[1]);
+// const ReuseLogic: React.FC = ({ children }) => {
+//   useFieldEffects(function* ({ value, fieldsEffects }) {
+//     yield fieldsEffects('^table\\[(\\d+)\\].wholename', function* (
+//       wholename,
+//       tokens
+//     ) {
+//       const fieldIndex = Number(tokens[1]);
 
-      yield reaction(
-        () => [
-          value(`table[${fieldIndex}].firstname`),
-          value(`table[${fieldIndex}].lastname`)
-        ],
-        ([first, last]) => {
-          wholename.change(first + ' ' + last);
-        }
-      );
-    });
-  });
-  return <>{children}</>;
-};
+//       yield reaction(
+//         () => [
+//           value(`table[${fieldIndex}].firstname`),
+//           value(`table[${fieldIndex}].lastname`)
+//         ],
+//         ([first, last]) => {
+//           wholename.change(first + ' ' + last);
+//         }
+//       );
+//     });
+//   });
+//   return <>{children}</>;
+// };
 
-const rule: BaseRule = { message: '必填', type: 'boolean' };
+const rules: BaseRule = { message: '必填', type: 'boolean' };
 
 const App: React.FC = () => {
   const form = useMemo(() => createForm(), []);
@@ -158,6 +158,7 @@ const App: React.FC = () => {
             console.log('finish', values);
           }}
           onFinishFailed={(errors) => {
+            console.log(form.everValitated);
             console.log('errors', errors);
           }}
           effects={function* ({ field, value, form }) {
@@ -202,14 +203,14 @@ const App: React.FC = () => {
             label="密码测试"
             name="password"
             component="Password"
-            rule={[{ required: true, message: '密码不能为空' }]}
+            rules={[{ required: true, message: '密码不能为空' }]}
             componentProps={{ placeholder: '请随便输入' }}
           />
           <Field
             label="异步的问候"
             name="greetingAsync"
             component="Input"
-            rule={{
+            rules={{
               type: 'string',
               min: 5,
               message: 'The length is at least 5'
@@ -245,13 +246,15 @@ const App: React.FC = () => {
             componentProps={({ field }) => ({
               children: field && (field.value ? '是小动物' : '不是小动物')
             })}
-            rule={rule}
+            rules={rules}
           />
           <Field
             label="你喜欢的小动物"
             name="favAnimal"
             component="CheckboxGroup"
             enum={options}
+            required
+            rules={{ required: true, message: 'required' }}
           />
           <Field
             label="你最最喜欢的小动物"
@@ -323,7 +326,7 @@ const App: React.FC = () => {
                     name: 'firstname',
                     label: '前名字',
                     component: 'Input',
-                    rule: {
+                    rules: {
                       type: 'string',
                       minLength: 1,
                       errorMessage: '该字段非空'
@@ -334,7 +337,7 @@ const App: React.FC = () => {
                     name: 'lastname',
                     label: '后名字',
                     component: 'Input',
-                    rule: {
+                    rules: {
                       type: 'string',
                       errorMessage: '该字段非空'
                     },
@@ -344,7 +347,7 @@ const App: React.FC = () => {
                     name: 'wholename',
                     label: '全名字',
                     component: 'Input',
-                    rule: {
+                    rules: {
                       type: 'string',
                       errorMessage: '该字段非空'
                     },

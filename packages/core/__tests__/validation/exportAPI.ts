@@ -19,7 +19,7 @@ describe('validation.formAPI', () => {
   beforeEach(() => {
     form = createForm();
     form.registerField('normal');
-    form.registerField('async', () => {}, { rule: { validator: checkRule } });
+    form.registerField('async', () => {}, { rules: { validator: checkRule } });
   });
 
   it('should work with validateFields', async () => {

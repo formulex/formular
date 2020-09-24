@@ -90,7 +90,7 @@ export function createField({
   name,
   validateFirst,
   validateTrigger,
-  rule,
+  rules,
   messageVariables,
   validateMessages,
   show,
@@ -113,7 +113,7 @@ export function createField({
     validation: createValidation({
       validateFirst,
       validateTrigger,
-      rule,
+      rules,
       messageVariables,
       validateMessages
     }),

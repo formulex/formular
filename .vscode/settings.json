@@ -1,3 +1,4 @@
 {
-  "typescript.tsdk": "/Users/heskeybaozi/web/formular/node_modules/typescript/lib"
+  "typescript.tsdk": "/Users/heskeybaozi/web/formular/node_modules/typescript/lib",
+  "eslint.enable": true
 }
