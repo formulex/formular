@@ -77,6 +77,7 @@ export function Field<CP extends Record<string, any>>({
               {...rest}
               validateStatus={
                 ((field.touched || form.everValitated.has(field.name)) &&
+                  !field.ignored &&
                   validateMapper[field.validation.status]) ||
                 undefined
               }
