@@ -146,6 +146,13 @@ const App: React.FC = () => {
     []
   );
 
+  useEffect(() => {
+    setTimeout(() => {
+      form.resolve('favAnimal')!.enum = options;
+      console.log('done');
+    }, 1000);
+  }, []);
+
   const snapshotRef = useRef<any | null>(null);
   return (
     <>
@@ -242,6 +249,7 @@ const App: React.FC = () => {
           <Field
             label="是小动物吗"
             name="isFurry"
+            initialValue={true}
             component="Checkbox"
             componentProps={({ field }) => ({
               children: field && (field.value ? '是小动物' : '不是小动物')
@@ -252,7 +260,6 @@ const App: React.FC = () => {
             label="你喜欢的小动物"
             name="favAnimal"
             component="CheckboxGroup"
-            enum={options}
             required
             rules={{ required: true, message: 'required' }}
           />
@@ -260,7 +267,7 @@ const App: React.FC = () => {
             label="你最最喜欢的小动物"
             name="bestFavAnimal"
             component="RadioGroup"
-            enum={options}
+            // enum={options}
           />
           <Field
             label="人选"

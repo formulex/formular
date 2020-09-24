@@ -18,7 +18,7 @@ export const Select = asAtomField<SelectProps<string | number>>(
       ...componentProps,
       ...computedProps,
       mode: undefined,
-      options: field.enum,
+      options: Array.isArray(field.enum) ? [...field.enum] : field.enum,
       disabled: field.disabled ?? componentProps.disabled,
       loading: field.loading ?? componentProps.loading
     };

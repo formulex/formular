@@ -9,7 +9,7 @@ export const MultipleSelect = asAtomField<SelectProps<any>>(
     return {
       ...componentProps,
       mode: 'multiple',
-      options: field.enum,
+      options: Array.isArray(field.enum) ? [...field.enum] : field.enum,
       disabled: field.disabled ?? componentProps.disabled,
       loading: field.loading ?? componentProps.loading
     };

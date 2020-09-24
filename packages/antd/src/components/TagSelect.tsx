@@ -9,7 +9,7 @@ export const TagSelect = asAtomField<SelectProps<any>>(
     return {
       ...componentProps,
       mode: 'tags',
-      options: field.enum,
+      options: Array.isArray(field.enum) ? [...field.enum] : field.enum,
       disabled: field.disabled ?? componentProps.disabled,
       loading: field.loading ?? componentProps.loading
     };

@@ -7,7 +7,7 @@ export const RadioGroup = asAtomField<RadioGroupProps>(
   ({ field }, componentProps) => {
     return {
       ...componentProps,
-      options: field.enum,
+      options: Array.isArray(field.enum) ? [...field.enum] : field.enum,
       disabled: field.disabled ?? componentProps.disabled
     };
   },
