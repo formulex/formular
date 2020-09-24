@@ -81,9 +81,10 @@ export function Field<CP extends Record<string, any>>({
                 undefined
               }
               help={
-                (field.touched || form.everValitated.has(field.name)) &&
-                !field.ignored &&
-                field.validation.errors.join(', ')
+                ((field.touched || form.everValitated.has(field.name)) &&
+                  !field.ignored &&
+                  field.validation.errors.join(', ')) ||
+                undefined
               }
             >
               <AtomFieldRenderer
