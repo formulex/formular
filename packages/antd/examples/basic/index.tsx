@@ -14,57 +14,13 @@ import { createForm } from '@formular/core';
 import RJV from 'react-json-view';
 import { BaseRule } from '@formular/core/lib/models/field/inner-features/validation/interface';
 import { applySnapshot, getSnapshot } from 'mobx-state-tree';
+import { from } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+import { toStream } from 'mobx-utils';
 if (process.env.NODE_ENV === 'development') {
   const whyDidYouRender = require('@welldone-software/why-did-you-render');
   whyDidYouRender(React, {});
 }
-// import { XTableProps } from '../../src/components';
-// import { ColumnType } from 'antd/lib/table';
-// import { DatePicker } from '../../src/components/DatePickterMoment';
-
-// const enhanceColumns: XTableProps['enhanceColumns'] = (
-//   columns: ColumnType<any>[],
-//   { meta: { field, form } }
-// ) => {
-//   return !field.plain
-//     ? columns.concat([
-//         {
-//           key: 'action',
-//           title: '操作',
-//           render: (_, __, index) => {
-//             return (
-//               <Button.Group style={{ marginBottom: '24px' }}>
-//                 <Button
-//                   onClick={() => {
-//                     field.remove(index);
-//                   }}
-//                 >
-//                   删除
-//                 </Button>
-//                 <Button
-//                   onClick={() => {
-//                     console.log(
-//                       Array.from(form.fields.entries()).map(([key, field]) =>
-//                         console.log(key, field.value)
-//                       )
-//                     );
-//                     console.log(
-//                       'push',
-//                       `${field.name}[${index}]`,
-//                       getIn(field.value, `[${index}]`)
-//                     );
-//                     field.push(form.resolve(`${field.name}[${index}]`)?.value);
-//                   }}
-//                 >
-//                   复制并新增到尾端
-//                 </Button>
-//               </Button.Group>
-//             );
-//           }
-//         }
-//       ])
-//     : columns;
-// };
 
 Registry.registerGlobalFields({
   ...components
@@ -176,6 +132,14 @@ const App: React.FC = () => {
                 field('greetingAsync')!.change(greetingValue);
               }
             );
+
+            yield from(
+              toStream<any>(() => value('greeting'))
+            )
+              .pipe(debounceTime(500))
+              .subscribe((val) => {
+                console.log('greeting: ', val);
+              });
 
             yield reaction(
               () => value<boolean>('isFurry'),
