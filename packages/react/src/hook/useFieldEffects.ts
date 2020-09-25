@@ -6,12 +6,14 @@ import type {
   FormInstance
 } from '@formular/core';
 
-export function useFieldEffects(effects?: SubscribeSetup<SubscribeArgs>) {
-  const formInstance = useFormInstance('useFieldEffects');
-  useInnerFieldEffects(formInstance, effects);
+export function useContextFieldEffects(
+  effects?: SubscribeSetup<SubscribeArgs>
+) {
+  const formInstance = useFormInstance('useContextFieldEffects');
+  useFieldEffects(formInstance, effects);
 }
 
-export function useInnerFieldEffects(
+export function useFieldEffects(
   formInstance: FormInstance,
   effects?: SubscribeSetup<SubscribeArgs>
 ) {

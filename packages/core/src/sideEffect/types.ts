@@ -5,17 +5,23 @@ export interface SubscribeArgs extends Resolvers {
   form: FormInstance;
 }
 
+export interface BaseSubscription {
+  unsubscribe: () => void;
+}
+
+export type Cancelable = (() => void) | BaseSubscription;
+
 export interface SubscribeSetup<Args> {
   (args: Args):
-    | Generator<undefined | (() => void), void | (() => void), void>
+    | Generator<undefined | Cancelable, void | Cancelable, void>
     | (() => void)
     | void;
 }
 
 export interface PatternSubscribeSetup {
   (field: FieldInstance, tokens: RegExpExecArray): Generator<
-    undefined | (() => void),
-    void | (() => void),
+    undefined | Cancelable,
+    void | Cancelable,
     void
   >;
 }

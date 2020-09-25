@@ -16,7 +16,7 @@ import { FormInstanceContext } from '../context/FormInstanceContext';
 import type { RegistryEntry } from '../registry';
 import { useRegistry } from '../hook/useRegistry';
 import { RegistryContext } from '../context/RegistryContext';
-import { useInnerFieldEffects } from '../hook/useFieldEffects';
+import { useFieldEffects } from '../hook/useFieldEffects';
 
 export interface FormularRenderProps {
   form: FormInstance;
@@ -118,7 +118,7 @@ export const Formular = React.forwardRef<FormInstance, FormularProps<any>>(
 
     const [registry] = useRegistry({ fields });
 
-    useInnerFieldEffects(form, effects);
+    useFieldEffects(form, effects);
 
     return (
       <FormInstanceContext.Provider value={form}>
