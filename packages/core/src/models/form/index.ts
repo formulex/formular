@@ -186,7 +186,11 @@ export const Form = types
               } else if (
                 typeof (disposerOrNull as any)?.unsubscribe === 'function'
               ) {
-                disposers.push((disposerOrNull as any).unsubscribe);
+                disposers.push(
+                  ((disposerOrNull as any).unsubscribe as Function).bind(
+                    disposerOrNull
+                  )
+                );
               }
             }
           }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'antd/lib/button';
 import 'antd/dist/antd.css';
@@ -398,4 +398,16 @@ const App: React.FC = () => {
   );
 };
 
-ReactDOM.render(<App />, document.getElementById('app'));
+const B: React.FC = () => {
+  const [show, setShow] = useState(true);
+  return (
+    <>
+      <Button onClick={() => setShow((val) => !val)}>
+        {show ? 'show' : 'unshow'}
+      </Button>
+      {show ? <App /> : null}
+    </>
+  );
+};
+
+ReactDOM.render(<B />, document.getElementById('app'));
