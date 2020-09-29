@@ -1,17 +1,13 @@
-import React, { useCallback } from 'react';
-import {
-  Formular,
-  FieldWrapper,
-  AtomFieldRenderer
-} from '../../src/components';
+import React from 'react';
+import { Formular, FieldWrapper, AtomFieldRenderer } from '../src/components';
 import { Form, Button, Switch, Card, Input } from 'antd';
 import 'antd/dist/antd.css';
 import './app.less';
 import { Observer } from 'mobx-react';
 import type { FormInstance } from '@formular/core';
-import { asAtomField } from '../../src/components/asAtomField';
+import { asAtomField } from '../src/components/asAtomField';
 import { InputProps } from 'antd/lib/input';
-import { Registry } from '../../src/registry';
+import { Registry } from '../src/registry';
 import { autorun } from 'mobx';
 
 const FInput = asAtomField<InputProps>()(Input);
@@ -40,7 +36,7 @@ export const App: React.FC = () => {
   const [plain, setPlain] = React.useState(false);
   const [perishable, setPerishable] = React.useState(false);
   const formRef = React.useRef<FormInstance>(null);
-  const [, forceUpdate] = React.useState();
+  const [, forceUpdate] = React.useState<any>();
   const [mount, setMount] = React.useState(true);
   const [tempPlain, setTempPlain] = React.useState(false);
 
@@ -102,7 +98,7 @@ export const App: React.FC = () => {
                     name="AryYouFurry"
                     initialValue="ggb"
                     plain={tempPlain}
-                    rule={{ required: true, message: '该项目必填' }}
+                    rules={{ required: true, message: '该项目必填' }}
                   >
                     {(source) => {
                       const { field, form } = source;
@@ -136,7 +132,7 @@ export const App: React.FC = () => {
                 <FieldWrapper
                   name="world"
                   plain={tempPlain}
-                  rule={{ required: true, message: '该项目必填' }}
+                  rules={{ required: true, message: '该项目必填' }}
                 >
                   {(source) => {
                     const { field, form } = source;
